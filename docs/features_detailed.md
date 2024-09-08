@@ -185,4 +185,5 @@ importance in detecting vandalism or low-quality contributions.
 These features are crucial for creating a robust system for detecting vandalism in OSM. By capturing a wide range of
 user, geometric, temporal, content, spatial, and historical factors, we can build a more comprehensive picture of each
 contribution's legitimacy. These features also allow for machine learning models to distinguish between legitimate edits
-and vandalism by identifying patterns that correlate with low-quality
+and vandalism by identifying patterns that correlate with low-quality or malicious changes. In this way, we can maintain
+the integrity of the OSM database and ensure that it continues to serve as a reliable resource for geographic data.
