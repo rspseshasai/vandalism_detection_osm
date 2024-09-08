@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import datetime
 
 import numpy as np
 import pandas as pd  # Import pandas for DataFrame handling
@@ -16,9 +16,37 @@ user_history = {
 }
 
 
+def calculate_user_edit_frequency(contributions):
+    # Step 1: Group contributions by user_id and calculate user-specific statistics
+    user_edit_frequencies = {}
+
+    # Iterate through all contributions and calculate user edit frequency
+    for user_id, group in contributions.groupby('user_id'):
+        # Sort the user's contributions by 'valid_from' timestamp
+        user_contributions = group.sort_values('valid_from')
+
+        # Get the total number of contributions made by the user
+        total_edits = len(user_contributions)
+
+        # Calculate the time range (in weeks) between the first and last edit
+        first_edit = user_contributions['valid_from'].min()
+        last_edit = user_contributions['valid_from'].max()
+
+        # Calculate the number of weeks between the first and last edit (at least 1 week to avoid division by zero)
+        time_span_in_weeks = max((last_edit - first_edit).days / 7.0, 1)
+
+        # Calculate average edit frequency (edits per week)
+        edit_frequency = total_edits / time_span_in_weeks
+        user_edit_frequencies[user_id] = edit_frequency
+
+    return user_edit_frequencies
+
+
 # Updated function to handle a DataFrame and return a DataFrame of features
 def extract_features(contribution_df):
     feature_list = []  # Initialize a list to collect feature dictionaries
+
+    user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
 
     # Iterate over each row in the DataFrame
     for index, contribution in contribution_df.iterrows():
@@ -26,12 +54,14 @@ def extract_features(contribution_df):
 
         # 1. User Behavior Features
         user_id = contribution['user_id']
-        user_edits = user_history.get(user_id, [])
-        one_week_ago = contribution['changeset']['timestamp'] - timedelta(days=7)
-        user_edits_last_week = [edit for edit in user_edits if edit['changeset']['timestamp'] >= one_week_ago]
-        features['user_edit_frequency'] = len(user_edits_last_week)
+
+        # User Edit Frequency (Average number of edits per week)
+        features['user_edit_frequency'] = user_edit_frequencies.get(user_id, 0)
 
         # Average Edit Size (area_delta, length_delta)
+
+        user_edits = user_history.get(user_id, [])
+
         if user_edits:
             avg_area_delta = np.mean([edit['area_delta'] for edit in user_edits])
             avg_length_delta = np.mean([edit['length_delta'] for edit in user_edits])
