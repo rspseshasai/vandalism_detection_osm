@@ -1,4 +1,5 @@
 import pandas as pd  # Import pandas for DataFrame handling
+from tqdm import tqdm
 
 from logger_config import logger
 
@@ -10,8 +11,9 @@ def calculate_user_edit_frequency(contributions):
     # Step 1: Group contributions by user_id and calculate user-specific statistics
     user_edit_frequencies = {}
 
-    # Iterate through all contributions and calculate user edit frequency
-    for user_id, group in contributions.groupby('user_id'):
+    logger.info("Calculating user edit frequencies...")
+    # Use tqdm to add a progress bar to this loop
+    for user_id, group in tqdm(contributions.groupby('user_id'), desc="User Edit Frequency"):
         # Sort the user's contributions by 'valid_from' timestamp
         user_contributions = group.sort_values('valid_from')
 
@@ -40,9 +42,6 @@ def calculate_time_since_last_edit(contribution, contribution_df):
     :param contribution_df: The full DataFrame of contributions, used to find previous contributions by the same user.
     :return: Time since the last edit in hours.
     """
-
-    # TODO: Also can add contextual features. To detect if similar changes happened in this area!
-
     user_id = contribution['user_id']
 
     # Filter contributions to get only previous contributions made by the same user
@@ -60,13 +59,24 @@ def calculate_time_since_last_edit(contribution, contribution_df):
     return time_since_last_edit
 
 
-# TODO: Check and update the edit_threshold
 def calculate_historical_validity(contribution_df, edit_threshold=0):
-    # TODO: Work more on the contextual and Historical features.
-    #  TODO: Put advance logic here. May be Time Series Analysis? At least more number of features.
+    """
+    Calculate historical validity based on the number of edits made to each feature (osm_id).
 
-    feature_edit_counts = contribution_df.groupby('osm_id').size()
-    historical_validity = feature_edit_counts.apply(lambda count: 0 if count > edit_threshold else 1)
+    :param contribution_df: DataFrame containing contribution data, including 'osm_id' and 'valid_from' columns.
+    :param edit_threshold: The number of edits that define "frequent modifications".
+    :return: A dictionary with osm_id as the key and a historical validity score (1 or 0) as the value.
+    """
+    logger.info("Calculating historical validity for all features...")
+
+    # Initialize an empty dictionary for historical validity
+    historical_validity = {}
+
+    # Use tqdm to add a progress bar
+    for osm_id, group in tqdm(contribution_df.groupby('osm_id'), desc="Historical Validity Calculation"):
+        feature_edit_counts = len(group)
+        historical_validity[osm_id] = 0 if feature_edit_counts > edit_threshold else 1
+
     return historical_validity
 
 
@@ -74,6 +84,7 @@ def calculate_historical_validity(contribution_df, edit_threshold=0):
 def extract_features(contribution_df):
     feature_list = []  # Initialize a list to collect feature dictionaries
 
+    # Use logger and progress bars in the functions that require it
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
     historical_validity = calculate_historical_validity(contribution_df)
 
@@ -127,8 +138,6 @@ def extract_features(contribution_df):
         features['country_count'] = len(country_iso)
 
         # 6. Contextual and Historical Features
-        # Calculate historical validity once for all contributions
-
         features['historical_validity'] = historical_validity.get(contribution['osm_id'], 10)
 
         # 7. Derived Features
@@ -141,7 +150,6 @@ def extract_features(contribution_df):
         comment = next((tag[1] for tag in contribution['changeset']['tags'] if tag[0] == 'comment'), "")
         features['changeset_comment_length'] = len(comment)
         source = next((tag[1] for tag in contribution['changeset']['tags'] if tag[0] == 'source'), "")
-        # TODO: Check and add more reliable sources
         reliable_sources = ['Bing Aerial Imagery', 'Esri World Imagery']
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
 

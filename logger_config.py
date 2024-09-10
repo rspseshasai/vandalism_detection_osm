@@ -7,7 +7,7 @@ import sys
 import coloredlogs
 
 # Configure the logger
-log_format = '%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
+log_format = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
 logging.basicConfig(
     level=logging.DEBUG,
     format=log_format,
