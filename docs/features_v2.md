@@ -75,14 +75,6 @@ importance in detecting vandalism or low-quality contributions.
 - **Importance**: Helps identify suspicious contributions made at unusual times, which may correlate with low-quality or
   malicious edits.
 
-#### 3.3 **Edit Duration**
-
-- **Definition**: The duration of the edit (difference between `valid_to` and `valid_from`).
-- **Theoretical Basis**: Shorter edit durations may indicate rushed or superficial edits, potentially lacking proper
-  verification.
-- **Importance**: Detects potentially low-effort edits, where users may not have spent sufficient time reviewing their
-  changes.
-
 ### 4. **Contribution Content Features**
 
 #### 4.1 **Number of Tags Added/Removed/Modified**
