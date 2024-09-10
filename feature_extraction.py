@@ -55,22 +55,10 @@ def extract_features(contribution_df):
         # 1. User Behavior Features
         user_id = contribution['user_id']
 
-        # User Edit Frequency (Average number of edits per week)
+        # 1.1 User Edit Frequency (Average number of edits per week)
         features['user_edit_frequency'] = user_edit_frequencies.get(user_id, 0)
 
-        # Average Edit Size (area_delta, length_delta)
-
-        user_edits = user_history.get(user_id, [])
-
-        if user_edits:
-            avg_area_delta = np.mean([edit['area_delta'] for edit in user_edits])
-            avg_length_delta = np.mean([edit['length_delta'] for edit in user_edits])
-        else:
-            avg_area_delta = avg_length_delta = 0
-        features['average_area_delta'] = avg_area_delta
-        features['average_length_delta'] = avg_length_delta
-
-        # Editor Used (one-hot encoding for JOSM, iD, etc.)
+        # 1.2 Editor Used (one-hot encoding for JOSM, iD, etc.)
         editor = contribution['changeset']['editor'].split('/')[0]
         features['editor_used'] = editor
 
