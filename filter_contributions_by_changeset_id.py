@@ -13,6 +13,13 @@ from s3clientmanager import S3ClientManager
 vandalism_labels_with_changeset_ids_file = 'data/ovid_labels.tsv'
 labels_df = pd.read_csv(vandalism_labels_with_changeset_ids_file, sep='\t')
 
+# Manually add three items for testing. To be commented otherwise
+# new_items = pd.DataFrame({
+#     'changeset': [421295, 67890, 420453],
+#     'label': [True, False, False]
+# })
+# labels_df = pd.concat([labels_df, new_items], ignore_index=True)
+
 changeset_labels = dict(zip(labels_df['changeset'], labels_df['label']))
 labelled_changeset_ids_to_filter = list(labels_df['changeset'])
 
