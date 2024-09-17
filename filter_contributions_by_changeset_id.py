@@ -27,7 +27,7 @@ labelled_changeset_ids_to_filter = list(labels_df['changeset'])
 labelled_contributions_df = pd.DataFrame()
 
 # Save threshold (number of S3 objects processed to trigger saving)
-threshold_to_save_filtered_contributions = 4
+threshold_to_save_filtered_contributions = 300
 processed_objects_count = 0
 file_counter = 0
 
