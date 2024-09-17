@@ -9,7 +9,7 @@ import coloredlogs
 # Configure the logger
 log_format = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format=log_format,
     handlers=[
         logging.FileHandler(f'log/{os.path.basename(__file__)}.log'),
@@ -31,7 +31,7 @@ level_styles = {
 }
 
 # Apply coloredlogs with the custom styles
-coloredlogs.install(level='DEBUG', logger=logging.getLogger(__name__), fmt=log_format, level_styles=level_styles,
+coloredlogs.install(level='INFO', logger=logging.getLogger(__name__), fmt=log_format, level_styles=level_styles,
                     field_styles=field_styles)
 
 # Create and export a logger instance
