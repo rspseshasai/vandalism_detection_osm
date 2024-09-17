@@ -19,5 +19,5 @@ class S3ClientManager:
         # Bucket name and prefix
         self.bucket_name = 'heigit-ohsome-sotm24'
         # Base path in S3
-        # self.prefix = 'data/geo_sort_ext/contributions/'
-        self.prefix = 'data/geo_sort_ext/contributions/status=invalid/geometry_type=LineString/'  # Path with lesser contributions for testing
+        self.prefix = 'data/geo_sort_ext/contributions/'
+        # self.prefix = 'data/geo_sort_ext/contributions/status=invalid/geometry_type=LineString/'  # Path with lesser contributions for testing
