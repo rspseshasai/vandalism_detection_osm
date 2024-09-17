@@ -1,28 +1,14 @@
 import os
 import tempfile
 
-import boto3
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from botocore.client import Config
 from tqdm import tqdm
 
 from contribution_schema import get_osm_contribution_schema
 from logger_config import logger
-
-# Initialize the S3 client
-s3_client = boto3.client(
-    's3',
-    endpoint_url='https://sotm2024.minio.heigit.org',
-    aws_access_key_id=os.getenv("S3_ACCESS_KEY"),
-    aws_secret_access_key=os.getenv("S3_SECRET_KEY"),
-    config=Config(signature_version='s3v4'),
-    region_name='eu-central-1'
-)
-
-bucket_name = 'heigit-ohsome-sotm24'
-prefix = 'data/geo_sort_ext/contributions/'  # Base path in S3
+from s3clientmanager import S3ClientManager
 
 # Load the changeset labels from a TSV file
 labels_file = 'data/ovid_labels.tsv'
@@ -86,21 +72,25 @@ def load_and_filter(path, changeset_ids, s3_client, bucket_name):
 
 continuation_token = None
 
+s3_client_manager = S3ClientManager()
+
 while True:
     # List objects in the S3 bucket with pagination
     if continuation_token:
-        response = s3_client.list_objects_v2(
-            Bucket=bucket_name, Prefix=prefix, ContinuationToken=continuation_token
+        response = s3_client_manager.s3_client.list_objects_v2(
+            Bucket=s3_client_manager.bucket_name, Prefix=s3_client_manager.prefix, ContinuationToken=continuation_token
         )
     else:
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+        response = s3_client_manager.s3_client.list_objects_v2(Bucket=s3_client_manager.bucket_name,
+                                                               Prefix=s3_client_manager.prefix)
 
     if 'Contents' in response:
         for obj in tqdm(response['Contents']):
             obj_key = obj['Key']
             if obj_key.endswith('.parquet'):
                 # Load and filter each Parquet file for matching contributions
-                filtered_df = load_and_filter(obj_key, changeset_ids_to_filter, s3_client, bucket_name)
+                filtered_df = load_and_filter(obj_key, changeset_ids_to_filter, s3_client_manager.s3_client,
+                                              s3_client_manager.bucket_name)
 
                 # Add the corresponding label to the filtered contributions
                 if not filtered_df.empty:
