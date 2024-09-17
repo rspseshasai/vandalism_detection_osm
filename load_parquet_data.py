@@ -10,11 +10,10 @@ def load(path, print_data):
     # contribution_df = pd.read_parquet('data/contri_test_1.parquet', engine='pyarrow')
 
     logger.info(f"Reading Parquet File Data...")
-    # Show progress while processing rows or other operations
+
     for index, row in tqdm(contribution_df.iterrows(), total=contribution_df.shape[0]):
         pass
 
-    # Print column headers
     logger.info(f"contribution_df.shape: " + contribution_df.shape.__str__())
     logger.info(f"Columns: " + contribution_df.columns.__str__())
 

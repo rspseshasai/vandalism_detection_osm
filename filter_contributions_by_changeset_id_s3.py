@@ -21,20 +21,18 @@ s3_client = boto3.client(
 bucket_name = 'heigit-ohsome-sotm24'
 prefix = 'data/geo_sort_ext/contributions/status=invalid/geometry_type=LineString/'  # Base path in S3
 
-# Read the labels file and create a mapping from changeset_id to label
-labels_file = 'data/ovid_labels.tsv'  # Update with the actual path to your labels file
+labels_file = 'data/ovid_labels.tsv'
 labels_df = pd.read_csv(labels_file, sep='\t')
 
 # Manually add three items for testing
 new_items = pd.DataFrame({
-    'changeset': [421295, 67890, 420453],  # Example changeset IDs
-    'label': ['false', 'false', 'true']  # Corresponding labels
+    'changeset': [421295, 67890, 420453],
+    'label': ['true', 'false', 'false']
 })
-
-# Concatenate the new items with the existing DataFrame
 labels_df = pd.concat([labels_df, new_items], ignore_index=True)
 changeset_labels = dict(zip(labels_df['changeset'], labels_df['label']))
 changeset_ids_to_filter = list(labels_df['changeset'])
+
 # DataFrame to hold all matching contributions
 filtered_contributions = pd.DataFrame()
 
@@ -43,30 +41,21 @@ def load_and_filter(path, changeset_ids, s3_client, bucket_name):
     """
     Load a Parquet file from S3 and return rows where `changeset.id` is in the specified list.
     """
-    # Create a temporary file
+
     with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
         temp_file_path = temp_file.name
 
-    # Download the parquet file from S3 to the temporary file
     s3_client.download_file(bucket_name, path, temp_file_path)
-
-    # Load the parquet file into a DataFrame
     contribution_df = pd.read_parquet(temp_file_path, engine='pyarrow')
-
-    # Remove the temporary file
     os.remove(temp_file_path)
 
-    # Check if 'changeset.id' exists in the DataFrame and filter rows
     if 'changeset' in contribution_df.columns:
-        # Filter rows where `changeset.id` is in the list
         filtered_df = contribution_df[contribution_df['changeset'].apply(lambda x: x['id']).isin(changeset_ids)]
         return filtered_df
 
-    # Return an empty DataFrame if no matching rows are found or column is missing
     return pd.DataFrame()
 
 
-# Initialize variables for pagination
 continuation_token = None
 
 while True:
@@ -82,7 +71,6 @@ while True:
         for obj in tqdm(response['Contents']):
             obj_key = obj['Key']
             if obj_key.endswith('.parquet'):
-                # Load and filter each Parquet file for matching contributions
                 filtered_df = load_and_filter(obj_key, changeset_ids_to_filter, s3_client, bucket_name)
 
                 # Add the corresponding label to the filtered contributions
@@ -97,11 +85,9 @@ while True:
     else:
         break
 
-# Output the final DataFrame
 logger.info(f"Total number of matching contributions: {filtered_contributions.shape[0]}")
 
-# Save the final DataFrame to a Parquet file
-output_file = 'output/filtered_contributions__' + labels_file.split("/")[0] + '.parquet'
+output_file = 'output/filtered_contributions__' + labels_file.split("/")[1] + '.parquet'
 filtered_contributions.to_parquet(output_file, index=False)
 
 logger.info(f"Filtered contributions with labels saved to {output_file}")

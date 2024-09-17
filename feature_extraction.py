@@ -1,9 +1,8 @@
-import pandas as pd  # Import pandas for DataFrame handling
+import pandas as pd
 from tqdm import tqdm
 
 from logger_config import logger
 
-# Placeholder for historical data
 historical_edits = {}
 
 
@@ -12,22 +11,17 @@ def calculate_user_edit_frequency(contributions):
     user_edit_frequencies = {}
 
     logger.info("Calculating user edit frequencies...")
-    # Use tqdm to add a progress bar to this loop
-    for user_id, group in tqdm(contributions.groupby('user_id'), desc="User Edit Frequency"):
-        # Sort the user's contributions by 'valid_from' timestamp
-        user_contributions = group.sort_values('valid_from')
 
-        # Get the total number of contributions made by the user
+    for user_id, group in tqdm(contributions.groupby('user_id'), desc="User Edit Frequency"):
+        user_contributions = group.sort_values('valid_from')
         total_edits = len(user_contributions)
 
-        # Calculate the time range (in weeks) between the first and last edit
         first_edit = user_contributions['valid_from'].min()
         last_edit = user_contributions['valid_from'].max()
 
         # Calculate the number of weeks between the first and last edit (at least 1 week to avoid division by zero)
         time_span_in_weeks = max((last_edit - first_edit).days / 7.0, 1)
 
-        # Calculate average edit frequency (edits per week)
         edit_frequency = total_edits / time_span_in_weeks
         user_edit_frequencies[user_id] = edit_frequency
 
