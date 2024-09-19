@@ -10,7 +10,7 @@ from contribution_schema import get_osm_contribution_schema
 from logger_config import logger
 from s3clientmanager import S3ClientManager
 
-vandalism_labels_with_changeset_ids_file = 'data/ovid_labels.tsv'
+vandalism_labels_with_changeset_ids_file = '../data/ovid_labels.tsv'
 labels_df = pd.read_csv(vandalism_labels_with_changeset_ids_file, sep='\t')
 
 # Manually add three items for testing. To be commented otherwise
@@ -27,7 +27,7 @@ labelled_changeset_ids_to_filter = list(labels_df['changeset'])
 labelled_contributions_df = pd.DataFrame()
 
 # Save threshold (number of S3 objects processed to trigger saving)
-threshold_to_save_filtered_contributions = 300
+threshold_to_save_filtered_contributions = 4
 processed_objects_count = 0
 file_counter = 0
 
@@ -39,7 +39,7 @@ def save_filtered_contributions(filtered_df, file_counter, schema):
     """
     Save the filtered contributions to a Parquet file with the defined schema.
     """
-    output_file = f'output/filtered_contributions_part_{file_counter}.parquet'
+    output_file = f'../output/filtered_contributions_part_{file_counter}.parquet'
     table = pa.Table.from_pandas(filtered_df, schema=schema, preserve_index=False)
     pq.write_table(table, output_file)
     logger.info(f"Filtered contributions saved to {output_file}")
