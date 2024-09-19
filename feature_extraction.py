@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from tqdm import tqdm
 
@@ -5,11 +7,13 @@ from logger_config import logger
 
 historical_edits = {}
 
+# Path to save and load extracted features in Parquet format
+FEATURES_FILE = "data/extracted_features.parquet"
+
 
 def calculate_user_edit_frequency(contributions):
     # Step 1: Group contributions by user_id and calculate user-specific statistics
     user_edit_frequencies = {}
-
     logger.info("Calculating user edit frequencies...")
 
     for user_id, group in tqdm(contributions.groupby('user_id'), desc="User Edit Frequency"):
@@ -76,15 +80,12 @@ def calculate_historical_validity(contribution_df, edit_threshold=0):
 
 # Updated function to handle a DataFrame and return a DataFrame of features
 def extract_features(contribution_df):
-    feature_list = []  # Initialize a list to collect feature dictionaries
-
-    # Use logger and progress bars in the functions that require it
+    feature_list = []
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
     historical_validity = calculate_historical_validity(contribution_df)
 
-    # Iterate over each row in the DataFrame
-    # TODO: Add a progress bar here
-    for index, contribution in contribution_df.iterrows():
+    logger.info(f"Extracting the features...")
+    for index, contribution in tqdm(contribution_df.iterrows(), total=len(contribution_df), desc="Feature Extraction"):
         features = {}
 
         # 1. User Behavior Features
@@ -148,9 +149,22 @@ def extract_features(contribution_df):
         reliable_sources = ['Bing Aerial Imagery', 'Esri World Imagery']
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
 
-        feature_list.append(features)  # Append the features for this contribution
+        feature_list.append(features)
 
-    # Convert list of feature dictionaries to a DataFrame
     features_df = pd.DataFrame(feature_list)
+    return features_df
+
+
+# Check if the feature file exists, load it, otherwise generate the features
+def get_or_generate_features(contribution_df, force_compute_features):
+    if os.path.exists(FEATURES_FILE) and not force_compute_features:
+        logger.info(f"Loading features from {FEATURES_FILE}...")
+        features_df = pd.read_parquet(FEATURES_FILE)
+    else:
+        logger.info("Extracting features...")
+        features_df = extract_features(contribution_df)
+        logger.info(f"Saving features to {FEATURES_FILE}...")
+        features_df.to_parquet(FEATURES_FILE)
+
     logger.info(f"features_df.shape: {features_df.shape}")
     return features_df
