@@ -83,6 +83,7 @@ def extract_features(contribution_df):
     historical_validity = calculate_historical_validity(contribution_df)
 
     # Iterate over each row in the DataFrame
+    # TODO: Add a progress bar here
     for index, contribution in contribution_df.iterrows():
         features = {}
 
