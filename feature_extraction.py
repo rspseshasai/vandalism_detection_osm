@@ -148,6 +148,7 @@ def extract_features(contribution_df):
         source = next((tag[1] for tag in contribution['changeset']['tags'] if tag[0] == 'source'), "")
         reliable_sources = ['Bing Aerial Imagery', 'Esri World Imagery']
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
+        features['geometry'] = contribution['geometry']
 
         feature_list.append(features)
 
