@@ -14,3 +14,7 @@ contributions as they occur.
 This repo consists of a master thesis code of a real-time ML vandalism notification system tailored to OSM's Kafka
 stream. The aim is to dynamically analyzing user updates to detect anomalies indicative of potential vandalism in
 real-time.
+
+### Data
+
+Data is stored in the link (WIP): https://drive.google.com/drive/folders/1EsxOFRJ5CNxpo3-TY91RqMdxeznnxQjJ?usp=sharing
