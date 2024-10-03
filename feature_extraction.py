@@ -57,7 +57,7 @@ def calculate_time_since_last_edit(contribution, contribution_df):
     return time_since_last_edit
 
 
-def calculate_historical_validity(contribution_df, edit_threshold=0):
+def calculate_historical_validity(contribution_df, edit_threshold=10):
     """
     Calculate historical validity based on the number of edits made to each feature (osm_id).
 
@@ -82,7 +82,7 @@ def calculate_historical_validity(contribution_df, edit_threshold=0):
 def extract_features(contribution_df):
     feature_list = []
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
-    historical_validity = calculate_historical_validity(contribution_df)
+    historical_validity = calculate_historical_validity(contribution_df, 8)
 
     logger.info(f"Extracting the features...")
     for index, contribution in tqdm(contribution_df.iterrows(), total=len(contribution_df), desc="Feature Extraction"):
@@ -134,7 +134,7 @@ def extract_features(contribution_df):
         features['country_count'] = len(country_iso)
 
         # 6. Contextual and Historical Features
-        features['historical_validity'] = historical_validity.get(contribution['osm_id'], 10)
+        features['historical_validity'] = historical_validity.get(contribution['osm_id'])
 
         # 7. Derived Features
         features['tag_density'] = len(contribution['tags']) / contribution['area'] if contribution['area'] > 0 else 0
@@ -149,7 +149,7 @@ def extract_features(contribution_df):
         reliable_sources = ['Bing Aerial Imagery', 'Esri World Imagery']
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
         features['geometry'] = contribution['geometry']
-
+        features['vandalism'] = contribution['vandalism']
         feature_list.append(features)
 
     features_df = pd.DataFrame(feature_list)
