@@ -98,6 +98,7 @@ def calculate_perimeter(geometry):
     return perimeter
 
 
+# TODO: Use this funciton somewhere
 def calculate_num_vertices(geometry):
     """
     Calculate the number of vertices of the polygon geometry.
@@ -161,7 +162,7 @@ def extract_features(contribution_df):
         features['osm_type'] = contribution["osm_type"]
         features['osm_id'] = contribution["osm_id"]
         features['osm_version'] = contribution["osm_version"]
-        features['contribution_type'] = contribution["contribution_type"]
+        features['contribution_type'] = contribution["contrib_type"]
         features['members'] = contribution["members"]
         features['status'] = contribution["status"]
 
@@ -171,6 +172,7 @@ def extract_features(contribution_df):
         features['centroid_x'] = contribution['centroid']['x']
         features['centroid_y'] = contribution['centroid']['y']
         country_iso = contribution['country_iso_a3']
+        # TODO: Also get countries
         features['country_count'] = len(country_iso)
         features['xzcode'] = contribution["xzcode"]
 
@@ -191,8 +193,8 @@ def extract_features(contribution_df):
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
 
         # 9. Map Features
-        map_features_str = contribution['map_features']  # assuming this is the field name in the DataFrame
-        map_features = json.loads(map_features_str)  # Convert string to dictionary
+        map_features = contribution['map_features']  # assuming this is the field name in the DataFrame
+        # map_features = json.loads(map_features_str)  # Convert string to dictionary
 
         # Add each map feature as a separate column
         for feature_name, feature_value in map_features.items():
