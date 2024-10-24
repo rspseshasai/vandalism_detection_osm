@@ -22,3 +22,4 @@ Data is stored in the link (WIP): https://drive.google.com/drive/folders/1EsxOFR
 ### Test Cases
 
 To run the test cases (in PyCharm): Mark the `test` folder as `test source root` and then set the `default test runner` to `pytest` in settings.
+Then right-click on the test file (feature_extraction_tests.py) and run all. 

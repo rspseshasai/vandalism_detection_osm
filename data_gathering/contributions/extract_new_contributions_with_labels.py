@@ -8,8 +8,8 @@ import pyarrow.parquet as pq
 from tqdm import tqdm
 
 from contribution_schema import get_osm_contribution_schema
-from logger_config import logger
-from s3clientmanager import S3ClientManager
+from logger.logger_config import logger
+from data_gathering.s3clientmanager import S3ClientManager
 
 # DataFrame to hold all matching contributions
 filtered_contributions_df = pd.DataFrame()

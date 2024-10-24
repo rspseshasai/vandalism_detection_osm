@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import re
 import osmium
 import pandas as pd
-from logger_config import logger
+from logger.logger_config import logger
 
 
 # Custom handler to read and store changesets with relevant comments

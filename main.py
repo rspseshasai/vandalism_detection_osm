@@ -1,5 +1,5 @@
+from data_gathering.load_parquet_data import load
 from feature_extraction import get_or_generate_features
-from load_parquet_data import load
 
 contributions_df = load('data/contribution_data/osm_labelled_contributions.parquet', False)
 

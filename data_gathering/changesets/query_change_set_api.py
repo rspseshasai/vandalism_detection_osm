@@ -5,17 +5,17 @@ import pandas as pd
 import requests
 from tqdm import tqdm  # For progress bar
 
-from logger_config import logger
+from logger.logger_config import logger
 
 # Read the TSV file containing changeset IDs and labels
-file_path = "../data/ovid_data/ovid_labels.tsv"
+file_path = "../../data/ovid_data/ovid_labels.tsv"
 changeset_data = pd.read_csv(file_path, sep='\t')
 
 # Extracting changeset IDs from the DataFrame
 changeset_ids = changeset_data['changeset_id'].tolist()
 
 # Path to the Parquet file containing changeset information
-parquet_file_path = "../data/changeset_data/osm_changesets_ovid.parquet"
+parquet_file_path = "../../data/changeset_data/osm_changesets_ovid.parquet"
 
 logger.info("Reading OSM history files which has entries for OVID changesets...")
 # Read the Parquet file containing changeset metadata

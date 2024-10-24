@@ -1,7 +1,7 @@
 import pandas as pd
 from tqdm import tqdm
 
-from logger_config import logger
+from logger.logger_config import logger
 
 
 def load(path, print_sample_data):
