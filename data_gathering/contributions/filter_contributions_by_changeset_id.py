@@ -10,7 +10,7 @@ from contribution_schema import get_osm_contribution_schema
 from logger.logger_config import logger
 from data_gathering.s3clientmanager import S3ClientManager
 
-vandalism_labels_with_changeset_ids_file = '../data/ovid_labels.tsv'
+vandalism_labels_with_changeset_ids_file = '../../data/ovid_data/ovid_labels_subset.tsv'
 labels_df = pd.read_csv(vandalism_labels_with_changeset_ids_file, sep='\t')
 
 # Manually add three items for testing. To be commented otherwise
@@ -39,10 +39,11 @@ def save_filtered_contributions(filtered_df, file_counter, schema):
     """
     Save the filtered contributions to a Parquet file with the defined schema.
     """
-    output_file = f'../output/filtered_contributions_part_{file_counter}.parquet'
-    table = pa.Table.from_pandas(filtered_df, schema=schema, preserve_index=False)
-    pq.write_table(table, output_file)
-    logger.info(f"Filtered contributions saved to {output_file}")
+    if not filtered_df.__len__() == 0:
+        output_file = f'../output/filtered_contributions_part_{file_counter}.parquet'
+        table = pa.Table.from_pandas(filtered_df, schema=schema, preserve_index=False)
+        pq.write_table(table, output_file)
+        logger.info(f"Filtered contributions saved to {output_file}")
 
 
 def load_and_filter_contributions_with_changeset_id(path, changeset_ids, s3_client, bucket_name):
