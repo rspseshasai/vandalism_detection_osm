@@ -10,7 +10,7 @@ from logger.logger_config import logger
 historical_edits = {}
 
 # Path to save and load extracted features in Parquet format
-FEATURES_FILE = "data/contribution_data/extracted_features.parquet"
+FEATURES_FILE = "data/contribution_data/extracted_features_v2.parquet"
 
 
 def calculate_user_edit_frequency(contributions):
@@ -191,6 +191,7 @@ def extract_features(contribution_df):
         source = next((tag[1] for tag in contribution['changeset']['tags'] if tag[0] == 'source'), "")
         reliable_sources = ['Bing Aerial Imagery', 'Esri World Imagery']
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
+        features['changeset_id'] = contribution['changeset']['id']
 
         # 9. Map Features
         map_features = contribution['map_features']  # assuming this is the field name in the DataFrame
