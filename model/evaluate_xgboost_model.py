@@ -24,13 +24,13 @@ def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
     print("\nTrain Set Evaluation")
     print("Accuracy:", accuracy_score(y_train, y_train_pred))
     print("AUC-ROC:", roc_auc_score(y_train, y_train_prob))
-    print("Classification Report (Train):\n", classification_report(y_train, y_train_pred))
+    print("Classification Report (Train):\n", classification_report(y_train, y_train_pred, target_names=class_names))
 
     # Test set metrics
     print("\nTest Set Evaluation")
     print("Accuracy:", accuracy_score(y_test, y_test_pred))
     print("AUC-ROC:", roc_auc_score(y_test, y_test_prob))
-    print("Classification Report (Test):\n", classification_report(y_test, y_test_pred))
+    print("Classification Report (Test):\n", classification_report(y_test, y_test_pred, target_names=class_names))
 
     return y_test_pred, y_test_prob
 
