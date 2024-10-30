@@ -12,7 +12,6 @@ class_names = ['Not Vandalism', 'Vandalism']
 
 def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
     """Evaluate model performance on both training and test datasets."""
-    print("Evaluating model performance on both training and test datasets...")
     # Predictions and probabilities for both sets
     y_train_pred = model.predict(X_train)
     y_test_pred = model.predict(X_test)
@@ -21,16 +20,16 @@ def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
     y_test_prob = model.predict_proba(X_test)[:, 1]
 
     # Training set metrics
-    print("\nTrain Set Evaluation")
+    print("\nTrain Set Evaluation\n--------------------\n")
     print("Accuracy:", accuracy_score(y_train, y_train_pred))
     print("AUC-ROC:", roc_auc_score(y_train, y_train_prob))
-    print("Classification Report (Train):\n", classification_report(y_train, y_train_pred, target_names=class_names))
+    print("\nClassification Report (Train):\n", classification_report(y_train, y_train_pred, target_names=class_names))
 
     # Test set metrics
-    print("\nTest Set Evaluation")
+    print("\nTest Set Evaluation\n-------------------\n")
     print("Accuracy:", accuracy_score(y_test, y_test_pred))
     print("AUC-ROC:", roc_auc_score(y_test, y_test_prob))
-    print("Classification Report (Test):\n", classification_report(y_test, y_test_pred, target_names=class_names))
+    print("\nClassification Report (Test):\n", classification_report(y_test, y_test_pred, target_names=class_names))
 
     return y_test_pred, y_test_prob
 
@@ -63,12 +62,12 @@ def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
     f1 = f1_score(y_test, y_test_pred)
 
     # Print statistics
-    print(f"\nStatistics:")
+    print(f"\nStatistics:\n-----------")
     print(f"True Negatives (TN): {TN}")
     print(f"False Positives (FP): {FP}")
     print(f"False Negatives (FN): {FN}")
     print(f"True Positives (TP): {TP}")
-    print(f"Accuracy: {accuracy:.4f}")
+    print(f"\nAccuracy: {accuracy:.4f}")
     print(f"Precision: {precision:.4f}")
     print(f"Recall: {recall:.4f}")
     print(f"F1 Score: {f1:.4f}")

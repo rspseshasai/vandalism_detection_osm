@@ -37,7 +37,8 @@ def get_random_parameters():
         'n_estimators': random.choice(param_grid['n_estimators'])
     }
 
-    logger.info("Random Hyperparameters Generated: " + str(random_params))
+    print("Random Hyperparameters Generated: \n")
+    print(random_params)
     return random_params
 
 
