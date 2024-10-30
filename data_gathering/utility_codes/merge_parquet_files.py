@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 from data_gathering.contributions.contribution_schema import get_osm_contribution_schema
 
 # Path to the directory containing the .parquet files
-input_directory = '../../data/contribution_data/osm_ovid_labled_contributions'
+input_directory = '../../data/contribution_model/osm_ovid_labled_contributions'
 
 # List all .parquet files in the directory
 parquet_files = [os.path.join(input_directory, f) for f in os.listdir(input_directory) if f.endswith('.parquet')]

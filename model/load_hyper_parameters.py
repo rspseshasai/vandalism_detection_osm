@@ -4,7 +4,7 @@ import os
 from logger.logger_config import logger
 
 
-def load_best_hyperparameters(hyperparams_file='../saved_parameters/best_hyperparameters.json'):
+def load_best_hyperparameters(hyperparams_file):
     if os.path.exists(hyperparams_file):
         with open(hyperparams_file, 'r') as f:
             best_params = json.load(f)

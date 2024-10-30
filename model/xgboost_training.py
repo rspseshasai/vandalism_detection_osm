@@ -23,14 +23,14 @@ def train_final_model(X_train, y_train, X_test, y_test,
     return final_model
 
 
-def save_model(model, file_path='../saved_parameters/final_xgboost_model.pkl'):
+def save_model(model, file_path):
     """Save the model to a specified file path."""
 
     joblib.dump(model, file_path)
     logger.info(f"Model saved to {file_path}")
 
 
-def load_model(file_path='../saved_parameters/final_xgboost_model.pkl'):
+def load_model(file_path):
     """Load a model from the specified file path."""
 
     model = joblib.load(file_path)

@@ -41,7 +41,7 @@ def get_random_parameters():
     return random_params
 
 
-def randomized_search_cv(X_train, y_train, hyperparams_file='../saved_parameters/best_hyperparameters.json'):
+def randomized_search_cv(X_train, y_train, hyperparams_file):
     # Define the parameter grid
     param_grid = {
         'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],

@@ -3,8 +3,7 @@ import numpy as np
 import seaborn as sns
 import xgboost as xgb
 from sklearn.metrics import (classification_report, accuracy_score,
-                             roc_auc_score, confusion_matrix,
-                             average_precision_score)
+                             roc_auc_score, average_precision_score)
 from sklearn.model_selection import cross_val_score
 
 # Define class names for the confusion matrix heatmap
@@ -37,6 +36,14 @@ def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
 
 
 def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
+    from sklearn.metrics import (
+        confusion_matrix,
+        accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score
+    )
+
     """Calculate and print AUC-PR and ROC-AUC scores for the test set."""
 
     aucpr = average_precision_score(y_test, y_test_prob)
@@ -47,9 +54,25 @@ def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
 
     # Confusion Matrix
     cm = confusion_matrix(y_test, y_test_pred)
-    print("\nConfusion Matrix:")
-    print(cm)
-    print(cm)
+
+    # Calculate additional statistics
+    TN, FP, FN, TP = cm.ravel()  # Unpack the confusion matrix
+    accuracy = accuracy_score(y_test, y_test_pred)
+    precision = precision_score(y_test, y_test_pred)
+    recall = recall_score(y_test, y_test_pred)
+    f1 = f1_score(y_test, y_test_pred)
+
+    # Print statistics
+    print(f"\nStatistics:")
+    print(f"True Negatives (TN): {TN}")
+    print(f"False Positives (FP): {FP}")
+    print(f"False Negatives (FN): {FN}")
+    print(f"True Positives (TP): {TP}")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 Score: {f1:.4f}")
+
     return cm
 
 
