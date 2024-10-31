@@ -1,4 +1,3 @@
-import json
 import math
 import os
 
@@ -12,6 +11,8 @@ historical_edits = {}
 # Path to save and load extracted features in Parquet format
 FEATURES_FILE = "data/contribution_data/extracted_features_v2.parquet"
 
+
+# TODO: Compare the features of other contributions with same changeset id and analyse the difference.
 
 def calculate_user_edit_frequency(contributions):
     # Step 1: Group contributions by user_id and calculate user-specific statistics
