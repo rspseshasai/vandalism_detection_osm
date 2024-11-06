@@ -11,9 +11,11 @@
 - All contributions in a particular Geo-spatial region should only be in one class (i.e., either in training data or in testing data)
 - CV based on changesets
 - CV based on location
+- Feature importance (and recursively remove the most important features until the model's performance won't decline anymore).
 - GIScience/ChangesetMD - to convert .osm file to .parquet file.
-- Graph between timeline (from 2023 to 2024) and vandalism: for both changeset and contributions data.
-- Heap map of world map with vandalism contributions (good to have).
+- Use the trained model to predict on all unseen changesets & contributions data from 2023, 2024.
+  - Graph between timeline (from 2023 to 2024) and vandalism: for both changeset and contributions data.
+  - Heap map of world map with vandalism contributions (good to have).
 
 ### TODO Later:
 - Outlier analysis.
