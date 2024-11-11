@@ -57,6 +57,7 @@ class MyOSMHandler(osmium.SimpleHandler):
 
             # Log progress every 1,000,000 changesets
             if self.count % 1000000 == 0:
+            # if self.count % 100 == 0:
                 logger.info(f"Processed until changeset ID: {cs.id}")
 
                 # Save the current batch to a Parquet file
@@ -67,7 +68,7 @@ class MyOSMHandler(osmium.SimpleHandler):
         changeset_df = pd.DataFrame(self.changeset_data)
 
         # Define the filename for the Parquet file
-        parquet_file_path = f"data/osm_filtered_changesets_{self.file_count}.parquet"
+        parquet_file_path = f"../../data/changeset_data/last_2_years/osm_filtered_changesets_{self.file_count}.parquet"
 
         # Save to Parquet file
         changeset_df.to_parquet(parquet_file_path, index=False)
@@ -80,11 +81,14 @@ class MyOSMHandler(osmium.SimpleHandler):
 
 
 # Path to your OSM file
-osm_file = "E:\\HeidelbergUniversity\\Thesis\\HeiGit\\data\\changesets-240930\\changesets-240930.osm"
+osm_file = "D:\\HeidelbergUniversity\\Thesis\\HeiGit\\data\\changesets-240930\\changesets-240930.osm"
 
 # Initialize the handler for the specified ID range
-min_changeset_id = 19739784
-max_changeset_id = 78808575
+# min_changeset_id = 120000000 # 2022-04-21
+# max_changeset_id = 158900000 # 2024-11-08
+
+min_changeset_id = 120000000 # 2022-04-21
+max_changeset_id = 158900000 # 2024-11-08
 
 logger.info("Start processing...")
 handler = MyOSMHandler(min_changeset_id, max_changeset_id)
