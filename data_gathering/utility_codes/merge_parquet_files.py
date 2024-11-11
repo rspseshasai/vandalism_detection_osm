@@ -4,10 +4,8 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from data_gathering.contributions.contribution_schema import get_osm_contribution_schema
-
 # Path to the directory containing the .parquet files
-input_directory = '../../data/contribution_model/osm_ovid_labled_contributions'
+input_directory = '../../data/changeset_data/last_2_years'
 
 # List all .parquet files in the directory
 parquet_files = [os.path.join(input_directory, f) for f in os.listdir(input_directory) if f.endswith('.parquet')]
@@ -26,7 +24,9 @@ merged_df = pd.concat(dataframes, ignore_index=True)
 
 # Function to convert a DataFrame to a PyArrow Table using the specified schema
 def convert_df_to_arrow_table(df):
-    table = pa.Table.from_pandas(df, schema=get_osm_contribution_schema(), preserve_index=False)
+    # uncomment below line for contribution data
+    # table = pa.Table.from_pandas(df, schema=get_osm_contribution_schema(), preserve_index=False)
+    table = pa.Table.from_pandas(df, preserve_index=False)
     return table
 
 
@@ -34,7 +34,7 @@ def convert_df_to_arrow_table(df):
 arrow_table = convert_df_to_arrow_table(merged_df)
 
 # Save the Arrow Table as a single Parquet file
-output_file = '../../data/contribution_data/osm_ovid_labled_contributions/output/merged_osm_contributions.parquet'
+output_file = '../../data/changeset_data/output/merged_osm_contributions.parquet'
 pq.write_table(arrow_table, output_file)
 
 print(f"Merged all parquet files into {output_file}")

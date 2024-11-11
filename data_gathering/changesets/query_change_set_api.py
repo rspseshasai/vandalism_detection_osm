@@ -7,19 +7,8 @@ from tqdm import tqdm  # For progress bar
 
 from logger.logger_config import logger
 
-# Read the TSV file containing changeset IDs and labels
-file_path = "../../data/ovid_data/ovid_labels.tsv"
-changeset_data = pd.read_csv(file_path, sep='\t')
-
-# Extracting changeset IDs from the DataFrame
-changeset_ids = changeset_data['changeset_id'].tolist()
-
-# Path to the Parquet file containing changeset information
-parquet_file_path = "../../data/changeset_data/osm_changesets_ovid.parquet"
-
-logger.info("Reading OSM history files which has entries for OVID changesets...")
-# Read the Parquet file containing changeset metadata
-df_changesets = pd.read_parquet(parquet_file_path)
+# True if you need to filter the changesets using a file.
+FILTER = False
 
 
 # Function to fetch detailed changeset data from OSM API (for nodes/ways/relations)
@@ -100,18 +89,36 @@ def fetch_user_info(uid):
         }
 
 
+# Path to the Parquet file containing changeset information
+parquet_file_path = "../../data/changeset_data/output/merged_osm_contributions.parquet"
+
+logger.info("Reading OSM history files which has entries for OVID changesets...")
+# Read the Parquet file containing changeset metadata
+df_changesets = pd.read_parquet(parquet_file_path)
+
 # Initialize progress bar for API calls to fetch detailed changeset data
 all_changeset_data = []
 
-# Create a DataFrame to hold the features of the changesets
-df_features = df_changesets[df_changesets['changeset_id'].isin(changeset_ids)]
+# Read the TSV file containing changeset IDs and labels
+file_path = "../../data/ovid_data/ovid_labels.tsv"
 
-# Delete the large DataFrame to free up memory
-del df_changesets  # Remove the DataFrame from memory
-gc.collect()  # Force garbage collection to free memory immediately
+if FILTER is True:
+    changeset_data = pd.read_csv(file_path, sep='\t')
+    changeset_ids = changeset_data['changeset_id'].tolist()
 
-# Merge the changeset metadata with labels
-df_merged = pd.merge(df_features, changeset_data, on='changeset_id', how='inner')
+    logger.info("Filtering the changesets which are present in the given list!")
+    # Create a DataFrame to hold the features of the changesets
+    df_features = df_changesets[df_changesets['changeset_id'].isin(changeset_ids)]
+
+    # Delete the large DataFrame to free up memory
+    del df_changesets  # Remove the DataFrame from memory
+    gc.collect()  # Force garbage collection to free memory immediately
+
+    # Merge the changeset metadata with labels
+    df_merged = pd.merge(df_features, changeset_data, on='changeset_id', how='inner')
+else:
+    logger.info("Querying on all the changesets without any filters!")
+    df_merged = df_changesets
 
 with tqdm(total=len(df_merged), desc="Fetching detailed changeset data and user info from API") as pbar:
     for index, row in df_merged.iterrows():
@@ -155,7 +162,8 @@ with tqdm(total=len(df_merged), desc="Fetching detailed changeset data and user 
 df_final = pd.DataFrame(all_changeset_data)
 
 # Optionally save to a CSV or Parquet file
-df_final.to_parquet("../data/changeset_data/osm_labelled_changeset_features_with_user_info1.parquet", index=False)
+df_final.to_parquet("../../data/changeset_data/output/osm_labelled_changeset_features_with_user_info.parquet",
+                    index=False)
 
 # logger.info the head of the final DataFrame
 logger.info(df_final.head())
