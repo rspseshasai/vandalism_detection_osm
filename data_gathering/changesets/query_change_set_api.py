@@ -162,7 +162,7 @@ with tqdm(total=len(df_merged), desc="Fetching detailed changeset data and user 
 df_final = pd.DataFrame(all_changeset_data)
 
 # Optionally save to a CSV or Parquet file
-df_final.to_parquet("../../data/changeset_data/output/osm_labelled_changeset_features_with_user_info.parquet",
+df_final.to_parquet("../../data/changeset_data/output/osm_unlabelled_changeset_features_with_user_info.parquet",
                     index=False)
 
 # logger.info the head of the final DataFrame
