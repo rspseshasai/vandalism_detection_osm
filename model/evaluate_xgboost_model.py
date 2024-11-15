@@ -4,6 +4,8 @@ import seaborn as sns
 import xgboost as xgb
 from sklearn.metrics import (classification_report, accuracy_score,
                              roc_auc_score, average_precision_score)
+from sklearn.metrics import roc_curve, precision_recall_curve
+from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import cross_val_score
 
 # Define class names for the confusion matrix heatmap
@@ -79,11 +81,34 @@ def plot_confusion_matrix(cm):
     """Plot the confusion matrix as a heatmap."""
 
     plt.figure(figsize=(6, 4))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+    sns.heatmap(cm / np.sum(cm), annot=True, fmt='.2%', cmap='Blues',
                 xticklabels=class_names, yticklabels=class_names)
+
     plt.title('Confusion Matrix')
     plt.xlabel('Predicted Labels')
     plt.ylabel('Actual Labels')
+    plt.show()
+
+
+def plot_roc_pr_curves(y_test, y_test_prob):
+    # ROC Curve
+    fpr, tpr, _ = roc_curve(y_test, y_test_prob)
+    plt.figure()
+    plt.plot(fpr, tpr, label='ROC Curve')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend()
+    plt.show()
+
+    # Precision-Recall Curve
+    precision, recall, _ = precision_recall_curve(y_test, y_test_prob)
+    plt.figure()
+    plt.plot(recall, precision, label='Precision-Recall Curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+    plt.legend()
     plt.show()
 
 
@@ -98,7 +123,8 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
     )
 
     # Perform cross-validation on the entire dataset
-    cv_scores = cross_val_score(model, X, y, cv=cv, scoring='roc_auc')
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
+    cv_scores = cross_val_score(model, X, y, cv=skf, scoring='average_precision')
 
     # print out the performance metrics
     print(f"Cross-Validation AUC Scores: {cv_scores}")

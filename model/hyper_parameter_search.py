@@ -44,6 +44,19 @@ def get_random_parameters():
 
 def randomized_search_cv(X_train, y_train, hyperparams_file):
     # Define the parameter grid
+    # param_grid = {
+    #     'learning_rate': [0.005, 0.01, 0.05, 0.1],
+    #     'max_depth': [3, 5, 7, 9, 11],
+    #     'subsample': [0.6, 0.8, 1.0],
+    #     'colsample_bytree': [0.6, 0.8, 1.0],
+    #     'lambda': [0, 1, 3],
+    #     'alpha': [0, 1, 2],
+    #     'min_child_weight': [1, 5, 10],
+    #     'gamma': [0, 0.1, 0.5],
+    #     'n_estimators': [100, 200, 500],
+    #     'scale_pos_weight': [1, 10, 25, 50]  # Adjust based on class imbalance
+    # }
+
     param_grid = {
         'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
         'max_depth': [3, 5, 7, 9],
