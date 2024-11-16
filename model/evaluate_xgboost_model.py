@@ -113,7 +113,22 @@ def plot_roc_pr_curves(y_test, y_test_prob):
 
 
 def evaluate_model_with_cv(X, y, best_params, cv=5):
-    print("\nPerforming 5-fold Cross-Validation on the entire data...")
+    """
+    Evaluate the model using cross-validation on the training data.
+
+    Parameters:
+    - X: Features (training data)
+    - y: Labels (training data)
+    - best_params: Best hyperparameters from tuning
+    - cv: Number of cross-validation folds
+
+    Returns:
+    - cv_scores: Cross-validation scores
+
+    Note:
+    - This function should be called with training data only to avoid data leakage.
+    """
+    print("\nPerforming 5-fold Cross-Validation on the training data...")
 
     # Initialize the model with the best hyperparameters
     model = xgb.XGBClassifier(

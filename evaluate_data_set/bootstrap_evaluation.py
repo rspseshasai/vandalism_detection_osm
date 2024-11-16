@@ -1,4 +1,5 @@
 # bootstrap_evaluation.py
+import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -167,7 +168,7 @@ def compute_additional_statistics(metrics_df):
     return stats_df
 
 
-def save_bootstrap_results(metrics_df, results_df, stats_df, prefix='bootstrap'):
+def save_bootstrap_results(metrics_df, results_df, stats_df, folder_to_save_bootstrap_results, prefix='bootstrap'):
     """
     Save bootstrap metrics and statistics to CSV files.
 
@@ -177,7 +178,14 @@ def save_bootstrap_results(metrics_df, results_df, stats_df, prefix='bootstrap')
     - stats_df: DataFrame containing additional statistics for each metric.
     - prefix: Prefix for the saved files (default: 'bootstrap').
     """
-    metrics_df.to_csv(f'../saved_parameters/bootstrapping/{prefix}_metrics_all_iterations.csv', index=False)
-    results_df.to_csv(f'../saved_parameters/bootstrapping/{prefix}_results_summary.csv', index=False)
-    stats_df.to_csv(f'../saved_parameters/bootstrapping/{prefix}_additional_statistics.csv', index=False)
-    print(f'Results saved in saved_parameters with prefix "{prefix}"')
+    # Check if the directory exists, else create it
+    if not os.path.exists(folder_to_save_bootstrap_results):
+        os.makedirs(folder_to_save_bootstrap_results)
+        print(f"Directory created at: {folder_to_save_bootstrap_results}")
+    else:
+        print(f"Directory already exists at: {folder_to_save_bootstrap_results}")
+
+    metrics_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_metrics_all_iterations.csv', index=False)
+    results_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_results_summary.csv', index=False)
+    stats_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_additional_statistics.csv', index=False)
+    print(f'Results saved in saved_parameters with prefix "{folder_to_save_bootstrap_results}/{prefix}"')
