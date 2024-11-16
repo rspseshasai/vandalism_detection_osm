@@ -11,6 +11,8 @@ from sklearn.metrics import (
 )
 from sklearn.utils import resample
 
+from logger.logger_config import logger
+
 
 def perform_bootstrap_evaluation(
         model, X_test, y_test, n_iterations=1000, random_state=None
@@ -181,11 +183,11 @@ def save_bootstrap_results(metrics_df, results_df, stats_df, folder_to_save_boot
     # Check if the directory exists, else create it
     if not os.path.exists(folder_to_save_bootstrap_results):
         os.makedirs(folder_to_save_bootstrap_results)
-        print(f"Directory created at: {folder_to_save_bootstrap_results}")
+        logger.info(f"Directory created at: {folder_to_save_bootstrap_results}")
     else:
-        print(f"Directory already exists at: {folder_to_save_bootstrap_results}")
+        logger.info(f"Directory already exists at: {folder_to_save_bootstrap_results}")
 
     metrics_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_metrics_all_iterations.csv', index=False)
     results_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_results_summary.csv', index=False)
     stats_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_additional_statistics.csv', index=False)
-    print(f'Results saved in saved_parameters with prefix "{folder_to_save_bootstrap_results}/{prefix}"')
+    logger.info(f'Results saved in saved_parameters with prefix "{folder_to_save_bootstrap_results}/{prefix}"')

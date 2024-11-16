@@ -29,6 +29,6 @@ def load(path, print_sample_data):
     # Print 1 Contribution Data - 10th row
     if print_sample_data:
         for i in range(0, contribution_df.columns.size):
-            print(contribution_df.columns[i].__str__() + ": " + contribution_df.iloc[10][i].__str__() + "\n")
+            logger.info(contribution_df.columns[i].__str__() + ": " + contribution_df.iloc[10][i].__str__() + "\n")
 
     return contribution_df
