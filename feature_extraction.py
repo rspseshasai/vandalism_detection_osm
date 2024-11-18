@@ -9,28 +9,58 @@ from logger.logger_config import logger
 historical_edits = {}
 
 # Path to save and load extracted features in Parquet format
-FEATURES_FILE = "data/contribution_data/extracted_features_v2.parquet"
+FEATURES_FILE = "data/contribution_data/extracted_features_v3.parquet"
 
 
 # TODO: Compare the features of other contributions with same changeset id and analyse the difference.
 
 def calculate_user_edit_frequency(contributions):
-    # Step 1: Group contributions by user_id and calculate user-specific statistics
-    user_edit_frequencies = {}
-    logger.info("Calculating user edit frequencies...")
+    """
+    Calculate user edit frequencies over different time windows.
 
+    Returns a dictionary with user_id as keys and a dictionary of frequencies as values.
+    Frequencies include:
+    - 'edit_frequency_7d': Edits per day over the last 7 days.
+    - 'edit_frequency_30d': Edits per day over the last 30 days.
+    - 'edit_frequency_all': Edits per week over the entire history.
+    """
+    from datetime import timedelta
+
+    user_edit_frequencies = {}
+    logger.info("Calculating user edit frequencies over different time windows...")
+
+    # Get the maximum timestamp in the dataset to define the end point of the time windows
+    max_timestamp = contributions['valid_from'].max()
+
+    # Define time windows
+    windows = {
+        '7d': timedelta(days=7),
+        '30d': timedelta(days=30),
+        '14d': timedelta(days=14),
+        '60d': timedelta(days=60),
+        '180d': timedelta(days=180),
+        '365d': timedelta(days=365)
+    }
+
+    # Iterate over users
     for user_id, group in tqdm(contributions.groupby('user_id'), desc="User Edit Frequency"):
         user_contributions = group.sort_values('valid_from')
-        total_edits = len(user_contributions)
 
-        first_edit = user_contributions['valid_from'].min()
-        last_edit = user_contributions['valid_from'].max()
+        # Initialize frequency dictionary for the user
+        frequencies = {}
 
-        # Calculate the number of weeks between the first and last edit (at least 1 week to avoid division by zero)
-        time_span_in_weeks = max((last_edit - first_edit).days / 7.0, 1)
+        # Calculate frequencies for each window
+        for window_name, window_timedelta in windows.items():
+            window_start = max_timestamp - window_timedelta
+            # Filter contributions within the time window
+            window_contributions = user_contributions[user_contributions['valid_from'] >= window_start]
+            total_edits = len(window_contributions)
+            days_in_window = window_timedelta.days
+            # Calculate edits per day
+            edit_frequency = total_edits / days_in_window
+            frequencies[f'edit_frequency_{window_name}'] = edit_frequency
 
-        edit_frequency = total_edits / time_span_in_weeks
-        user_edit_frequencies[user_id] = edit_frequency
+        user_edit_frequencies[user_id] = frequencies
 
     return user_edit_frequencies
 
@@ -124,7 +154,17 @@ def extract_features(contribution_df):
         # 1. User Behavior Features
         user_id = contribution['user_id']
         features['user_id'] = contribution['user_id']
-        features['user_edit_frequency'] = user_edit_frequencies.get(user_id, 0)
+        # features['user_edit_frequency'] = user_edit_frequencies.get(user_id, 0)
+        # Add user edit frequencies for different time windows
+        user_frequency = user_edit_frequencies.get(user_id, {})
+        features['user_edit_frequency_7d'] = user_frequency.get('edit_frequency_7d', 0)
+        features['user_edit_frequency_14d'] = user_frequency.get('edit_frequency_14d', 0)
+        features['user_edit_frequency_30d'] = user_frequency.get('edit_frequency_30d', 0)
+        features['user_edit_frequency_60d'] = user_frequency.get('edit_frequency_60d', 0)
+        features['user_edit_frequency_180d'] = user_frequency.get('edit_frequency_180d', 0)
+        features['user_edit_frequency_365d'] = user_frequency.get('edit_frequency_365d', 0)
+        features['user_edit_frequency_all'] = user_frequency.get('edit_frequency_all', 0)
+
         editor = contribution['changeset']['editor'].split('/')[0]
         features['editor_used'] = editor
 
@@ -173,8 +213,8 @@ def extract_features(contribution_df):
         features['centroid_x'] = contribution['centroid']['x']
         features['centroid_y'] = contribution['centroid']['y']
         country_iso = contribution['country_iso_a3']
-        # TODO: Also get countries
         features['country_count'] = len(country_iso)
+        features['countries'] = country_iso
         features['xzcode'] = contribution["xzcode"]
 
         # 6. Contextual and Historical Features

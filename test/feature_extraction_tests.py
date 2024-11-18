@@ -7,42 +7,52 @@ from feature_extraction import calculate_user_edit_frequency
 
 
 def test_calculate_user_edit_frequency():
-    # Create test data with datetime objects
+    from datetime import datetime
+
+    # Create test data with datetime objects spanning multiple time windows
     test_data = [
-        {'user_id': 1, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)},
-        {'user_id': 1, 'valid_from': datetime(2024, 6, 5, 12, 0, 0)},
-        {'user_id': 1, 'valid_from': datetime(2024, 6, 10, 12, 0, 0)},
-        {'user_id': 1, 'valid_from': datetime(2024, 6, 15, 12, 0, 0)},
+        {'user_id': 1, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)},  # Falls into 365d, 180d, 60d, 30d
+        {'user_id': 1, 'valid_from': datetime(2024, 6, 20, 12, 0, 0)},  # Falls into 365d, 180d, 60d, 30d
+        {'user_id': 1, 'valid_from': datetime(2024, 6, 28, 12, 0, 0)},  # Falls into 365d, 180d, 60d, 30d, 14d
+        {'user_id': 1, 'valid_from': datetime(2024, 6, 30, 12, 0, 0)},  # Falls into all windows
 
-        {'user_id': 2, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)},
-        {'user_id': 2, 'valid_from': datetime(2024, 6, 8, 12, 0, 0)},
-        {'user_id': 2, 'valid_from': datetime(2024, 6, 15, 12, 0, 0)},
-        {'user_id': 2, 'valid_from': datetime(2024, 6, 22, 12, 0, 0)},
-        {'user_id': 2, 'valid_from': datetime(2024, 6, 29, 12, 0, 0)},
-
-        {'user_id': 3, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)},
-
-        {'user_id': 4, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)},
-        {'user_id': 4, 'valid_from': datetime(2024, 6, 21, 12, 0, 0)},
+        {'user_id': 4, 'valid_from': datetime(2023, 6, 1, 12, 0, 0)},  # Only in 365d
     ]
+
     # Convert the test data into a DataFrame
     contributions_df = pd.DataFrame(test_data)
 
-    # Expected Results:
-    expected_frequencies = {
-        1: 2.0,  # 4 edits in 2 weeks
-        2: 1.25,  # 5 edits in 4 weeks
-        3: 1.0,  # 1 edit in 1 week
-        4: 0.7,  # 2 edits in 3 weeks (rounded to 2 decimal places)
-    }
-
-    # Calculate the actual user edit frequencies using the function
+    # Call the function to calculate user edit frequencies
     actual_frequencies = calculate_user_edit_frequency(contributions_df)
 
-    # Check if the actual frequencies match the expected values
-    for user_id, expected_frequency in expected_frequencies.items():
-        assert round(actual_frequencies.get(user_id, 0), 2) == expected_frequency, \
-            f"Test failed for user {user_id}: expected {expected_frequency}, got {actual_frequencies.get(user_id, 0)}"
+    # Expected results for user frequencies across different windows
+    expected_frequencies = {
+        1: {
+            'edit_frequency_7d': 2.0 / 7,  # 2 edits in the last 7 days
+            'edit_frequency_14d': 3.0 / 14,  # 3 edits in the last 14 days
+            'edit_frequency_30d': 4.0 / 30,  # 4 edits in the last 30 days
+            'edit_frequency_60d': 4.0 / 60,  # 4 edits in the last 60 days
+            'edit_frequency_180d': 4.0 / 180,  # 4 edits in the last 180 days
+            'edit_frequency_365d': 4.0 / 365  # 4 edits in the last 365 days
+        },
+
+        4: {
+            'edit_frequency_7d': 0.0,  # No edits in the last 7 days
+            'edit_frequency_14d': 0.0,  # No edits in the last 14 days
+            'edit_frequency_30d': 0.0,  # No edits in the last 30 days
+            'edit_frequency_60d': 0.0,  # No edits in the last 60 days
+            'edit_frequency_180d': 0.0,  # No edits in the last 180 days
+            'edit_frequency_365d': 1.0 / 365  # 1 edit in the last 365 days
+        },
+
+    }
+
+    # Compare the actual results with expected frequencies
+    for user_id, expected_values in expected_frequencies.items():
+        actual_values = actual_frequencies.get(user_id, {})
+        for key, expected_value in expected_values.items():
+            assert round(actual_values.get(key, 0), 2) == round(expected_value, 2), \
+                f"Test failed for user {user_id}, {key}: expected {expected_value}, got {actual_values.get(key, 0)}"
 
 
 def test_calculate_time_since_last_edit():
