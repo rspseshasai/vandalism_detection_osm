@@ -206,16 +206,36 @@ def extract_features(contribution_df):
         # 4. Contribution Content Features
         tags_before = dict(contribution['tags_before'])
         tags_after = dict(contribution['tags'])
-        tags_added = len(set(tags_after.keys()) - set(tags_before.keys()))
-        tags_removed = len(set(tags_before.keys()) - set(tags_after.keys()))
-        tags_modified = sum(1 for tag in tags_before if tag in tags_after and tags_before[tag] != tags_after[tag])
+
+        # Calculate tags added, removed, and modified
+        tags_added_set = set(tags_after.keys()) - set(tags_before.keys())
+        tags_removed_set = set(tags_before.keys()) - set(tags_after.keys())
+        tags_modified_set = set(tag for tag in tags_before if tag in tags_after and tags_before[tag] != tags_after[tag])
+
+        tags_added = len(tags_added_set)
+        tags_removed = len(tags_removed_set)
+        tags_modified = len(tags_modified_set)
+        tags_changed = tags_added + tags_removed + tags_modified
+
         features['tags_added'] = tags_added
         features['tags_removed'] = tags_removed
         features['tags_modified'] = tags_modified
+        features['tags_changed'] = tags_changed
+        features['total_tags'] = len(tags_after)
 
-        key_tags = ['name', 'boundary', 'population']
+        # Expand the list of key tags based on OSM domain knowledge
+        key_tags = ['name', 'boundary', 'population', 'highway', 'building', 'landuse',
+                    'amenity', 'natural', 'waterway', 'place', 'railway', 'shop', 'leisure']
+
+        # For each key tag, check if it was added, removed, or modified
         for tag in key_tags:
-            features[f'{tag}_changed'] = int(tags_before.get(tag) != tags_after.get(tag))
+            tag_before = tags_before.get(tag)
+            tag_after = tags_after.get(tag)
+            features[f'{tag}_added'] = int(tag in tags_added_set)
+            features[f'{tag}_removed'] = int(tag in tags_removed_set)
+            features[f'{tag}_modified'] = int(tag in tags_modified_set)
+            features[f'{tag}_changed'] = int(
+                (tag_before is not None or tag_after is not None) and tag_before != tag_after)
 
         features['osm_type'] = contribution["osm_type"]
         features['osm_id'] = contribution["osm_id"]
