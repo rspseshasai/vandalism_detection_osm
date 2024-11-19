@@ -65,6 +65,39 @@ def calculate_user_edit_frequency(contributions):
     return user_edit_frequencies
 
 
+def get_continents_for_bbox(xmin, xmax, ymin, ymax):
+    """
+    Determine all continents covered by a bounding box.
+
+    Parameters:
+    - xmin, xmax: Longitude boundaries of the bounding box.
+    - ymin, ymax: Latitude boundaries of the bounding box.
+
+    Returns:
+    - continents: List of continents that fall within the bounding box.
+    """
+    continents = []
+
+    # Define approximate boundaries for each continent
+    continent_boundaries = {
+        'Africa': (-34.83333, 37.09222, -17.62500, 51.20833),  # (min_lat, max_lat, min_lon, max_lon)
+        'Antarctica': (-90, -60, -180, 180),
+        'Asia': (11.16056, 77.71917, 25.06667, 168.95833),
+        'Europe': (34.50500, 71.18528, -24.95583, 68.93500),
+        'North America': (5.49955, 83.16210, -168.17625, -52.23304),
+        'South America': (-56.10273, 12.45777, -81.76056, -34.72999),
+        'Oceania': (-47.28639, -8.23306, 110.95167, 179.85917),
+    }
+
+    # Check intersection of the bounding box with each continent's boundaries
+    for continent, (lat_min, lat_max, lon_min, lon_max) in continent_boundaries.items():
+        if not (xmax < lon_min or xmin > lon_max or ymax < lat_min or ymin > lat_max):
+            continents.append(continent)
+
+    # If no continents match, assign 'Other'
+    return continents if continents else ['Other']
+
+
 def calculate_time_since_last_edit(contribution, contribution_df):
     """
     Calculate the time since the last edit for a specific contribution.
@@ -245,14 +278,17 @@ def extract_features(contribution_df):
         features['status'] = contribution["status"]
 
         # 5. Spatial Features
-        features['bbox_x_range'] = contribution['xmax'] - contribution['xmin']
-        features['bbox_y_range'] = contribution['ymax'] - contribution['ymin']
+        xmin, xmax = contribution['xmin'], contribution['xmax']
+        ymin, ymax = contribution['ymin'], contribution['ymax']
+        features['bbox_x_range'] = xmax - xmin
+        features['bbox_y_range'] = ymax - ymin
         features['centroid_x'] = contribution['centroid']['x']
         features['centroid_y'] = contribution['centroid']['y']
         country_iso = contribution['country_iso_a3']
         features['country_count'] = len(country_iso)
         features['countries'] = country_iso
         features['xzcode'] = contribution["xzcode"]
+        features['continents'] = get_continents_for_bbox(xmin, xmax, ymin, ymax)
 
         # 6. Contextual and Historical Features
         features['historical_validity'] = historical_validity.get(contribution['osm_id'])
