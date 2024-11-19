@@ -70,6 +70,9 @@ def test_calculate_time_since_last_edit():
     # Convert the test data into a DataFrame
     contributions_df = pd.DataFrame(test_data)
 
+    # Placeholder for first-time contributors
+    first_time_placeholder = 10 * 365 * 24  # 10 years in hours
+
     # Test case 1: User 1, 4th contribution (2024-06-15)
     contribution = {'user_id': 1, 'valid_from': datetime(2024, 6, 15, 12, 0, 0)}
     expected_hours = (datetime(2024, 6, 15, 12, 0, 0) - datetime(2024, 6, 10, 12, 0, 0)).total_seconds() / 3600.0
@@ -85,8 +88,15 @@ def test_calculate_time_since_last_edit():
         f"Test failed: expected {expected_hours} hours, got {actual_hours} hours"
 
     # Test case 3: User 2, first contribution (2024-06-01)
-    contribution = {'user_id': 2, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)}
-    expected_hours = 0  # First contribution, so no previous edit
+    contribution = {'user_id': 4, 'valid_from': datetime(2024, 6, 1, 12, 0, 0)}
+    expected_hours = first_time_placeholder  # Placeholder for first-time contributors
+    actual_hours = calculate_time_since_last_edit(contribution, contributions_df)
+    assert actual_hours == expected_hours, \
+        f"Test failed: expected {expected_hours} hours, got {actual_hours} hours"
+
+    # Test case 4: User 3, first contribution in dataset (new user)
+    contribution = {'user_id': 3, 'valid_from': datetime(2024, 6, 25, 12, 0, 0)}
+    expected_hours = first_time_placeholder  # Placeholder for first-time contributors
     actual_hours = calculate_time_since_last_edit(contribution, contributions_df)
     assert actual_hours == expected_hours, \
         f"Test failed: expected {expected_hours} hours, got {actual_hours} hours"
