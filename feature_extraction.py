@@ -68,10 +68,11 @@ def calculate_user_edit_frequency(contributions):
 def calculate_time_since_last_edit(contribution, contribution_df):
     """
     Calculate the time since the last edit for a specific contribution.
+    If the user has no previous edits, return a large placeholder value (e.g., a predefined max value).
 
     :param contribution: A row (Series) from the DataFrame representing the current contribution.
     :param contribution_df: The full DataFrame of contributions, used to find previous contributions by the same user.
-    :return: Time since the last edit in hours.
+    :return: Time since the last edit in hours or a placeholder for first-time contributors.
     """
     user_id = contribution['user_id']
 
@@ -79,14 +80,15 @@ def calculate_time_since_last_edit(contribution, contribution_df):
     user_contributions = contribution_df[(contribution_df['user_id'] == user_id) &
                                          (contribution_df['valid_from'] < contribution['valid_from'])]
 
-    # Check if the user has previous contributions, if not, set the current contribution's timestamp
+    # Check if the user has previous contributions
     if not user_contributions.empty:
         last_edit = user_contributions['valid_from'].max()  # Get the most recent previous contribution
+        # Calculate time since last edit in hours
+        time_since_last_edit = (contribution['valid_from'] - last_edit).total_seconds() / 3600.0
     else:
-        last_edit = contribution['valid_from']
+        # Assign a large placeholder value (e.g., 10 years in hours) for first-time contributors
+        time_since_last_edit = 10 * 365 * 24  # 10 years in hours
 
-    # Calculate time since last edit in hours
-    time_since_last_edit = (contribution['valid_from'] - last_edit).total_seconds() / 3600.0
     return time_since_last_edit
 
 
@@ -184,7 +186,22 @@ def extract_features(contribution_df):
 
         # 3. Temporal Features
         features['time_since_last_edit'] = calculate_time_since_last_edit(contribution, contribution_df)
-        features['edit_time_of_day'] = contribution['changeset']['timestamp'].hour
+        timestamp = contribution['changeset']['timestamp']
+        hour = timestamp.hour
+
+        # Convert hour into categorical time segments
+        if 5 <= hour < 12:
+            features['time_of_day'] = 'morning'
+        elif 12 <= hour < 17:
+            features['time_of_day'] = 'afternoon'
+        elif 17 <= hour < 21:
+            features['time_of_day'] = 'evening'
+        else:
+            features['time_of_day'] = 'night'
+
+        # Add day_of_week and is_weekend features
+        features['day_of_week'] = timestamp.weekday()  # 0 = Monday, 6 = Sunday
+        features['is_weekend'] = int(timestamp.weekday() >= 5)  # 1 if Saturday or Sunday, else 0
 
         # 4. Contribution Content Features
         tags_before = dict(contribution['tags_before'])
