@@ -176,6 +176,24 @@ def calculate_num_vertices(geometry):
     return len(coordinates) - 1  # Exclude closing point which is a repeat of the first
 
 
+def get_grid_cell_id(lat, lon, grid_size=0.1):
+    """
+    Assigns a grid cell ID to the given latitude and longitude.
+
+    Parameters:
+    - lat: Latitude value.
+    - lon: Longitude value.
+    - grid_size: Size of the grid cells in degrees.
+
+    Returns:
+    - grid_cell_id: A string representing the grid cell.
+    """
+    x_index = int((lon + 180) / grid_size)
+    y_index = int((lat + 90) / grid_size)
+    grid_cell_id = f"{x_index}_{y_index}"
+    return grid_cell_id
+
+
 def extract_features(contribution_df):
     feature_list = []
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
@@ -282,8 +300,17 @@ def extract_features(contribution_df):
         ymin, ymax = contribution['ymin'], contribution['ymax']
         features['bbox_x_range'] = xmax - xmin
         features['bbox_y_range'] = ymax - ymin
-        features['centroid_x'] = contribution['centroid']['x']
-        features['centroid_y'] = contribution['centroid']['y']
+
+        latitude = contribution['centroid']['y']
+        longitude = contribution['centroid']['x']
+
+        # Compute grid cell ID
+        grid_cell_id = get_grid_cell_id(latitude, longitude, grid_size=0.1)
+        features['grid_cell_id'] = grid_cell_id
+
+        features['centroid_x'] = longitude
+        features['centroid_y'] = latitude
+
         country_iso = contribution['country_iso_a3']
         features['country_count'] = len(country_iso)
         features['countries'] = country_iso
