@@ -125,25 +125,55 @@ def calculate_time_since_last_edit(contribution, contribution_df):
     return time_since_last_edit
 
 
-def calculate_historical_validity(contribution_df, edit_threshold=10):
+def calculate_edit_history_features_of_osm_element(contribution_df):
     """
-    Calculate historical validity based on the number of edits made to each feature (osm_id).
+    Calculate historical features for each contribution.
 
-    :param contribution_df: DataFrame containing contribution data, including 'osm_id' and 'valid_from' columns.
-    :param edit_threshold: The number of edits that define "frequent modifications".
-    :return: A dictionary with osm_id as the key and a historical validity score (1 or 0) as the value.
+    Features:
+    - edit_frequency_of_osm_element: Categorized frequency of edits (rare, moderate, frequent).
+    - number_of_past_edits_of_osm_element: Total number of edits made to the feature (osm_id).
+    - last_edit_time_of_osm_element: Time since the feature was last edited before this contribution.
+
+    Parameters:
+    - contribution_df: DataFrame containing contribution data.
+
+    Returns:
+    - historical_features: Dictionary of features for each osm_id.
     """
-    logger.info("Calculating historical validity for all features...")
+    logger.info("Calculating historical features for all features...")
 
-    # Initialize an empty dictionary for historical validity
-    historical_validity = {}
+    # Initialize dictionaries to store historical features
+    edit_frequency_of_osm_element = {}
+    number_of_past_edits_of_osm_element = {}
+    last_edit_time_of_osm_element = {}
 
-    # Use tqdm to add a progress bar
-    for osm_id, group in tqdm(contribution_df.groupby('osm_id'), desc="Historical Validity Calculation"):
-        feature_edit_counts = len(group)
-        historical_validity[osm_id] = 0 if feature_edit_counts > edit_threshold else 1
+    for osm_id, group in tqdm(contribution_df.groupby('osm_id'), desc="Historical Feature Calculation"):
+        sorted_group = group.sort_values('valid_from')  # Sort by timestamp for temporal calculations
+        num_edits = len(sorted_group)
 
-    return historical_validity
+        # Calculate historical validity categories
+        if num_edits <= 5:
+            validity = 'rarely_edited'
+        elif 5 < num_edits <= 20:
+            validity = 'moderately_edited'
+        else:
+            validity = 'frequently_edited'
+
+        edit_frequency_of_osm_element[osm_id] = validity
+        number_of_past_edits_of_osm_element[osm_id] = num_edits
+
+        # Calculate the time since the last edit for each contribution in the group
+        timestamps = sorted_group['valid_from'].values
+        last_edit_times = [0]  # First edit has no previous edit, so set to 0
+        for i in range(1, len(timestamps)):
+            time_since_last = (timestamps[i] - timestamps[i - 1]) / np.timedelta64(1, 'h')
+            last_edit_times.append(time_since_last)
+
+        # Store the last edit time for the group (to be used in feature extraction)
+        for i, row in enumerate(sorted_group.itertuples()):
+            last_edit_time_of_osm_element[row.osm_id] = last_edit_times[i]
+
+    return edit_frequency_of_osm_element, number_of_past_edits_of_osm_element, last_edit_time_of_osm_element
 
 
 def calculate_perimeter(geometry):
@@ -197,7 +227,8 @@ def get_grid_cell_id(lat, lon, grid_size=0.1):
 def extract_features(contribution_df):
     feature_list = []
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
-    historical_validity = calculate_historical_validity(contribution_df, 8)
+    edit_frequency_of_osm_element, number_of_past_edits_of_osm_element, last_edit_time_of_osm_element = calculate_edit_history_features_of_osm_element(
+        contribution_df)
 
     logger.info(f"Extracting the features...")
 
@@ -318,7 +349,10 @@ def extract_features(contribution_df):
         features['continents'] = get_continents_for_bbox(xmin, xmax, ymin, ymax)
 
         # 6. Contextual and Historical Features
-        features['historical_validity'] = historical_validity.get(contribution['osm_id'])
+        osm_id = contribution['osm_id']
+        features['edit_frequency_of_osm_element'] = edit_frequency_of_osm_element.get(osm_id, 'unknown')
+        features['number_of_past_edits_of_osm_element'] = number_of_past_edits_of_osm_element.get(osm_id, 0)
+        features['last_edit_time_of_osm_element'] = last_edit_time_of_osm_element.get(osm_id, 0)
 
         # 7. Derived Features
         features['tag_density'] = len(contribution['tags']) / contribution['area'] if contribution['area'] > 0 else 0
