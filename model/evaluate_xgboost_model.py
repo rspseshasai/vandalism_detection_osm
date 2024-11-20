@@ -112,6 +112,7 @@ def plot_roc_pr_curves(y_test, y_test_prob):
     plt.show()
 
 
+# TODO: Multi threading for this code
 def evaluate_model_with_cv(X, y, best_params, cv=5):
     """
     Evaluate the model using cross-validation on the training data.

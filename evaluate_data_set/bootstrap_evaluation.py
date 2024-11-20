@@ -187,7 +187,7 @@ def save_bootstrap_results(metrics_df, results_df, stats_df, folder_to_save_boot
     else:
         logger.info(f"Directory already exists at: {folder_to_save_bootstrap_results}")
 
-    metrics_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_metrics_all_iterations.csv', index=False)
-    results_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_results_summary.csv', index=False)
-    stats_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_additional_statistics.csv', index=False)
+    metrics_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_metrics_all_iterations_v2.csv', index=False)
+    results_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_results_summary_v2.csv', index=False)
+    stats_df.to_csv(f'{folder_to_save_bootstrap_results}/{prefix}_additional_statistics_v2.csv', index=False)
     logger.info(f'Results saved in saved_parameters with prefix "{folder_to_save_bootstrap_results}/{prefix}"')
