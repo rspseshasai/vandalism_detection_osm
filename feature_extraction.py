@@ -355,18 +355,38 @@ def extract_features(contribution_df):
         features['last_edit_time_of_osm_element'] = last_edit_time_of_osm_element.get(osm_id, 0)
 
         # 7. Derived Features
-        features['tag_density'] = len(contribution['tags']) / contribution['area'] if contribution['area'] > 0 else 0
+        # Tag Density: Tags per unit area
+        if contribution['area'] > 0:
+            raw_tag_density = len(contribution['tags']) / contribution['area']
+            features['tag_density'] = min(math.log1p(raw_tag_density), 10)  # Apply log transformation and cap at 10
+        else:
+            features['tag_density'] = 0  # Default for zero or invalid area
+
+        # Relative Area Change: Ratio of area_delta to the previous area
         previous_area = contribution.get('previous_area', contribution['area'] - contribution['area_delta'])
-        change_ratio = contribution['area_delta'] / previous_area if previous_area > 0 else contribution['area_delta']
-        features['change_ratio'] = change_ratio
+        if previous_area > 0:
+            raw_change_ratio = contribution['area_delta'] / previous_area
+            features['relative_area_change'] = min(max(raw_change_ratio, -10), 10)  # Cap between -10 and 10
+        else:
+            features['relative_area_change'] = min(max(contribution['area_delta'], -10),
+                                                   10)  # Handle edge cases with no previous area
 
         # 8. Changeset Features
         comment = next((tag[1] for tag in contribution['changeset']['tags'] if tag[0] == 'comment'), "")
         features['changeset_comment_length'] = len(comment)
         source = next((tag[1] for tag in contribution['changeset']['tags'] if tag[0] == 'source'), "")
-        reliable_sources = ['Bing Aerial Imagery', 'Esri World Imagery']
+        reliable_sources = [
+            'bing aerial imagery',
+            'esri world imagery',
+            'mapbox',
+            'digitalglobe',
+            'here maps',
+            'maxar technologies',
+            'google satellite',
+        ]
         features['source_reliability'] = 1 if any(s in source for s in reliable_sources) else 0
         features['changeset_id'] = contribution['changeset']['id']
+        features['source_used'] = source if source else 'unknown'
 
         # 9. Map Features
         map_features = contribution['map_features']  # assuming this is the field name in the DataFrame
