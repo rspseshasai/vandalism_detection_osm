@@ -4,18 +4,20 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from joblib import Parallel, delayed
 from scipy.stats import skew, kurtosis, normaltest
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    roc_auc_score, average_precision_score
+    accuracy_score, precision_score, recall_score,
+    f1_score, roc_auc_score, average_precision_score
 )
 from sklearn.utils import resample
+from tqdm import tqdm
 
 from logger.logger_config import logger
 
 
 def perform_bootstrap_evaluation(
-        model, X_test, y_test, n_iterations=1000, random_state=None
+        model, X_test, y_test, n_iterations=1000, random_state=None, n_jobs=-1
 ):
     """
     Perform bootstrapping on the test set to evaluate the model's performance.
@@ -26,20 +28,14 @@ def perform_bootstrap_evaluation(
     - y_test: Labels of the test set.
     - n_iterations: Number of bootstrap samples to generate (default: 1000).
     - random_state: Random state for reproducibility (default: None).
+    - n_jobs: Number of CPU cores to use for parallel processing (default: -1).
 
     Returns:
     - metrics_df: DataFrame containing all metrics from each iteration.
     """
-    # Initialize lists to store metrics
-    accuracy_list = []
-    precision_list = []
-    recall_list = []
-    f1_list = []
-    auc_roc_list = []
-    auc_pr_list = []
 
-    for i in range(n_iterations):
-        # Set random state for reproducibility
+    def bootstrap_iteration(i):
+        # Adjust random state for reproducibility
         rs = i if random_state is None else random_state + i
 
         # Generate a bootstrap sample from the test set
@@ -62,23 +58,22 @@ def perform_bootstrap_evaluation(
         auc_roc = roc_auc_score(y_bootstrap, y_prob)
         auc_pr = average_precision_score(y_bootstrap, y_prob)
 
-        # Store metrics
-        accuracy_list.append(accuracy)
-        precision_list.append(precision)
-        recall_list.append(recall)
-        f1_list.append(f1)
-        auc_roc_list.append(auc_roc)
-        auc_pr_list.append(auc_pr)
+        return {
+            'Accuracy': accuracy,
+            'Precision': precision,
+            'Recall': recall,
+            'F1-score': f1,
+            'AUC-ROC': auc_roc,
+            'AUC-PR': auc_pr
+        }
+
+    # Run bootstrap iterations in parallel
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(bootstrap_iteration)(i) for i in tqdm(range(n_iterations))
+    )
 
     # Create a DataFrame of the metrics
-    metrics_df = pd.DataFrame({
-        'Accuracy': accuracy_list,
-        'Precision': precision_list,
-        'Recall': recall_list,
-        'F1-score': f1_list,
-        'AUC-ROC': auc_roc_list,
-        'AUC-PR': auc_pr_list
-    })
+    metrics_df = pd.DataFrame(results)
 
     return metrics_df
 

@@ -1,12 +1,8 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
-import xgboost as xgb
 from sklearn.metrics import (classification_report, accuracy_score,
                              roc_auc_score, average_precision_score)
 from sklearn.metrics import roc_curve, precision_recall_curve
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import cross_val_score
 
 # Define class names for the confusion matrix heatmap
 class_names = ['Not Vandalism', 'Vandalism']
@@ -112,7 +108,11 @@ def plot_roc_pr_curves(y_test, y_test_prob):
     plt.show()
 
 
-# TODO: Multi threading for this code
+import numpy as np
+import xgboost as xgb
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+
 def evaluate_model_with_cv(X, y, best_params, cv=5):
     """
     Evaluate the model using cross-validation on the training data.
@@ -125,9 +125,6 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
 
     Returns:
     - cv_scores: Cross-validation scores
-
-    Note:
-    - This function should be called with training data only to avoid data leakage.
     """
     print("\nPerforming 5-fold Cross-Validation on the training data...")
 
@@ -135,14 +132,20 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
     model = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='aucpr',
+        n_jobs=1,  # Prevent nested parallelism
         **best_params
     )
 
     # Perform cross-validation on the entire dataset
     skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=42)
-    cv_scores = cross_val_score(model, X, y, cv=skf, scoring='average_precision')
+    cv_scores = cross_val_score(
+        model, X, y,
+        cv=skf,
+        scoring='average_precision',
+        n_jobs=11  # Use all available cores
+    )
 
-    # print out the performance metrics
+    # Print out the performance metrics
     print(f"Cross-Validation AUC Scores: {cv_scores}")
     print(f"Mean AUC Score: {np.mean(cv_scores)}")
     print(f"Standard Deviation of AUC Scores: {np.std(cv_scores)}")
