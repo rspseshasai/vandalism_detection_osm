@@ -1,7 +1,7 @@
 import pandas as pd
 import pyarrow.parquet as pq
 
-from logger.logger_config import logger
+from logger_config import logger
 
 # Path to the merged parquet file
 merged_parquet_file = '../../data/contribution_data/osm_labelled_contributions_v2.parquet'

@@ -1,11 +1,11 @@
 import joblib
 import xgboost as xgb
 
-from logger.logger_config import logger
+from logger_config import logger
 
 
 def train_final_model(X_train, y_train, X_val, y_val, best_params):
-    # Initialize the final model with the best hyperparameters
+    # Initialize the final models with the best hyperparameters
     final_model = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='aucpr',
@@ -17,7 +17,7 @@ def train_final_model(X_train, y_train, X_val, y_val, best_params):
     eval_set = [(X_val, y_val)]
 
 
-    # Fit the model and track evaluation metrics
+    # Fit the models and track evaluation metrics
     final_model.fit(
         X_train,
         y_train,
@@ -41,14 +41,14 @@ def train_final_model(X_train, y_train, X_val, y_val, best_params):
 
 
 def save_model(model, file_path):
-    """Save the model to a specified file path."""
+    """Save the models to a specified file path."""
 
     joblib.dump(model, file_path)
     logger.info(f"Model saved to {file_path}")
 
 
 def load_model(file_path):
-    """Load a model from the specified file path."""
+    """Load a models from the specified file path."""
 
     model = joblib.load(file_path)
     logger.info(f"Model loaded from {file_path}")

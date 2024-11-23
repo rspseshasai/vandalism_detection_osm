@@ -9,7 +9,7 @@ class_names = ['Not Vandalism', 'Vandalism']
 
 
 def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
-    """Evaluate model performance on both training and test datasets."""
+    """Evaluate models performance on both training and test datasets."""
     # Predictions and probabilities for both sets
     y_train_pred = model.predict(X_train)
     y_test_pred = model.predict(X_test)
@@ -115,7 +115,7 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 def evaluate_model_with_cv(X, y, best_params, cv=5):
     """
-    Evaluate the model using cross-validation on the training data.
+    Evaluate the models using cross-validation on the training data.
 
     Parameters:
     - X: Features (training data)
@@ -128,7 +128,7 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
     """
     print("\nPerforming 5-fold Cross-Validation on the training data...")
 
-    # Initialize the model with the best hyperparameters
+    # Initialize the models with the best hyperparameters
     model = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='aucpr',

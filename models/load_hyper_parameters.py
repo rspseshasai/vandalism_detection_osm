@@ -1,7 +1,7 @@
 import json
 import os
 
-from logger.logger_config import logger
+from logger_config import logger
 
 
 def load_best_hyperparameters(hyperparams_file):

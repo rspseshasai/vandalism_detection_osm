@@ -5,8 +5,8 @@ import random
 import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV
 
-from logger.logger_config import logger
-from model.load_hyper_parameters import load_best_hyperparameters
+from logger_config import logger
+from models.load_hyper_parameters import load_best_hyperparameters
 
 
 def get_random_parameters():
@@ -73,7 +73,7 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
     if os.path.exists(hyperparams_file):
         logger.info("Hyperparameters file already exists.")
     else:
-        # Initialize the model
+        # Initialize the models
         xgb_model = xgb.XGBClassifier(
             objective='binary:logistic',
             eval_metric='aucpr',

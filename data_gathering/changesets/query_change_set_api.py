@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import requests
 
-from logger.logger_config import logger
+from logger_config import logger
 
 # True if you need to filter the changesets using a file.
 FILTER = False

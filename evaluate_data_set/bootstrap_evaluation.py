@@ -13,17 +13,17 @@ from sklearn.metrics import (
 from sklearn.utils import resample
 from tqdm import tqdm
 
-from logger.logger_config import logger
+from logger_config import logger
 
 
 def perform_bootstrap_evaluation(
         model, X_test, y_test, n_iterations=1000, random_state=None, n_jobs=-1
 ):
     """
-    Perform bootstrapping on the test set to evaluate the model's performance.
+    Perform bootstrapping_results on the test set to evaluate the models's performance.
 
     Parameters:
-    - model: Trained model to evaluate.
+    - models: Trained models to evaluate.
     - X_test: Features of the test set.
     - y_test: Labels of the test set.
     - n_iterations: Number of bootstrap samples to generate (default: 1000).
@@ -83,7 +83,7 @@ def calculate_bootstrap_statistics(metrics_df):
     Calculate mean, standard deviation, and 95% confidence intervals for each metric.
 
     Parameters:
-    - metrics_df: DataFrame containing metrics from bootstrapping.
+    - metrics_df: DataFrame containing metrics from bootstrapping_results.
 
     Returns:
     - results_df: DataFrame with statistical summary of each metric.
@@ -113,7 +113,7 @@ def plot_metric_distributions(metrics_df):
     Plot histograms and box plots for each performance metric.
 
     Parameters:
-    - metrics_df: DataFrame containing metrics from bootstrapping.
+    - metrics_df: DataFrame containing metrics from bootstrapping_results.
     """
     for metric_name in metrics_df.columns:
         plt.figure(figsize=(10, 4))
@@ -140,7 +140,7 @@ def compute_additional_statistics(metrics_df):
     Compute skewness, kurtosis, and normality test for each metric.
 
     Parameters:
-    - metrics_df: DataFrame containing metrics from bootstrapping.
+    - metrics_df: DataFrame containing metrics from bootstrapping_results.
 
     Returns:
     - stats_df: DataFrame containing additional statistics for each metric.
@@ -170,7 +170,7 @@ def save_bootstrap_results(metrics_df, results_df, stats_df, folder_to_save_boot
     Save bootstrap metrics and statistics to CSV files.
 
     Parameters:
-    - metrics_df: DataFrame containing metrics from bootstrapping.
+    - metrics_df: DataFrame containing metrics from bootstrapping_results.
     - results_df: DataFrame with statistical summary of each metric.
     - stats_df: DataFrame containing additional statistics for each metric.
     - prefix: Prefix for the saved files (default: 'bootstrap').

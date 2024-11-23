@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from config import FEATURES_FILE_PATH
 from logger_config import logger
 
 # Path to save and load extracted features in Parquet format
@@ -439,25 +440,29 @@ def extract_features(contribution_df):
     return features_df
 
 
-def get_or_generate_features(contribution_df, force_compute_features=False):
+def get_or_generate_features(contribution_df, force_compute_features=False, test_mode=False):
     """
     Load existing features or generate them if not available.
 
     Parameters:
     - contribution_df (pd.DataFrame): DataFrame containing contribution data.
     - force_compute_features (bool): If True, forces re-computation of features.
+    - test_mode (bool): If True, limit to 100 entries for testing purposes.
 
     Returns:
     - pd.DataFrame: DataFrame containing extracted features.
     """
-    if os.path.exists(FEATURES_FILE) and not force_compute_features:
-        logger.info(f"Loading features from {FEATURES_FILE}...")
-        features_df = pd.read_parquet(FEATURES_FILE)
+    if os.path.exists(FEATURES_FILE_PATH) and not force_compute_features:
+        logger.info(f"Loading features from {FEATURES_FILE_PATH}...")
+        features_df = pd.read_parquet(FEATURES_FILE_PATH)
     else:
         logger.info("Extracting features...")
+        if test_mode:
+            logger.info("Test mode enabled: Limiting to 100 entries.")
+            contribution_df = contribution_df.head(100)
         features_df = extract_features(contribution_df)
-        logger.info(f"Saving features to {FEATURES_FILE}...")
-        features_df.to_parquet(FEATURES_FILE)
+        logger.info(f"Saving features to {FEATURES_FILE_PATH}...")
+        features_df.to_parquet(FEATURES_FILE_PATH)
 
     logger.info(f"Features DataFrame shape: {features_df.shape}")
     return features_df

@@ -39,11 +39,11 @@ def split_test_set_by_key(X_test, y_test, binary_columns, split_key):
 
 def evaluate_model_on_split_groups(split_data, model):
     """
-    Evaluate the model on each group (continent or country) and compute metrics.
+    Evaluate the models on each group (continent or country) and compute metrics.
 
     Parameters:
     - split_data: Dictionary with group names as keys and DataFrames as values.
-    - model: Trained model to evaluate.
+    - models: Trained models to evaluate.
     - split_key: Key indicating the grouping basis (e.g., "continent" or "country").
 
     Returns:
@@ -57,7 +57,7 @@ def evaluate_model_on_split_groups(split_data, model):
         X_group = data.drop(columns=features_to_drop, errors='ignore')
         y_group = data['label']
 
-        # Ensure feature alignment with the model
+        # Ensure feature alignment with the models
         X_group = X_group[model.get_booster().feature_names]
 
         # Make predictions
