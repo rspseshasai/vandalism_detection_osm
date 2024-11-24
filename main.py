@@ -1,7 +1,10 @@
 import os
 import sys
 
+import pandas as pd
+
 from evaluation import save_evaluation_results
+from geographical_evaluation import split_test_set_by_key, evaluate_model_on_split_groups
 from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
 
 # Adjust the path to import modules from src
@@ -18,6 +21,17 @@ from src.clustering import perform_clustering
 from src.training import train_final_model, save_model
 from src.evaluation import calculate_auc_scores, evaluate_train_test_metrics, \
     evaluate_model_with_cv
+
+from src.evaluation import (
+    evaluate_train_test_metrics,
+    calculate_auc_scores,
+    save_evaluation_results
+)
+from src.bootstrap_evaluation import (
+    perform_bootstrap_evaluation,
+    calculate_bootstrap_statistics,
+    save_bootstrap_results, compute_additional_statistics
+)
 
 
 # Step 1: Load Data
@@ -94,7 +108,7 @@ def data_splitting_helper(X_encoded, y):
 
 
 # Step 5: Clustering
-def clustering_helper(X_train, X_val, X_test, n_clusters=100):
+def clustering_helper(X_train, X_val, X_test):
     logger.info("Starting clustering...")
     X_train, X_val, X_test = perform_clustering(X_train, X_val, X_test, n_clusters=config.N_CLUSTERS)
 
@@ -150,31 +164,105 @@ def evaluation_helper(model, X_train, y_train, X_test, y_test):
     logger.info("Evaluation completed.")
 
 
+# Step 8: Bootstrapping Evaluation
+def bootstrapping_evaluation_helper(model, X_test, y_test):
+    logger.info("Starting bootstrapping evaluation...")
+
+    # Perform bootstrapping
+    metrics_df = perform_bootstrap_evaluation(
+        model=model,
+        X_test=X_test,
+        y_test=y_test,
+        n_iterations=config.BOOTSTRAP_ITERATIONS,
+        random_state=config.RANDOM_STATE,
+        n_jobs=config.N_JOBS
+    )
+
+    # Calculate statistics
+    results_df = calculate_bootstrap_statistics(metrics_df)
+    stats_df = compute_additional_statistics(metrics_df)
+
+    # Save results
+    save_bootstrap_results(
+        metrics_df,
+        results_df,
+        stats_df,
+        folder_to_save_bootstrap_results=config.BOOTSTRAP_RESULTS_DIR,
+        prefix='bootstrap_test_set'
+    )
+
+    logger.info("Bootstrapping evaluation completed.")
+
+
+# Step 9: Geographical Evaluation
+def geographical_evaluation_helper(model, X_test, y_test):
+    logger.info("Starting geographical evaluation...")
+
+    # Evaluate on continents
+    geographical_evaluation(model, X_test, y_test, split_key='continent')
+
+    # Evaluate on countries
+    geographical_evaluation(model, X_test, y_test, split_key='country')
+
+    logger.info("Geographical evaluation completed.")
+
+
+def geographical_evaluation(model, X_test, y_test, split_key):
+    # Get binary columns for the split key
+    binary_columns = [col for col in X_test.columns if col.startswith(f"{split_key}_")]
+
+    # Remove any unwanted columns
+    if 'country_count' in binary_columns:
+        binary_columns.remove('country_count')
+
+    # Split test set by the specified key
+    split_data = split_test_set_by_key(X_test, y_test, binary_columns, split_key)
+
+    # Evaluate model on each split group
+    results = evaluate_model_on_split_groups(split_data, model)
+
+    # Convert results to DataFrame
+    stats_columns = [
+        'Total Samples', 'Total Correct Predictions', 'Total Incorrect Predictions', 'True Positives (TP)',
+        'True Negatives (TN)', 'False Positives (FP)', 'False Negatives (FN)',
+        'Accuracy', 'Precision', 'Recall', 'F1-score', 'AUC-ROC', 'AUC-PR'
+    ]
+
+    stats_df = pd.DataFrame.from_dict(results, orient='index')[stats_columns]
+    stats_df.index.name = f'{split_key.capitalize()} Name'
+    stats_df.reset_index(inplace=True)
+
+    # Save the geographical evaluation results
+    geo_results_path = os.path.join(config.GEOGRAPHICAL_RESULTS_DIR, f'{split_key}_evaluation_results.csv')
+    stats_df.to_csv(geo_results_path, index=False)
+    logger.info(f"Saved geographical evaluation results to {geo_results_path}")
+
+
 # Main Pipeline
 def main():
     logger.info("Starting the ML pipeline...")
 
     # Define the pipeline steps and their corresponding functions
-    pipeline_steps = {
-        'data_loading': data_loading_helper,
-        'feature_engineering': feature_engineering_helper,
-        'preprocessing': preprocessing_helper,
-        'data_splitting': data_splitting_helper,
-        'clustering': clustering_helper,
-        'training': training_helper,
-        'evaluation': evaluation_helper,
-        # Add more steps as needed
-    }
+    pipeline_steps = [
+        ('data_loading', data_loading_helper),
+        ('feature_engineering', feature_engineering_helper),
+        ('preprocessing', preprocessing_helper),
+        ('data_splitting', data_splitting_helper),
+        ('clustering', clustering_helper),
+        ('training', training_helper),
+        ('evaluation', evaluation_helper),
+        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        ('geographical_evaluation', geographical_evaluation_helper),
+    ]
 
     # Data containers
-    contributions_df = None
-    features_df = None
-    X_encoded = None
-    y = None
+    contributions_df = features_df = None
+    X_encoded = y = None
     X_train = X_val = X_test = y_train = y_val = y_test = None
+    model = None
 
     # Execute each step in the defined order
-    for step_name, step_function in pipeline_steps.items():
+    for step_name, step_function in pipeline_steps:
         logger.info(f"\nExecuting pipeline step: {step_name}")
         if step_name == 'data_loading':
             contributions_df = step_function()
@@ -187,9 +275,13 @@ def main():
         elif step_name == 'clustering':
             X_train, X_val, X_test = step_function(X_train, X_val, X_test)
         elif step_name == 'training':
-            final_model = step_function(X_train, y_train, X_val, y_val)
+            model = step_function(X_train, y_train, X_val, y_val)
         elif step_name == 'evaluation':
-            step_function(final_model, X_train, y_train, X_test, y_test)
+            step_function(model, X_train, y_train, X_test, y_test)
+        elif step_name == 'bootstrapping_evaluation':
+            step_function(model, X_test, y_test)
+        elif step_name == 'geographical_evaluation':
+            step_function(model, X_test, y_test)
         else:
             logger.warning(f"Unknown pipeline step: {step_name}")
 

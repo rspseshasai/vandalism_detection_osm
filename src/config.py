@@ -53,11 +53,25 @@ VISUALIZATION_DATA_PATH = {
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = True
 
+# Bootstrapping configurations
+BOOTSTRAP_ITERATIONS = 1000  # Number of bootstrap iterations
+BOOTSTRAP_RESULTS_DIR = os.path.join(PROCESSED_DATA_DIR, 'bootstrap_results')
+if not os.path.exists(BOOTSTRAP_RESULTS_DIR):
+    os.makedirs(BOOTSTRAP_RESULTS_DIR)
+
+# Geographical evaluation configurations
+GEOGRAPHICAL_RESULTS_DIR = os.path.join(PROCESSED_DATA_DIR, 'geographical_evaluation_results')
+if not os.path.exists(GEOGRAPHICAL_RESULTS_DIR):
+    os.makedirs(GEOGRAPHICAL_RESULTS_DIR)
+
 # === Logger Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)  # Ensure the log directory exists
 LOG_FILE_PATH = os.path.join(LOG_DIR, 'pipeline.log')
+
+# Number of jobs for parallel processing
+N_JOBS = 11  # -1 to use all available cores
 
 # Configure logging
 logging.basicConfig(
