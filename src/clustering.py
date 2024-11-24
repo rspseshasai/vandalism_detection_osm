@@ -1,9 +1,10 @@
 # src/clustering.py
 
+import os
+
 from sklearn.cluster import KMeans
 
 from src import config
-from src.config import logger
 
 
 def perform_clustering(X_train, X_val, X_test, n_clusters=100):
@@ -11,6 +12,7 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
     Fits KMeans clustering on training data and assigns cluster labels to training, validation, and test data.
     """
     logger.info("Starting clustering...")
+    os.environ["LOKY_MAX_CPU_COUNT"] = "4"
 
     # Ensure 'centroid_x' and 'centroid_y' are available
     required_columns = ['centroid_x', 'centroid_y']
@@ -55,3 +57,73 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
     logger.info("Clustering completed.")
 
     return X_train, X_val, X_test
+
+
+import matplotlib.pyplot as plt
+import pandas as pd
+from config import VISUALIZATION_DATA_PATH, logger
+
+
+def load_clustered_data():
+    """
+    Load the clustered data from saved visualization files.
+
+    Returns:
+    - X_train: Training dataset with cluster labels.
+    - X_val: Validation dataset with cluster labels.
+    - X_test: Test dataset with cluster labels.
+    """
+    try:
+        X_train = pd.read_parquet(VISUALIZATION_DATA_PATH['clustering_train'])
+        X_val = pd.read_parquet(VISUALIZATION_DATA_PATH['clustering_val'])
+        X_test = pd.read_parquet(VISUALIZATION_DATA_PATH['clustering_test'])
+        logger.info("Clustered data loaded successfully.")
+        return X_train, X_val, X_test
+    except FileNotFoundError as e:
+        logger.error(f"Error loading clustered data: {e}")
+        raise
+
+
+def plot_clusters(data, title):
+    """
+    Helper function to plot clustering results.
+
+    Parameters:
+    - data: DataFrame containing clustering results.
+    - title: Title for the plot.
+    """
+    if not {'cluster_label', 'centroid_x', 'centroid_y'}.issubset(data.columns):
+        logger.warning(f"Required columns missing in data for {title}. Ensure clustering was performed.")
+        return
+
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(
+        data['centroid_x'],
+        data['centroid_y'],
+        c=data['cluster_label'],
+        cmap='tab10',
+        alpha=0.7
+    )
+    plt.colorbar(scatter, label="Cluster Label")
+    plt.title(title)
+    plt.xlabel("Centroid X")
+    plt.ylabel("Centroid Y")
+    plt.grid(True)
+    plt.show()
+
+
+def visualize_clustering():
+    """
+    Visualize the clustering results for training, validation, and test datasets.
+    """
+    try:
+        # Load clustered data
+        X_train, X_val, X_test = load_clustered_data()
+
+        # Visualize each dataset
+        logger.info("Visualizing clustering results...")
+        plot_clusters(X_train, "Clustering Visualization - Training Set")
+        plot_clusters(X_val, "Clustering Visualization - Validation Set")
+        plot_clusters(X_test, "Clustering Visualization - Test Set")
+    except Exception as e:
+        logger.error(f"Error during clustering visualization: {e}")

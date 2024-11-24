@@ -78,9 +78,10 @@ def data_splitting_helper(X_encoded, y):
     calculate_statistics(y_test, "Test Set")
 
     if config.SAVE_VISUALIZATION_SAMPLES:
-        sample_path = config.VISUALIZATION_DATA_PATH['data_splitting']
-        X_train.head(100).to_parquet(sample_path)
-        logger.info(f"Saved data splitting sample to {sample_path}")
+        X_train.head(100).to_parquet(config.VISUALIZATION_DATA_PATH['data_splitting_X_train'])
+        X_val.head(100).to_parquet(config.VISUALIZATION_DATA_PATH['data_splitting_X_val'])
+        X_test.head(100).to_parquet(config.VISUALIZATION_DATA_PATH['data_splitting_X_test'])
+        logger.info("Saved all data splits for visualization.")
 
     logger.info("Data splitting completed.")
     return X_train, X_val, X_test, y_train, y_val, y_test
