@@ -3,8 +3,8 @@
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
+from config import logger
 from src import config
-from src.logger_config import logger
 
 
 def encode_multilabel_column(df, column_name, prefix):

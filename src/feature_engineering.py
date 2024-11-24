@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from config import FEATURES_FILE_PATH
-from logger_config import logger
+from config import logger
 
 # Path to save and load extracted features in Parquet format
 FEATURES_FILE = "data/contribution_data/extracted_features_v3.parquet"
