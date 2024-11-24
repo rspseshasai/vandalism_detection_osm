@@ -1,17 +1,23 @@
 import os
 import sys
 
+from evaluation import save_evaluation_results
+from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
+
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
-from config import logger
+from config import logger, BEST_PARAMS_PATH_CONTRIBUTION_DATA, TEST_RUN
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
 from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
+from src.training import train_final_model, save_model
+from src.evaluation import calculate_auc_scores, evaluate_train_test_metrics, \
+    evaluate_model_with_cv
 
 
 # Step 1: Load Data
@@ -34,7 +40,7 @@ def feature_engineering_helper(contributions_df):
     features_df = get_or_generate_features(
         contributions_df,
         force_compute_features=False,
-        test_mode=False
+        test_mode=TEST_RUN
     )
 
     if config.SAVE_VISUALIZATION_SAMPLES:
@@ -105,6 +111,45 @@ def clustering_helper(X_train, X_val, X_test, n_clusters=100):
     return X_train, X_val, X_test
 
 
+# Step 6: Model Training
+def training_helper(X_train, y_train, X_val, y_val):
+    # Generate random hyperparameters or load from a saved file
+    best_params = randomized_search_cv(
+        X_train, y_train, BEST_PARAMS_PATH_CONTRIBUTION_DATA
+    )
+
+    logger.info("Starting model training...")
+    # Train final model
+    final_model = train_final_model(X_train, y_train, X_val, y_val, best_params)
+
+    # Save the model
+    save_model(final_model, config.FINAL_MODEL_PATH_CONTRIBUTION_DATA)
+
+    logger.info("Model training completed.")
+    return final_model
+
+
+# Step 7: Model Evaluation
+def evaluation_helper(model, X_train, y_train, X_test, y_test):
+    logger.info("Starting evaluation...")
+
+    # Evaluate train and test metrics
+    y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test)
+
+    # Calculate additional metrics and confusion matrix
+    cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
+
+    # Save evaluation data for visualization
+    save_evaluation_results(y_test, y_test_pred, y_test_prob, cm)
+
+    # (OPTIONAL): Perform Cross-Validation on Training Data
+    evaluate_model_with_cv(
+        X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH_CONTRIBUTION_DATA)
+    )
+
+    logger.info("Evaluation completed.")
+
+
 # Main Pipeline
 def main():
     logger.info("Starting the ML pipeline...")
@@ -116,6 +161,8 @@ def main():
         'preprocessing': preprocessing_helper,
         'data_splitting': data_splitting_helper,
         'clustering': clustering_helper,
+        'training': training_helper,
+        'evaluation': evaluation_helper,
         # Add more steps as needed
     }
 
@@ -139,6 +186,10 @@ def main():
             X_train, X_val, X_test, y_train, y_val, y_test = step_function(X_encoded, y)
         elif step_name == 'clustering':
             X_train, X_val, X_test = step_function(X_train, X_val, X_test)
+        elif step_name == 'training':
+            final_model = step_function(X_train, y_train, X_val, y_val)
+        elif step_name == 'evaluation':
+            step_function(final_model, X_train, y_train, X_test, y_test)
         else:
             logger.warning(f"Unknown pipeline step: {step_name}")
 

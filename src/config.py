@@ -11,10 +11,24 @@ RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
 EXTERNAL_DATA_DIR = os.path.join(DATA_DIR, 'external')
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
+if not os.path.exists(MODELS_DIR):
+    os.makedirs(MODELS_DIR)
 
 # === Data File Paths ===
 CONTRIBUTIONS_DATA_FILE = os.path.join(RAW_DATA_DIR, 'osm_labelled_contributions.parquet')
 FEATURES_FILE_PATH = os.path.join(PROCESSED_DATA_DIR, 'extracted_features_contributions.parquet')
+
+# Paths for saving models and hyperparameters
+BEST_PARAMS_PATH_CONTRIBUTION_DATA = os.path.join(MODELS_DIR, 'contribution_model/best_hyperparameters.json')
+FINAL_MODEL_PATH_CONTRIBUTION_DATA = os.path.join(MODELS_DIR, 'contribution_model/final_xgboost_model.pkl')
+
+# === Split Configurations ===
+TEST_SIZE = 0.4  # Proportion for the temporary test set
+VAL_SIZE = 0.2  # Proportion of the temporary set to use as the final test set
+RANDOM_STATE = 42
+
+# === Clustering configuration ===
+N_CLUSTERS = 100  # Default number of clusters for KMeans
 
 # === Visualization ===
 VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization')
@@ -28,18 +42,16 @@ VISUALIZATION_DATA_PATH = {
     'data_splitting_X_train': os.path.join(VISUALIZATION_DIR, 'data_splitting_X_train_sample.parquet'),
     'data_splitting_X_val': os.path.join(VISUALIZATION_DIR, 'data_splitting_X_val_sample.parquet'),
     'data_splitting_X_test': os.path.join(VISUALIZATION_DIR, 'data_splitting_X_test_sample.parquet'),
-    'clustering_train': os.path.join(PROCESSED_DATA_DIR, 'clustering_train_sample.parquet'),
-    'clustering_val': os.path.join(PROCESSED_DATA_DIR, 'clustering_val_sample.parquet'),
-    'clustering_test': os.path.join(PROCESSED_DATA_DIR, 'clustering_test_sample.parquet'),
+    'clustering_train': os.path.join(VISUALIZATION_DIR, 'clustering_train_sample.parquet'),
+    'clustering_val': os.path.join(VISUALIZATION_DIR, 'clustering_val_sample.parquet'),
+    'clustering_test': os.path.join(VISUALIZATION_DIR, 'clustering_test_sample.parquet'),
+    'evaluation_results': os.path.join(VISUALIZATION_DIR, 'evaluation_results.parquet'),
+    'confusion_matrix': os.path.join(VISUALIZATION_DIR, 'confusion_matrix.csv')
 }
 
-# === Split Configurations ===
-TEST_SIZE = 0.4  # Proportion for the temporary test set
-VAL_SIZE = 0.2  # Proportion of the temporary set to use as the final test set
-RANDOM_STATE = 42
-
-# === Clustering configuration ===
-N_CLUSTERS = 100  # Default number of clusters for KMeans
+# === Additional Configurations ===
+SAVE_VISUALIZATION_SAMPLES = True
+TEST_RUN = True
 
 # === Logger Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
@@ -82,6 +94,3 @@ coloredlogs.install(
 
 # Create and export the logger instance
 logger = logging.getLogger(__name__)
-
-# === Additional Configurations ===
-SAVE_VISUALIZATION_SAMPLES = True

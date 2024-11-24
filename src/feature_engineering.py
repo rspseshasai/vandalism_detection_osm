@@ -458,8 +458,8 @@ def get_or_generate_features(contribution_df, force_compute_features=False, test
     else:
         logger.info("Extracting features...")
         if test_mode:
-            logger.info("Test mode enabled: Limiting to 100 entries.")
-            contribution_df = contribution_df.head(100)
+            logger.info("Test mode enabled: Limiting to 1000 entries.")
+            contribution_df = contribution_df.head(1000)
         features_df = extract_features(contribution_df)
         logger.info(f"Saving features to {FEATURES_FILE_PATH}...")
         features_df.to_parquet(FEATURES_FILE_PATH)

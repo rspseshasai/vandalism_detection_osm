@@ -5,8 +5,17 @@ import random
 import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV
 
-from logger_config import logger
-from models.load_hyper_parameters import load_best_hyperparameters
+from config import logger
+
+
+def load_best_hyperparameters(hyperparams_file):
+    if os.path.exists(hyperparams_file):
+        with open(hyperparams_file, 'r') as f:
+            best_params = json.load(f)
+            logger.info(f"Loaded hyperparameters from {hyperparams_file}")
+        return best_params
+    else:
+        raise FileNotFoundError(f"No hyperparameters file found at {hyperparams_file}")
 
 
 def get_random_parameters():
@@ -79,6 +88,7 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
             eval_metric='aucpr',
         )
 
+        # TODO: Move CV, n_jobs, n_iter params to config file
         # Set up and run RandomizedSearchCV
         random_search = RandomizedSearchCV(
             estimator=xgb_model,
@@ -86,7 +96,7 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
             n_iter=50,
             scoring='roc_auc',
             cv=5,
-            verbose=2,
+            verbose=False,
             n_jobs=-1,
             random_state=42
         )
