@@ -17,7 +17,7 @@ from tqdm import tqdm
 from src.config import logger
 
 
-def plot_metric_distributions(metrics_df):
+def plot_metric_distributions(metrics_df, plot_graphs=False):
     """
     Plot histograms and box plots for each performance metric.
 
@@ -28,24 +28,25 @@ def plot_metric_distributions(metrics_df):
     print("Bootstrap Performance Metrics on Test Set:")
     print(results_df)
 
-    for metric_name in metrics_df.columns:
-        plt.figure(figsize=(10, 4))
+    if plot_graphs:
+        for metric_name in metrics_df.columns:
+            plt.figure(figsize=(10, 4))
 
-        # Histogram with KDE
-        plt.subplot(1, 2, 1)
-        sns.histplot(metrics_df[metric_name], bins=30, kde=True)
-        plt.title(f'Distribution of {metric_name}')
-        plt.xlabel(metric_name)
-        plt.ylabel('Frequency')
+            # Histogram with KDE
+            plt.subplot(1, 2, 1)
+            sns.histplot(metrics_df[metric_name], bins=30, kde=True)
+            plt.title(f'Distribution of {metric_name}')
+            plt.xlabel(metric_name)
+            plt.ylabel('Frequency')
 
-        # Box plot
-        plt.subplot(1, 2, 2)
-        sns.boxplot(x=metrics_df[metric_name])
-        plt.title(f'Box Plot of {metric_name}')
-        plt.xlabel(metric_name)
+            # Box plot
+            plt.subplot(1, 2, 2)
+            sns.boxplot(x=metrics_df[metric_name])
+            plt.title(f'Box Plot of {metric_name}')
+            plt.xlabel(metric_name)
 
-        plt.tight_layout()
-        plt.show()
+            plt.tight_layout()
+            plt.show()
 
 
 def perform_bootstrap_evaluation(
