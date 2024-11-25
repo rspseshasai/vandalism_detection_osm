@@ -4,7 +4,7 @@ import pyarrow.parquet as pq
 from logger_config import logger
 
 # Path to the merged parquet file
-merged_parquet_file = '../../data/contribution_data/osm_labelled_contributions_v2.parquet'
+merged_parquet_file = '../../../data/contribution_data/osm_labelled_contributions_v2.parquet'
 # Path to the TSV file containing the original changeset data
 tsv_file_path = '../../data/ovid_data/ovid_labels.tsv'
 

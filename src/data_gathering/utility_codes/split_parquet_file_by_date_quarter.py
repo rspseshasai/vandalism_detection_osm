@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 # Define the path to the input Parquet file and the output directory
-input_parquet_file = "../../data/changeset_data/output/merged_osm_contributions.parquet"
+input_parquet_file = "../../../data/changeset_data/output/merged_osm_contributions.parquet"
 output_directory = "../../data/changeset_data/output/quarterly_data"
 
 # Ensure the output directory exists

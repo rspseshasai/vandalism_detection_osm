@@ -34,7 +34,7 @@ def convert_df_to_arrow_table(df):
 arrow_table = convert_df_to_arrow_table(merged_df)
 
 # Save the Arrow Table as a single Parquet file
-output_file = '../../data/changeset_data/output/merged_osm_contributions.parquet'
+output_file = '../../../data/changeset_data/output/merged_osm_contributions.parquet'
 pq.write_table(arrow_table, output_file)
 
 print(f"Merged all parquet files into {output_file}")

@@ -4,23 +4,29 @@ import sys
 
 import coloredlogs
 
+# Define split types
+SPLIT_TYPES = ['random', 'temporal', 'geographic']
+SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
+
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
-PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
-EXTERNAL_DATA_DIR = os.path.join(DATA_DIR, 'external')
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
+PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed', SPLIT_METHOD)
+MODELS_DIR = os.path.join(BASE_DIR, 'models', SPLIT_METHOD)
+
+if not os.path.exists(PROCESSED_DATA_DIR):
+    os.makedirs(PROCESSED_DATA_DIR)
+
 if not os.path.exists(MODELS_DIR):
     os.makedirs(MODELS_DIR)
-
 # === Data File Paths ===
-CONTRIBUTIONS_DATA_FILE = os.path.join(RAW_DATA_DIR, 'osm_labelled_contributions.parquet')
-FEATURES_FILE_PATH = os.path.join(PROCESSED_DATA_DIR, 'extracted_features_contributions.parquet')
+RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, 'osm_labelled_contributions.parquet')
+PROCESSED_FEATURES_FILE_PATH = os.path.join(PROCESSED_DATA_DIR, 'extracted_features_contributions.parquet')
 
 # Paths for saving models and hyperparameters
-BEST_PARAMS_PATH_CONTRIBUTION_DATA = os.path.join(MODELS_DIR, 'contribution_model/best_hyperparameters.json')
-FINAL_MODEL_PATH_CONTRIBUTION_DATA = os.path.join(MODELS_DIR, 'contribution_model/final_xgboost_model.pkl')
+BEST_PARAMS_PATH_CONTRIBUTION_DATA = os.path.join(MODELS_DIR, 'best_hyperparameters.json')
+FINAL_MODEL_PATH_CONTRIBUTION_DATA = os.path.join(MODELS_DIR, 'final_xgboost_model.pkl')
 
 # === Split Configurations ===
 TEST_SIZE = 0.4  # Proportion for the temporary test set
@@ -31,7 +37,7 @@ RANDOM_STATE = 42
 N_CLUSTERS = 100  # Default number of clusters for KMeans
 
 # === Visualization ===
-VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization')
+VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization', SPLIT_METHOD)
 os.makedirs(VISUALIZATION_DIR, exist_ok=True)  # Ensure the directory exists
 
 VISUALIZATION_DATA_PATH = {

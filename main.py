@@ -3,7 +3,6 @@ import sys
 
 import pandas as pd
 
-from evaluation import save_evaluation_results
 from geographical_evaluation import split_test_set_by_key, evaluate_model_on_split_groups
 from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
 
@@ -11,7 +10,7 @@ from hyper_parameter_search import randomized_search_cv, load_best_hyperparamete
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
-from config import logger, BEST_PARAMS_PATH_CONTRIBUTION_DATA, TEST_RUN
+from config import logger, BEST_PARAMS_PATH_CONTRIBUTION_DATA, TEST_RUN, SPLIT_METHOD
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -19,8 +18,7 @@ from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
 from src.training import train_final_model, save_model
-from src.evaluation import calculate_auc_scores, evaluate_train_test_metrics, \
-    evaluate_model_with_cv
+from src.evaluation import evaluate_model_with_cv
 
 from src.evaluation import (
     evaluate_train_test_metrics,
@@ -83,8 +81,8 @@ def preprocessing_helper(features_df):
 
 
 # Step 4: Data Splitting
-def data_splitting_helper(X_encoded, y):
-    logger.info("Starting data splitting...")
+def data_splitting_helper(X_encoded, y, split_type):
+    logger.info(f"Starting data splitting with method: {split_type}")
     X_train, X_val, X_test, y_train, y_val, y_test = split_train_test_val(
         X_encoded, y,
         test_size=config.TEST_SIZE,
@@ -263,7 +261,8 @@ def main():
 
     # Execute each step in the defined order
     for step_name, step_function in pipeline_steps:
-        logger.info(f"\nExecuting pipeline step: {step_name}")
+        logger.info(
+            f"====================================== Executing pipeline step: {str(step_name).upper()} ======================================")
         if step_name == 'data_loading':
             contributions_df = step_function()
         elif step_name == 'feature_engineering':
@@ -271,7 +270,7 @@ def main():
         elif step_name == 'preprocessing':
             X_encoded, y = step_function(features_df)
         elif step_name == 'data_splitting':
-            X_train, X_val, X_test, y_train, y_val, y_test = step_function(X_encoded, y)
+            X_train, X_val, X_test, y_train, y_val, y_test = step_function(X_encoded, y, SPLIT_METHOD)
         elif step_name == 'clustering':
             X_train, X_val, X_test = step_function(X_train, X_val, X_test)
         elif step_name == 'training':

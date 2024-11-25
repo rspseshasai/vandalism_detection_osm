@@ -75,5 +75,4 @@ def log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test):
     }
 
     shapes_df = pd.DataFrame(shapes, index=['Number of Samples', 'Number of Features']).T
-    logger.info("Dataset Shapes:")
-    logger.info(f"\n{shapes_df}")
+    logger.info(f"Dataset Shapes:\n{shapes_df}")

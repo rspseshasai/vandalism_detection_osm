@@ -13,7 +13,7 @@ from logger_config import logger
 FILTER = False
 
 # Path to the merged parquet file
-parquet_file_path = "../../data/changeset_data/output/quarterly_data/osm_contributions_2022_Q2.parquet"
+parquet_file_path = "../../../data/changeset_data/output/quarterly_data/osm_contributions_2022_Q2.parquet"
 
 # Path to the TSV file containing the original changeset data (labels)
 tsv_file_path = "../../data/ovid_data/ovid_labels.tsv"

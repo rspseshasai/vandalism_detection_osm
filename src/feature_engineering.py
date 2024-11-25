@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from config import FEATURES_FILE_PATH
+from config import PROCESSED_FEATURES_FILE_PATH
 from config import logger
 
 # Path to save and load extracted features in Parquet format
@@ -452,17 +452,17 @@ def get_or_generate_features(contribution_df, force_compute_features=False, test
     Returns:
     - pd.DataFrame: DataFrame containing extracted features.
     """
-    if os.path.exists(FEATURES_FILE_PATH) and not force_compute_features:
-        logger.info(f"Loading features from {FEATURES_FILE_PATH}...")
-        features_df = pd.read_parquet(FEATURES_FILE_PATH)
+    if os.path.exists(PROCESSED_FEATURES_FILE_PATH) and not force_compute_features:
+        logger.info(f"Loading features from {PROCESSED_FEATURES_FILE_PATH}...")
+        features_df = pd.read_parquet(PROCESSED_FEATURES_FILE_PATH)
     else:
         logger.info("Extracting features...")
         if test_mode:
             logger.info("Test mode enabled: Limiting to 1000 entries.")
             contribution_df = contribution_df.head(1000)
         features_df = extract_features(contribution_df)
-        logger.info(f"Saving features to {FEATURES_FILE_PATH}...")
-        features_df.to_parquet(FEATURES_FILE_PATH)
+        logger.info(f"Saving features to {PROCESSED_FEATURES_FILE_PATH}...")
+        features_df.to_parquet(PROCESSED_FEATURES_FILE_PATH)
 
     logger.info(f"Features DataFrame shape: {features_df.shape}")
     return features_df

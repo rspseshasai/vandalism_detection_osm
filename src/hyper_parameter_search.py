@@ -104,7 +104,6 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
 
         # Get the best parameters
         best_params = random_search.best_params_
-        logger.info("Best Hyperparameters:", best_params)
 
         # Save best parameters to file
         with open(hyperparams_file, 'w') as f:
