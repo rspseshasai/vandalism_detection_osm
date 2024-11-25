@@ -83,13 +83,32 @@ def preprocessing_helper(features_df):
 # Step 4: Data Splitting
 def data_splitting_helper(X_encoded, y, split_type):
     logger.info(f"Starting data splitting with method: {split_type}")
+
+    if split_type == 'random':
+        split_params = {
+            'test_size': config.TEST_SIZE,
+            'val_size': config.VAL_SIZE,
+            'random_state': config.RANDOM_STATE
+        }
+    elif split_type == 'geographic':
+        split_params = {
+            'split_key': config.GEOGRAPHIC_SPLIT_KEY,
+            'train_regions': config.TRAIN_REGIONS,
+            'val_regions': config.VAL_REGIONS,
+            'test_regions': config.TEST_REGIONS
+        }
+    elif split_type == 'temporal':
+        split_params = {
+            'date_column': config.DATE_COLUMN
+        }
+    else:
+        raise ValueError(f"Unknown split_type: {split_type}")
+
     X_train, X_val, X_test, y_train, y_val, y_test = split_train_test_val(
-        X_encoded, y,
-        test_size=config.TEST_SIZE,
-        val_size=config.VAL_SIZE,
-        random_state=config.RANDOM_STATE
+        X_encoded, y, split_type=split_type, **split_params
     )
 
+    # Log dataset shapes and statistics
     log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test)
     calculate_statistics(y_train, "Train Set")
     calculate_statistics(y_val, "Validation Set")

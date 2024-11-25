@@ -79,6 +79,18 @@ LOG_FILE_PATH = os.path.join(LOG_DIR, 'pipeline.log')
 # Number of jobs for parallel processing
 N_JOBS = 11  # -1 to use all available cores
 
+# Geographic split parameters
+GEOGRAPHIC_SPLIT_KEY = 'continent'  # 'continent' or 'country'
+TRAIN_REGIONS = ['Oceania', 'Europe']
+VAL_REGIONS = ['Africa']
+TEST_REGIONS = ['North America', 'Asia']
+
+# Temporal split parameters
+DATE_COLUMN = 'data_created'  # Column name in the DataFrame
+TRAIN_YEARS = [2018, 2019]
+VAL_YEARS = [2015]
+TEST_YEARS = [2017]
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

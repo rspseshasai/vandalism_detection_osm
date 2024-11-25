@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from config import PROCESSED_FEATURES_FILE_PATH
+from config import PROCESSED_FEATURES_FILE_PATH, SPLIT_METHOD
 from config import logger
 
 # Path to save and load extracted features in Parquet format
@@ -249,6 +249,9 @@ def extract_temporal_features(contribution, contribution_df):
     # Time since last edit
     features['time_since_last_edit'] = calculate_time_since_last_edit(contribution, contribution_df)
 
+    # For Temporal Evaluation
+    if SPLIT_METHOD == 'temporal':
+        features['data_created'] = contribution['valid_from']
     return features
 
 
