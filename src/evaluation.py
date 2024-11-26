@@ -182,7 +182,7 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
         model, X, y,
         cv=skf,
         scoring='average_precision',
-        n_jobs=11  # Use all available cores
+        n_jobs=11  # -1 to use all available cores
     )
 
     # Print out the performance metrics

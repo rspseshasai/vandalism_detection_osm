@@ -57,7 +57,8 @@ VISUALIZATION_DATA_PATH = {
 
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
-TEST_RUN = True
+TEST_RUN = False
+FORCE_COMPUTE_FEATURES = False
 
 # Bootstrapping configurations
 BOOTSTRAP_ITERATIONS = 1000  # Number of bootstrap iterations
