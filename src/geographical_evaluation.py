@@ -1,11 +1,13 @@
 # src/geographical_evaluation.py
-
+import os
 import warnings
 
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     roc_auc_score, average_precision_score, confusion_matrix
 )
+
+import config
 
 # Suppress specific UserWarning about single label in y_true and y_pred
 warnings.filterwarnings(
@@ -80,3 +82,31 @@ def evaluate_model_on_split_groups(split_data, model):
             'AUC-PR': auc_pr if auc_pr is not None else "Not defined (single class)"
         }
     return results
+
+
+def geographical_evaluation(model, X_test, y_test, split_key):
+    binary_columns = [col for col in X_test.columns if col.startswith(f"{split_key}_")]
+    if 'country_count' in binary_columns:
+        binary_columns.remove('country_count')
+
+    # Split test set by the specified key
+    split_data = split_test_set_by_key(X_test, y_test, binary_columns, split_key)
+
+    # Evaluate model on each split group
+    results = evaluate_model_on_split_groups(split_data, model)
+
+    # Convert results to DataFrame
+    stats_columns = [
+        'Total Samples', 'Total Correct Predictions', 'Total Incorrect Predictions', 'True Positives (TP)',
+        'True Negatives (TN)', 'False Positives (FP)', 'False Negatives (FN)',
+        'Accuracy', 'Precision', 'Recall', 'F1-score', 'AUC-ROC', 'AUC-PR'
+    ]
+
+    stats_df = pd.DataFrame.from_dict(results, orient='index')[stats_columns]
+    stats_df.index.name = f'{split_key.capitalize()} Name'
+    stats_df.reset_index(inplace=True)
+
+    # Save the geographical evaluation results
+    geo_results_path = os.path.join(config.GEOGRAPHICAL_RESULTS_DIR, f'{split_key}_evaluation_results.csv')
+    stats_df.to_csv(geo_results_path, index=False)
+    config.logger.info(f"Saved geographical evaluation results to {geo_results_path}")

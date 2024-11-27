@@ -248,7 +248,7 @@ def extract_temporal_features(contribution, contribution_df):
 
     # For Temporal Evaluation
     if SPLIT_METHOD == 'temporal':
-        features['data_created'] = contribution['valid_from']
+        features['date_created'] = contribution['valid_from']
     return features
 
 
@@ -441,6 +441,17 @@ def extract_features(contribution_df):
 
 
 def extract_features_changeset(data_df):
+
+    # Calculate centroid for each row
+    data_df["centroid_lon"] = (data_df["min_lon"] + data_df["max_lon"]) / 2
+    data_df["centroid_lat"] = (data_df["min_lat"] + data_df["max_lat"]) / 2
+
+    data_df['changeset_comment_length'] = len(data_df['comment_length'])
+
+    # For Temporal Evaluation
+    if SPLIT_METHOD == 'temporal':
+        data_df['date_created'] = data_df['created_at']
+
     return data_df
 
 

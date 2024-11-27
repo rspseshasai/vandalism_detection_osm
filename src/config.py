@@ -81,7 +81,7 @@ VAL_REGIONS = ['Africa']
 TEST_REGIONS = ['North America', 'Asia']
 
 # === Temporal Split Parameters ===
-DATE_COLUMN = 'data_created'  # Column name in the DataFrame
+DATE_COLUMN = 'date_created'  # Column name in the DataFrame
 TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
 TEST_YEARS = [2017]

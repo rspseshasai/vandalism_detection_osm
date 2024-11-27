@@ -1,16 +1,16 @@
 import os
 import sys
 
-import pandas as pd
+from adodbapi import NotSupportedError
 
-from geographical_evaluation import split_test_set_by_key, evaluate_model_on_split_groups
+from geographical_evaluation import geographical_evaluation
 from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
 
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
-from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES
+from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -92,6 +92,8 @@ def data_splitting_helper(X_encoded, y, split_type):
             'random_state': config.RANDOM_STATE
         }
     elif split_type == 'geographic':
+        if DATASET_TYPE != 'contribution':
+            raise NotSupportedError(f"Split type '{split_type}' is only supported with contribution dataset")
         split_params = {
             'split_key': config.GEOGRAPHIC_SPLIT_KEY,
             'train_regions': config.TRAIN_REGIONS,
@@ -205,6 +207,10 @@ def bootstrapping_evaluation_helper(model, X_test, y_test):
 
 # Step 9: Geographical Evaluation
 def geographical_evaluation_helper(model, X_test, y_test):
+    if DATASET_TYPE != 'contribution':
+        logger.info("Skipping geographical evaluation as it's only supported with contribution dataset")
+        return
+
     logger.info("Starting geographical evaluation...")
 
     # Evaluate on continents
@@ -213,34 +219,6 @@ def geographical_evaluation_helper(model, X_test, y_test):
     # Evaluate on countries
     geographical_evaluation(model, X_test, y_test, split_key='country')
     logger.info("Geographical evaluation completed.")
-
-
-def geographical_evaluation(model, X_test, y_test, split_key):
-    binary_columns = [col for col in X_test.columns if col.startswith(f"{split_key}_")]
-    if 'country_count' in binary_columns:
-        binary_columns.remove('country_count')
-
-    # Split test set by the specified key
-    split_data = split_test_set_by_key(X_test, y_test, binary_columns, split_key)
-
-    # Evaluate model on each split group
-    results = evaluate_model_on_split_groups(split_data, model)
-
-    # Convert results to DataFrame
-    stats_columns = [
-        'Total Samples', 'Total Correct Predictions', 'Total Incorrect Predictions', 'True Positives (TP)',
-        'True Negatives (TN)', 'False Positives (FP)', 'False Negatives (FN)',
-        'Accuracy', 'Precision', 'Recall', 'F1-score', 'AUC-ROC', 'AUC-PR'
-    ]
-
-    stats_df = pd.DataFrame.from_dict(results, orient='index')[stats_columns]
-    stats_df.index.name = f'{split_key.capitalize()} Name'
-    stats_df.reset_index(inplace=True)
-
-    # Save the geographical evaluation results
-    geo_results_path = os.path.join(config.GEOGRAPHICAL_RESULTS_DIR, f'{split_key}_evaluation_results.csv')
-    stats_df.to_csv(geo_results_path, index=False)
-    logger.info(f"Saved geographical evaluation results to {geo_results_path}")
 
 
 # Main Pipeline

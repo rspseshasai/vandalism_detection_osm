@@ -47,6 +47,7 @@ def preprocess_changeset_features(features_df):
     # Drop unnecessary columns
     columns_to_drop = ['geometry', 'changeset_id', 'created_at', 'user', 'comment',
                        'uid', 'changes_count']
+
     existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]
     features_df.drop(existing_columns_to_drop, axis=1, inplace=True)
     logger.info(f"Dropped columns: {existing_columns_to_drop}")
@@ -58,8 +59,14 @@ def preprocess_changeset_features(features_df):
     X['account_created'] = pd.to_datetime(X['account_created']).astype(int) / 10 ** 9
 
     X_encoded = pd.get_dummies(X, columns=['created_by'])
+    logger.info("Performed one-hot encoding on categorical columns.")
 
-    assert X_encoded.dtypes.__contains__('object') == False
+    # Ensure no object-type columns remain
+    object_columns = X_encoded.select_dtypes(include=['object']).columns
+    if object_columns.any():
+        logger.error(f"There are still object-type columns: {list(object_columns)}")
+        raise ValueError(f"There are still object-type columns: {list(object_columns)}")
+
     return X_encoded, y
 
 
