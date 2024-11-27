@@ -3,7 +3,7 @@
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from config import logger
+from config import logger, DATASET_TYPE
 from src import config
 
 
@@ -41,6 +41,28 @@ def encode_multilabel_column(df, column_name, prefix):
     return df
 
 
+def preprocess_changeset_features(features_df):
+    logger.info("Starting preprocessing of changeset features...")
+
+    # Drop unnecessary columns
+    columns_to_drop = ['geometry', 'changeset_id', 'created_at', 'user', 'comment',
+                       'uid', 'changes_count']
+    existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]
+    features_df.drop(existing_columns_to_drop, axis=1, inplace=True)
+    logger.info(f"Dropped columns: {existing_columns_to_drop}")
+
+    X = features_df.drop('label', axis=1).copy()
+    y = features_df['label'].copy()
+
+    X['closed_at'] = pd.to_datetime(X['closed_at']).astype(int) / 10 ** 9
+    X['account_created'] = pd.to_datetime(X['account_created']).astype(int) / 10 ** 9
+
+    X_encoded = pd.get_dummies(X, columns=['created_by'])
+
+    assert X_encoded.dtypes.__contains__('object') == False
+    return X_encoded, y
+
+
 def preprocess_features(features_df):
     """
     Preprocess the features DataFrame for ML training.
@@ -52,7 +74,11 @@ def preprocess_features(features_df):
     - X_encoded: The preprocessed and encoded feature DataFrame.
     - y: The target labels.
     """
-    logger.info("Starting preprocessing of features...")
+
+    if DATASET_TYPE == 'changeset':
+        return preprocess_changeset_features(features_df)
+
+    logger.info("Starting preprocessing of contribution features...")
 
     # Shuffle the data entries
     features_df = features_df.sample(frac=1, random_state=config.RANDOM_STATE).reset_index(drop=True)
