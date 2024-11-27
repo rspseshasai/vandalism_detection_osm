@@ -441,16 +441,25 @@ def extract_features(contribution_df):
 
 
 def extract_features_changeset(data_df):
+    # Ensure you're working on the actual DataFrame, not a slice
+    data_df = data_df.copy()
+
+    # Handle missing values in the min/max latitude and longitude columns
+    data_df["min_lon"] = data_df["min_lon"].fillna(0)
+    data_df["max_lon"] = data_df["max_lon"].fillna(0)
+    data_df["min_lat"] = data_df["min_lat"].fillna(0)
+    data_df["max_lat"] = data_df["max_lat"].fillna(0)
 
     # Calculate centroid for each row
-    data_df["centroid_lon"] = (data_df["min_lon"] + data_df["max_lon"]) / 2
-    data_df["centroid_lat"] = (data_df["min_lat"] + data_df["max_lat"]) / 2
+    data_df.loc[:, "centroid_x"] = (data_df["min_lon"] + data_df["max_lon"]) / 2
+    data_df.loc[:, "centroid_y"] = (data_df["min_lat"] + data_df["max_lat"]) / 2
 
-    data_df['changeset_comment_length'] = len(data_df['comment_length'])
+    # Calculate the length of the changeset comment
+    data_df['changeset_comment_length'] = data_df['comment'].fillna("").apply(len)
 
     # For Temporal Evaluation
     if SPLIT_METHOD == 'temporal':
-        data_df['date_created'] = data_df['created_at']
+        data_df.loc[:, 'date_created'] = data_df['created_at']
 
     return data_df
 

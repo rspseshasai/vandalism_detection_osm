@@ -49,7 +49,7 @@ def preprocess_changeset_features(features_df):
                        'uid', 'changes_count']
 
     existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]
-    features_df.drop(existing_columns_to_drop, axis=1, inplace=True)
+    features_df = features_df.drop(existing_columns_to_drop, axis=1)
     logger.info(f"Dropped columns: {existing_columns_to_drop}")
 
     X = features_df.drop('label', axis=1).copy()
