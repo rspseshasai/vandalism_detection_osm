@@ -7,20 +7,6 @@ import coloredlogs
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
-# === Base Directories ===
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, 'data', f"{DATASET_TYPE}_data")
-RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
-PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
-VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization')
-MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
-
-# Ensure directories exist
-os.makedirs(RAW_DATA_DIR, exist_ok=True)
-os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
-os.makedirs(VISUALIZATION_DIR, exist_ok=True)
-os.makedirs(MODELS_DIR, exist_ok=True)
-
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
 SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
@@ -28,6 +14,20 @@ SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 TEST_SIZE = 0.4  # Proportion for the temporary test set
 VAL_SIZE = 0.2  # Proportion of the temporary test set to use as the final test set
 RANDOM_STATE = 42
+
+# === Base Directories ===
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'data', f"{DATASET_TYPE}_data")
+RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
+PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
+VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization', SPLIT_METHOD)
+MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
+
+# Ensure directories exist
+os.makedirs(RAW_DATA_DIR, exist_ok=True)
+os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+os.makedirs(VISUALIZATION_DIR, exist_ok=True)
+os.makedirs(MODELS_DIR, exist_ok=True)
 
 # === Clustering Configuration ===
 N_CLUSTERS = 100  # Default number of clusters for KMeans
@@ -89,7 +89,7 @@ TEST_YEARS = [2017]
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = True
-FORCE_COMPUTE_FEATURES = False
+FORCE_COMPUTE_FEATURES = True
 
 # === Logging Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
