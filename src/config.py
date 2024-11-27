@@ -7,7 +7,7 @@ import coloredlogs
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
-FORCE_COMPUTE_FEATURES = True
+FORCE_COMPUTE_FEATURES = False
 
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
