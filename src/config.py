@@ -4,6 +4,11 @@ import sys
 
 import coloredlogs
 
+# === Additional Configurations ===
+SAVE_VISUALIZATION_SAMPLES = True
+TEST_RUN = False
+FORCE_COMPUTE_FEATURES = True
+
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
@@ -85,11 +90,6 @@ DATE_COLUMN = 'date_created'  # Column name in the DataFrame
 TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
 TEST_YEARS = [2017]
-
-# === Additional Configurations ===
-SAVE_VISUALIZATION_SAMPLES = True
-TEST_RUN = True
-FORCE_COMPUTE_FEATURES = True
 
 # === Logging Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
