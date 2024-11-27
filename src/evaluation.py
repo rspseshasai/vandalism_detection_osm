@@ -1,15 +1,47 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import (classification_report, accuracy_score,
-                             roc_auc_score, average_precision_score)
-from sklearn.metrics import roc_curve, precision_recall_curve
-
 # Define class names for the confusion matrix heatmap
 class_names = ['Not Vandalism', 'Vandalism']
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import xgboost as xgb
+from sklearn.metrics import (
+    classification_report,
+    accuracy_score,
+    roc_auc_score,
+    average_precision_score,
+    roc_curve,
+    precision_recall_curve,
+)
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+from config import logger, VISUALIZATION_DATA_PATH
+
+
+def save_evaluation_results(y_test, y_test_pred, y_test_prob, cm):
+    """
+    Save evaluation results and confusion matrix to disk.
+    """
+    evaluation_results_path = VISUALIZATION_DATA_PATH['evaluation_results']
+    confusion_matrix_path = VISUALIZATION_DATA_PATH['confusion_matrix']
+
+    # Save evaluation results
+    pd.DataFrame({
+        'y_test': y_test,
+        'y_test_pred': y_test_pred,
+        'y_test_prob': y_test_prob
+    }).to_parquet(evaluation_results_path)
+
+    # Save confusion matrix
+    np.savetxt(confusion_matrix_path, cm, delimiter=",")
+
+    logger.info(f"Saved evaluation results to {evaluation_results_path}")
+    logger.info(f"Saved confusion matrix to {confusion_matrix_path}")
+
 
 def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
-    """Evaluate model performance on both training and test datasets."""
+    """Evaluate models performance on both training and test datasets."""
     # Predictions and probabilities for both sets
     y_train_pred = model.predict(X_train)
     y_test_pred = model.predict(X_test)
@@ -73,20 +105,34 @@ def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
     return cm
 
 
-def plot_confusion_matrix(cm):
-    """Plot the confusion matrix as a heatmap."""
+def plot_confusion_matrix():
+    """
+    Plot confusion matrix using saved data.
+    """
+    confusion_matrix_path = VISUALIZATION_DATA_PATH['confusion_matrix']
+    cm = np.loadtxt(confusion_matrix_path, delimiter=",")
 
     plt.figure(figsize=(6, 4))
-    sns.heatmap(cm / np.sum(cm), annot=True, fmt='.2%', cmap='Blues',
-                xticklabels=class_names, yticklabels=class_names)
-
+    sns.heatmap(cm / cm.sum(), annot=True, fmt='.2%', cmap='Blues',
+                xticklabels=['Not Vandalism', 'Vandalism'],
+                yticklabels=['Not Vandalism', 'Vandalism'])
     plt.title('Confusion Matrix')
     plt.xlabel('Predicted Labels')
     plt.ylabel('Actual Labels')
     plt.show()
 
 
-def plot_roc_pr_curves(y_test, y_test_prob):
+
+def plot_roc_pr_curves():
+    """
+    Plot ROC and Precision-Recall curves using saved evaluation data.
+    """
+    evaluation_results_path = VISUALIZATION_DATA_PATH['evaluation_results']
+    evaluation_results = pd.read_parquet(evaluation_results_path)
+
+    y_test = evaluation_results['y_test']
+    y_test_prob = evaluation_results['y_test_prob']
+
     # ROC Curve
     fpr, tpr, _ = roc_curve(y_test, y_test_prob)
     plt.figure()
@@ -107,15 +153,9 @@ def plot_roc_pr_curves(y_test, y_test_prob):
     plt.legend()
     plt.show()
 
-
-import numpy as np
-import xgboost as xgb
-from sklearn.model_selection import cross_val_score, StratifiedKFold
-
-
 def evaluate_model_with_cv(X, y, best_params, cv=5):
     """
-    Evaluate the model using cross-validation on the training data.
+    Evaluate the models using cross-validation on the training data.
 
     Parameters:
     - X: Features (training data)
@@ -128,7 +168,7 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
     """
     print("\nPerforming 5-fold Cross-Validation on the training data...")
 
-    # Initialize the model with the best hyperparameters
+    # Initialize the models with the best hyperparameters
     model = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='aucpr',
@@ -142,7 +182,7 @@ def evaluate_model_with_cv(X, y, best_params, cv=5):
         model, X, y,
         cv=skf,
         scoring='average_precision',
-        n_jobs=11  # Use all available cores
+        n_jobs=11  # -1 to use all available cores
     )
 
     # Print out the performance metrics

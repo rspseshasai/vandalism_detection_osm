@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 from tqdm import tqdm
 
 from contribution_schema import get_osm_contribution_schema
-from logger.logger_config import logger
+from logger_config import logger
 from data_gathering.s3clientmanager import S3ClientManager
 
 vandalism_labels_with_changeset_ids_file = '../../data/ovid_data/ovid_labels_subset.tsv'

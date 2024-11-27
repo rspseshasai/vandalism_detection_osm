@@ -6,10 +6,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from logger.logger_config import logger
-
-# Path to save and load extracted features in Parquet format
-FEATURES_FILE = "data/contribution_data/extracted_features_v3.parquet"
+from config import PROCESSED_FEATURES_FILE, SPLIT_METHOD, DATASET_TYPE
+from config import logger
 
 
 def calculate_user_edit_frequency(contributions):
@@ -248,6 +246,9 @@ def extract_temporal_features(contribution, contribution_df):
     # Time since last edit
     features['time_since_last_edit'] = calculate_time_since_last_edit(contribution, contribution_df)
 
+    # For Temporal Evaluation
+    if SPLIT_METHOD == 'temporal':
+        features['date_created'] = contribution['valid_from']
     return features
 
 
@@ -439,25 +440,59 @@ def extract_features(contribution_df):
     return features_df
 
 
-def get_or_generate_features(contribution_df, force_compute_features=False):
+def extract_features_changeset(data_df):
+    # Ensure you're working on the actual DataFrame, not a slice
+    data_df = data_df.copy()
+
+    # Handle missing values in the min/max latitude and longitude columns
+    data_df["min_lon"] = data_df["min_lon"].fillna(0)
+    data_df["max_lon"] = data_df["max_lon"].fillna(0)
+    data_df["min_lat"] = data_df["min_lat"].fillna(0)
+    data_df["max_lat"] = data_df["max_lat"].fillna(0)
+
+    # Calculate centroid for each row
+    data_df.loc[:, "centroid_x"] = (data_df["min_lon"] + data_df["max_lon"]) / 2
+    data_df.loc[:, "centroid_y"] = (data_df["min_lat"] + data_df["max_lat"]) / 2
+
+    # Calculate the length of the changeset comment
+    data_df['changeset_comment_length'] = data_df['comment'].fillna("").apply(len)
+
+    # For Temporal Evaluation
+    if SPLIT_METHOD == 'temporal':
+        data_df.loc[:, 'date_created'] = data_df['created_at']
+
+    return data_df
+
+
+def get_or_generate_features(data_df, force_compute_features=False, test_mode=False):
     """
     Load existing features or generate them if not available.
 
     Parameters:
-    - contribution_df (pd.DataFrame): DataFrame containing contribution data.
+    - data_df (pd.DataFrame): DataFrame containing contribution or changeset data.
     - force_compute_features (bool): If True, forces re-computation of features.
+    - test_mode (bool): If True, limit to 100 entries for testing purposes.
 
     Returns:
     - pd.DataFrame: DataFrame containing extracted features.
     """
-    if os.path.exists(FEATURES_FILE) and not force_compute_features:
-        logger.info(f"Loading features from {FEATURES_FILE}...")
-        features_df = pd.read_parquet(FEATURES_FILE)
+    if os.path.exists(PROCESSED_FEATURES_FILE) and not force_compute_features:
+        logger.info(f"Loading features from {PROCESSED_FEATURES_FILE}...")
+        features_df = pd.read_parquet(PROCESSED_FEATURES_FILE)
+        if test_mode:
+            logger.info("Test mode enabled: Limiting to 1000 entries.")
+            features_df = features_df.head(1000)
     else:
         logger.info("Extracting features...")
-        features_df = extract_features(contribution_df)
-        logger.info(f"Saving features to {FEATURES_FILE}...")
-        features_df.to_parquet(FEATURES_FILE)
+        if test_mode:
+            logger.info("Test mode enabled: Limiting to 1000 entries.")
+            data_df = data_df.head(1000)
+        if DATASET_TYPE == 'changeset':
+            features_df = extract_features_changeset(data_df)
+        else:
+            features_df = extract_features(data_df)
+        logger.info(f"Saving features to {PROCESSED_FEATURES_FILE}...")
+        features_df.to_parquet(PROCESSED_FEATURES_FILE)
 
     logger.info(f"Features DataFrame shape: {features_df.shape}")
     return features_df

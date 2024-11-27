@@ -5,8 +5,17 @@ import random
 import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV
 
-from logger.logger_config import logger
-from model.load_hyper_parameters import load_best_hyperparameters
+from config import logger
+
+
+def load_best_hyperparameters(hyperparams_file):
+    if os.path.exists(hyperparams_file):
+        with open(hyperparams_file, 'r') as f:
+            best_params = json.load(f)
+            logger.info(f"Loaded hyperparameters from {hyperparams_file}")
+        return best_params
+    else:
+        raise FileNotFoundError(f"No hyperparameters file found at {hyperparams_file}")
 
 
 def get_random_parameters():
@@ -73,12 +82,13 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
     if os.path.exists(hyperparams_file):
         logger.info("Hyperparameters file already exists.")
     else:
-        # Initialize the model
+        # Initialize the models
         xgb_model = xgb.XGBClassifier(
             objective='binary:logistic',
             eval_metric='aucpr',
         )
 
+        # TODO: Move CV, n_jobs, n_iter params to config file
         # Set up and run RandomizedSearchCV
         random_search = RandomizedSearchCV(
             estimator=xgb_model,
@@ -86,7 +96,7 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
             n_iter=50,
             scoring='roc_auc',
             cv=5,
-            verbose=2,
+            verbose=False,
             n_jobs=-1,
             random_state=42
         )
@@ -94,7 +104,6 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
 
         # Get the best parameters
         best_params = random_search.best_params_
-        logger.info("Best Hyperparameters:", best_params)
 
         # Save best parameters to file
         with open(hyperparams_file, 'w') as f:

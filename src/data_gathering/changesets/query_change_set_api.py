@@ -7,13 +7,13 @@ from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 import requests
 
-from logger.logger_config import logger
+from logger_config import logger
 
 # True if you need to filter the changesets using a file.
 FILTER = False
 
 # Path to the merged parquet file
-parquet_file_path = "../../data/changeset_data/output/quarterly_data/osm_contributions_2022_Q2.parquet"
+parquet_file_path = "../../../data/changeset_data/output/quarterly_data/osm_contributions_2022_Q2.parquet"
 
 # Path to the TSV file containing the original changeset data (labels)
 tsv_file_path = "../../data/ovid_data/ovid_labels.tsv"
