@@ -171,7 +171,7 @@ def evaluation_helper(model, X_train, y_train, X_test, y_test):
     save_evaluation_results(y_test, y_test_pred, y_test_prob, cm)
 
     # (OPTIONAL): Perform Cross-Validation on Training Data
-    evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
+    # evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
     logger.info("Evaluation completed.")
 
 
@@ -221,6 +221,17 @@ def geographical_evaluation_helper(model, X_test, y_test):
     logger.info("Geographical evaluation completed.")
 
 
+# Step 10: Hyper-Classifier
+def hyper_classifier_helper():
+    if config.DATASET_TYPE != 'changeset':
+        logger.info("Skipping hyper-classifier as it's only applicable for changeset data.")
+        return
+    logger.info("Starting hyper-classifier pipeline...")
+    from hyper_classifier.hyper_classifier_main import run_hyper_classifier_pipeline
+    run_hyper_classifier_pipeline()
+    logger.info("Hyper-classifier pipeline completed.")
+
+
 # Main Pipeline
 def main():
     logger.info("Starting the ML pipeline...")
@@ -231,11 +242,12 @@ def main():
         ('feature_engineering', feature_engineering_helper),
         ('preprocessing', preprocessing_helper),
         ('data_splitting', data_splitting_helper),
-        ('clustering', clustering_helper),
+        # ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
-        ('geographical_evaluation', geographical_evaluation_helper),
+        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        # ('geographical_evaluation', geographical_evaluation_helper),
+        ('hyper_classifier', hyper_classifier_helper),  # New step added
     ]
 
     data_df = features_df = None
@@ -264,6 +276,8 @@ def main():
             step_function(model, X_test, y_test)
         elif step_name == 'geographical_evaluation':
             step_function(model, X_test, y_test)
+        elif step_name == 'hyper_classifier':
+            hyper_classifier_helper()
         else:
             logger.warning(f"Unknown pipeline step: {step_name}")
 

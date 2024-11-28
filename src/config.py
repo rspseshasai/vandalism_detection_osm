@@ -6,11 +6,11 @@ import coloredlogs
 
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
-TEST_RUN = False
+TEST_RUN = True
 FORCE_COMPUTE_FEATURES = False
 
 # === Dataset Type ===
-DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
+DATASET_TYPE = 'changeset'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
@@ -52,6 +52,13 @@ PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, 'processed_features.p
 # Paths for models and hyperparameters
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, 'best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, 'final_xgboost_model.pkl')
+
+# For Hyper Classifier
+CONTRIBUTION_FINAL_MODEL_PATH = os.path.join(os.path.join(BASE_DIR, 'models', f"contribution_model"), SPLIT_METHOD,
+                                             'final_xgboost_model.pkl')
+CONTRIBUTION_PROCESSED_FEATURES_FILE = os.path.join(
+    os.path.join(os.path.join(BASE_DIR, 'data', f"contribution_data"), 'processed'), 'processed_features.parquet')
+
 os.makedirs(os.path.join(MODELS_DIR, SPLIT_METHOD), exist_ok=True)
 
 # === Visualization Paths ===
@@ -90,6 +97,14 @@ DATE_COLUMN = 'date_created'  # Column name in the DataFrame
 TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
 TEST_YEARS = [2017]
+
+# === Hyper-Classifier Paths ===
+HYPER_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'hyper_classifier')
+os.makedirs(HYPER_CLASSIFIER_DIR, exist_ok=True)
+
+HYPER_MODEL_PATH = os.path.join(HYPER_CLASSIFIER_DIR, 'hyper_classifier_model.xgb')
+HYPER_VISUALIZATION_DIR = os.path.join(VISUALIZATION_DIR, 'hyper_classifier')
+os.makedirs(HYPER_VISUALIZATION_DIR, exist_ok=True)
 
 # === Logging Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
