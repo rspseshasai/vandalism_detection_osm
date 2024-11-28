@@ -111,9 +111,8 @@ def plot_confusion_matrix():
     """
     confusion_matrix_path = VISUALIZATION_DATA_PATH['confusion_matrix']
     cm = np.loadtxt(confusion_matrix_path, delimiter=",")
-
     plt.figure(figsize=(6, 4))
-    sns.heatmap(cm / cm.sum(), annot=True, fmt='.2%', cmap='Blues',
+    sns.heatmap(cm / cm.sum(), annot=True, fmt='f', cmap='Blues',
                 xticklabels=['Not Vandalism', 'Vandalism'],
                 yticklabels=['Not Vandalism', 'Vandalism'])
     plt.title('Confusion Matrix')

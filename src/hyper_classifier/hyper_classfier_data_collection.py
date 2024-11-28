@@ -5,7 +5,8 @@ import os
 import pandas as pd
 from joblib import load
 
-from config import CONTRIBUTION_FINAL_MODEL_PATH, CONTRIBUTION_PROCESSED_FEATURES_FILE, RAW_DATA_DIR, TEST_RUN
+from config import CONTRIBUTION_FINAL_MODEL_PATH, RAW_DATA_DIR, TEST_RUN, \
+    CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE
 from config import logger
 from src.preprocessing import preprocess_contribution_features
 
@@ -44,15 +45,13 @@ def get_contribution_predictions():
     # Load the trained contribution-level model
     contribution_model = load(CONTRIBUTION_FINAL_MODEL_PATH)
 
-    contributions_features_df = pd.read_parquet(CONTRIBUTION_PROCESSED_FEATURES_FILE)
+    X_encoded = pd.read_parquet(CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE)
     if TEST_RUN:
         logger.info("Test mode enabled: Limiting to 1000 entries.")
-        contributions_features_df = contributions_features_df.head(1000)
-
-    X_encoded, _ = preprocess_contribution_features(contributions_features_df)
+        X_encoded = X_encoded.head(1000)
 
     # Predict probabilities
-    contributions_df = contributions_features_df.copy()
+    contributions_df = X_encoded.copy()
     contributions_df['predicted_prob'] = contribution_model.predict_proba(X_encoded)[:, 1]
 
     return contributions_df[['changeset_id', 'predicted_prob']]

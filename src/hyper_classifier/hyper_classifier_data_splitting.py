@@ -3,6 +3,7 @@
 from sklearn.model_selection import train_test_split
 
 from config import logger, VAL_SIZE, TEST_SIZE
+from data_splitting import log_dataset_shapes, calculate_statistics
 
 
 def split_data(changeset_features, changeset_labels, test_size=TEST_SIZE, val_size=VAL_SIZE, random_state=42):
@@ -36,5 +37,10 @@ def split_data(changeset_features, changeset_labels, test_size=TEST_SIZE, val_si
     logger.info(f"Training set size: {len(X_train)}")
     logger.info(f"Validation set size: {len(X_val)}")
     logger.info(f"Test set size: {len(X_test)}")
+
+    log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test)
+    calculate_statistics(y_train, "Train Set")
+    calculate_statistics(y_val, "Validation Set")
+    calculate_statistics(y_test, "Test Set")
 
     return X_train, X_val, X_test, y_train, y_val, y_test

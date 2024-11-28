@@ -1,16 +1,18 @@
 import os
 import sys
 
+import pandas as pd
 from adodbapi import NotSupportedError
 
 from geographical_evaluation import geographical_evaluation
-from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
+from hyper_parameter_search import randomized_search_cv
 
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
-from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE
+from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
+    PROCESSED_ENCODED_FEATURES_FILE
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -18,7 +20,6 @@ from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
 from src.training import train_final_model, save_model
-from src.evaluation import evaluate_model_with_cv
 
 from src.evaluation import (
     evaluate_train_test_metrics,
@@ -131,6 +132,11 @@ def clustering_helper(X_train, X_val, X_test):
     logger.info("Starting clustering...")
     X_train, X_val, X_test = perform_clustering(X_train, X_val, X_test, n_clusters=config.N_CLUSTERS)
 
+    X_combined = pd.concat([X_train, X_val, X_test])
+    # Save to a Parquet file for hyper classifier
+    X_combined.to_parquet(PROCESSED_ENCODED_FEATURES_FILE)
+    print(f"Combined data saved to {PROCESSED_ENCODED_FEATURES_FILE}")
+
     if config.SAVE_VISUALIZATION_SAMPLES:
         sample_path_train = config.VISUALIZATION_DATA_PATH['clustering_train']
         sample_path_val = config.VISUALIZATION_DATA_PATH['clustering_val']
@@ -242,7 +248,7 @@ def main():
         ('feature_engineering', feature_engineering_helper),
         ('preprocessing', preprocessing_helper),
         ('data_splitting', data_splitting_helper),
-        # ('clustering', clustering_helper),
+        ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
         # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
@@ -277,7 +283,7 @@ def main():
         elif step_name == 'geographical_evaluation':
             step_function(model, X_test, y_test)
         elif step_name == 'hyper_classifier':
-            hyper_classifier_helper()
+            step_function()
         else:
             logger.warning(f"Unknown pipeline step: {step_name}")
 

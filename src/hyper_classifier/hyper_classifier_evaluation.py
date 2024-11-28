@@ -1,10 +1,10 @@
 # hyper_classifier/hyper_classifier_evaluation.py
 
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import xgboost as xgb
 from sklearn.metrics import (
     accuracy_score,
@@ -18,6 +18,7 @@ from sklearn.metrics import (
     roc_curve,
     precision_recall_curve
 )
+
 from config import logger, SAVE_VISUALIZATION_SAMPLES, HYPER_VISUALIZATION_DIR
 
 
@@ -42,15 +43,25 @@ def evaluate_hyper_classifier(hyper_model, X_test, y_test):
     auc_pr = average_precision_score(y_test, y_pred_prob)
     conf_matrix = confusion_matrix(y_test, y_pred)
 
+    # Calculate additional statistics
+    TN, FP, FN, TP = conf_matrix.ravel()  # Unpack the confusion matrix
+
+    # Print statistics
+    print(f"\nStatistics:\n-----------")
+    print(f"True Negatives (TN): {TN}")
+    print(f"False Positives (FP): {FP}")
+    print(f"False Negatives (FN): {FN}")
+    print(f"True Positives (TP): {TP}")
+
     # Print evaluation metrics
-    logger.info("\nEvaluation Metrics:")
-    logger.info(f"Accuracy: {accuracy:.4f}")
-    logger.info(f"Precision: {precision:.4f}")
-    logger.info(f"Recall: {recall:.4f}")
-    logger.info(f"F1 Score: {f1:.4f}")
-    logger.info(f"AUC-ROC Score: {auc_score:.4f}")
-    logger.info(f"AUC-PR Score: {auc_pr:.4f}")
-    logger.info(f"\nConfusion Matrix:\n{conf_matrix}")
+    logger.info("Evaluation Metrics:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 Score: {f1:.4f}")
+    print(f"AUC-ROC Score: {auc_score:.4f}")
+    print(f"AUC-PR Score: {auc_pr:.4f}")
+    print(f"\nConfusion Matrix:\n{conf_matrix}")
 
     # Detailed classification report
     report = classification_report(y_test, y_pred, target_names=['Non-Vandalism', 'Vandalism'], zero_division=0)
@@ -99,7 +110,8 @@ def plot_pr_curve(y_test, y_pred_prob, save_dir):
     """Plot Precision-Recall curve and save."""
     precision, recall, _ = precision_recall_curve(y_test, y_pred_prob)
     plt.figure()
-    plt.plot(recall, precision, label='Precision-Recall Curve (AP = {:.4f})'.format(average_precision_score(y_test, y_pred_prob)))
+    plt.plot(recall, precision,
+             label='Precision-Recall Curve (AP = {:.4f})'.format(average_precision_score(y_test, y_pred_prob)))
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.title('Precision-Recall Curve')
