@@ -45,7 +45,7 @@ def preprocess_changeset_features(features_df):
     logger.info("Starting preprocessing of changeset features...")
 
     # Drop unnecessary columns
-    columns_to_drop = ['geometry', 'changeset_id', 'created_at', 'user', 'comment',
+    columns_to_drop = ['geometry', 'created_at', 'user', 'comment',
                        'uid', 'changes_count']
 
     existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]

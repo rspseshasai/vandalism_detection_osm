@@ -11,7 +11,6 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
     """
     Fits KMeans clustering on training data and assigns cluster labels to training, validation, and test data.
     """
-    logger.info("Starting clustering...")
     os.environ["LOKY_MAX_CPU_COUNT"] = "4"
 
     # Ensure 'centroid_x' and 'centroid_y' are available
@@ -29,7 +28,6 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
         n_clusters = centroids_train.shape[0]
     clustering_model = KMeans(n_clusters=n_clusters, random_state=config.RANDOM_STATE)
     clustering_model.fit(centroids_train)
-    logger.info("Clustering model fitted on training data.")
 
     # Assign cluster labels to training data
     X_train = X_train.copy()
@@ -53,8 +51,6 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
             X_val = dataset
         else:
             X_test = dataset
-
-    logger.info("Clustering completed.")
 
     return X_train, X_val, X_test
 

@@ -1,18 +1,16 @@
-import os
-
 from scipy.stats import skew, kurtosis
 
-from config import logger, SAVE_VISUALIZATION_SAMPLES, HYPER_VISUALIZATION_DIR, TEST_RUN
+from config import logger, SAVE_VISUALIZATION_SAMPLES, VISUALIZATION_DATA_PATH
 
 
 def engineer_features(contributions_df):
     """
     Aggregate contribution-level predictions into changeset-level features.
     """
-    logger.info("Aggregating contribution-level predictions into changeset-level features...")
+    logger.info("Hyper classifier contribution-level predictions into changeset-level features...")
 
     # Compute aggregated features
-    aggregate_features = contributions_df.groupby('changeset_id').agg(
+    hyper_classifier_features = contributions_df.groupby('changeset_id').agg(
         num_contributions=('predicted_prob', 'count'),
         mean_prediction=('predicted_prob', 'mean'),
         median_prediction=('predicted_prob', 'median'),
@@ -26,38 +24,39 @@ def engineer_features(contributions_df):
     ).reset_index()
 
     # Add proportion-based features
-    aggregate_features['proportion_vandalism'] = (
+    hyper_classifier_features['proportion_vandalism'] = (
         contributions_df.groupby('changeset_id')['predicted_prob']
         .apply(lambda x: (x > 0.5).sum() / len(x))
         .values
     )
-    aggregate_features['num_vandalism_predictions'] = (
+    hyper_classifier_features['num_vandalism_predictions'] = (
         contributions_df.groupby('changeset_id')['predicted_prob']
         .apply(lambda x: (x > 0.5).sum())
         .values
     )
 
     # Add binary indicators
-    aggregate_features['any_vandalism_prediction'] = (
+    hyper_classifier_features['any_vandalism_prediction'] = (
         contributions_df.groupby('changeset_id')['predicted_prob']
         .apply(lambda x: int((x > 0.5).any()))
         .values
     )
-    aggregate_features['all_vandalism_predictions'] = (
+    hyper_classifier_features['all_vandalism_predictions'] = (
         contributions_df.groupby('changeset_id')['predicted_prob']
         .apply(lambda x: int((x > 0.5).all()))
         .values
     )
 
     # Handle NaN values
-    aggregate_features.fillna(0, inplace=True)
+    hyper_classifier_features.fillna(0, inplace=True)
 
     # Save visualization samples if enabled
     if SAVE_VISUALIZATION_SAMPLES:
-        sample_path = os.path.join(HYPER_VISUALIZATION_DIR, 'aggregated_features_sample.parquet')
-        aggregate_features.head(100).to_parquet(sample_path)
-        logger.info(f"Saved aggregated features sample to {sample_path}")
+        # sample_path = os.path.join(HYPER_VISUALIZATION_DIR, 'aggregated_features_sample.parquet')
+        sample_path = VISUALIZATION_DATA_PATH['hyper_classifier_features_sample_path']
+        hyper_classifier_features.head(100).to_parquet(sample_path)
+        logger.info(f"Saved hyper classifier features sample to {sample_path}")
 
     logger.info("Feature aggregation completed.")
 
-    return aggregate_features
+    return hyper_classifier_features

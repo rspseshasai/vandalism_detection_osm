@@ -5,10 +5,9 @@ import os
 import pandas as pd
 from joblib import load
 
-from config import CONTRIBUTION_FINAL_MODEL_PATH, RAW_DATA_DIR, TEST_RUN, \
-    CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE
+from config import CONTRIBUTION_FINAL_MODEL_PATH, RAW_DATA_DIR, CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE, \
+    CHANGESET_LABELS_FILE
 from config import logger
-from src.preprocessing import preprocess_contribution_features
 
 
 # hyper_classifier/data_preparation.py
@@ -21,8 +20,7 @@ def get_changeset_labels():
     logger.info("Loading changeset-level labels...")
 
     # Load changeset-level labels from the TSV file
-    changeset_labels_file = os.path.join(RAW_DATA_DIR, 'changeset_labels.tsv')
-    changeset_labels = pd.read_csv(changeset_labels_file, sep='\t')
+    changeset_labels = pd.read_csv(CHANGESET_LABELS_FILE, sep='\t')
 
     # Rename columns to match pipeline conventions, if necessary
     changeset_labels.rename(columns={'changeset': 'changeset_id', 'label': 'vandalism'}, inplace=True)
@@ -46,9 +44,6 @@ def get_contribution_predictions():
     contribution_model = load(CONTRIBUTION_FINAL_MODEL_PATH)
 
     X_encoded = pd.read_parquet(CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE)
-    if TEST_RUN:
-        logger.info("Test mode enabled: Limiting to 1000 entries.")
-        X_encoded = X_encoded.head(1000)
 
     # Predict probabilities
     contributions_df = X_encoded.copy()
