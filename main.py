@@ -113,7 +113,7 @@ def data_splitting_helper(X_encoded, y, split_type):
         raise ValueError("Column 'changeset_id' is missing in X_encoded.")
 
     # Split the data
-    X_train, X_val, X_test, y_train, y_val, y_test = split_train_test_val(
+    X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta = split_train_test_val(
         X_encoded, y, split_type=split_type, **split_params
     )
 
@@ -121,8 +121,10 @@ def data_splitting_helper(X_encoded, y, split_type):
     split_ids = {
         'train': X_train['changeset_id'].copy(),
         'val': X_val['changeset_id'].copy(),
-        'test': X_test['changeset_id'].copy()
+        'test': X_test['changeset_id'].copy(),
     }
+    if DATASET_TYPE == 'changeset':
+        split_ids['meta_test'] = X_test_meta['changeset_id'].copy()
 
     # # Remove 'changeset_id' from X datasets to avoid data leakage
     # X_train = X_train.drop(columns=['changeset_id'])
@@ -141,15 +143,15 @@ def data_splitting_helper(X_encoded, y, split_type):
         logger.info("Saved all data splits for visualization.")
 
     logger.info("Data splitting completed.")
-    return X_train, X_val, X_test, y_train, y_val, y_test, split_ids
+    return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids
 
 
 # Step 5: Clustering
-def clustering_helper(X_train, X_val, X_test):
+def clustering_helper(X_train, X_val, X_test, X_test_meta):
     logger.info("Starting clustering...")
-    X_train, X_val, X_test = perform_clustering(X_train, X_val, X_test, n_clusters=config.N_CLUSTERS)
+    X_train, X_val, X_test, X_test_meta = perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=config.N_CLUSTERS)
 
-    X_combined = pd.concat([X_train, X_val, X_test])
+    X_combined = pd.concat([X_train, X_val, X_test, X_test_meta])
     # Save to a Parquet file for hyper classifier
     X_combined.to_parquet(PROCESSED_ENCODED_FEATURES_FILE)
     logger.info(f"Combined data saved to {PROCESSED_ENCODED_FEATURES_FILE}")
@@ -164,7 +166,7 @@ def clustering_helper(X_train, X_val, X_test):
         logger.info(f"Saved clustering samples to {sample_path_train}, {sample_path_val}, and {sample_path_test}")
 
     logger.info("Clustering completed.")
-    return X_train, X_val, X_test
+    return X_train, X_val, X_test, X_test_meta
 
 
 # Step 6: Model Training
@@ -258,20 +260,20 @@ def geographical_evaluation_helper(model, X_test, y_test):
 def hyper_classifier_helper(split_ids):
     if config.DATASET_TYPE != 'changeset':
         logger.info("Skipping hyper-classifier as it's only applicable for changeset data.")
-        return
+        return None, None, None
     logger.info("Starting hyper-classifier pipeline...")
     from hyper_classifier.hyper_classifier_main import run_hyper_classifier_pipeline
-    evaluation_results_hyper = run_hyper_classifier_pipeline(split_ids)
+    hyper_model, evaluation_results_hyper, X_test_meta_hyper = run_hyper_classifier_pipeline(split_ids)
     logger.info("Hyper-classifier pipeline completed.")
-    return evaluation_results_hyper
+    return hyper_model, evaluation_results_hyper, X_test_meta_hyper
 
 
-def combine_and_evaluate_helper(evaluation_results_main_model, evaluation_results_hyper):
+def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model, X_test_meta, X_test_meta_hyper, y_test_meta):
     if config.DATASET_TYPE != 'changeset':
-        logger.info("Skipping combine_and_evaluate as it's only applicable for changeset data.")
+        logger.info("Skipping meta_classifier as it's only applicable for changeset data.")
         return
-    from combine_and_evaluate import combine_and_evaluate
-    combine_and_evaluate(evaluation_results_main_model, evaluation_results_hyper)
+    from meta_classifier import meta_classifier
+    meta_classifier(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model, X_test_meta, X_test_meta_hyper, y_test_meta)
 
 
 # Main Pipeline
@@ -287,16 +289,16 @@ def main():
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
         ('geographical_evaluation', geographical_evaluation_helper),
         ('hyper_classifier', hyper_classifier_helper),  # New step added
-        ('combine_and_evaluate', combine_and_evaluate_helper),
+        ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
     X_encoded = y = None
     X_train = X_val = X_test = y_train = y_val = y_test = None
-    model = None
+    main_model = None
     split_ids = None
 
     # Initialize variables to capture evaluation results
@@ -313,22 +315,25 @@ def main():
         elif step_name == 'preprocessing':
             X_encoded, y = step_function(features_df)
         elif step_name == 'data_splitting':
-            X_train, X_val, X_test, y_train, y_val, y_test, split_ids = step_function(X_encoded, y, SPLIT_METHOD)
+            X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids = step_function(
+                X_encoded, y, SPLIT_METHOD)
         elif step_name == 'clustering':
-            X_train, X_val, X_test = step_function(X_train, X_val, X_test)
+            X_train, X_val, X_test, X_test_meta = step_function(X_train, X_val, X_test, X_test_meta)
         elif step_name == 'training':
-            model = step_function(X_train, y_train, X_val, y_val)
+            main_model = step_function(X_train, y_train, X_val, y_val)
         elif step_name == 'evaluation':
-            evaluation_results_main_model = step_function(model, X_train, y_train, X_test, y_test, split_ids['test'],
+            evaluation_results_main_model = step_function(main_model, X_train, y_train, X_test, y_test,
+                                                          split_ids['test'],
                                                           'main')
         elif step_name == 'bootstrapping_evaluation':
-            step_function(model, X_test, y_test)
+            step_function(main_model, X_test, y_test)
         elif step_name == 'geographical_evaluation':
-            step_function(model, X_test, y_test)
+            step_function(main_model, X_test, y_test)
         elif step_name == 'hyper_classifier':
-            evaluation_results_hyper_classifier_model = step_function(split_ids)
-        elif step_name == 'combine_and_evaluate':
-            step_function(evaluation_results_main_model, evaluation_results_hyper_classifier_model)
+            hyper_model, evaluation_results_hyper_classifier_model, X_test_meta_hyper = step_function(split_ids)
+        elif step_name == 'meta_classifier':
+            step_function(evaluation_results_main_model, evaluation_results_hyper_classifier_model, main_model,
+                          hyper_model, X_test_meta, X_test_meta_hyper, y_test_meta)
         else:
             logger.warning(f"Unknown pipeline step: {step_name}")
 

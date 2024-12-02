@@ -32,14 +32,19 @@ def split_data(changeset_features, changeset_labels, split_ids):
     X_test = X.loc[split_ids['test']]
     y_test = y.loc[split_ids['test']]
 
+    X_test_meta = X.loc[split_ids['meta_test']]
+    y_test_meta = y.loc[split_ids['meta_test']]
+
     # Reset index to turn 'changeset_id' back into a column
     X_train = X_train.reset_index()
     X_val = X_val.reset_index()
     X_test = X_test.reset_index()
+    X_test_meta = X_test_meta.reset_index()
 
     y_train = y_train.reset_index(drop=True)
     y_val = y_val.reset_index(drop=True)
     y_test = y_test.reset_index(drop=True)
+    y_test_meta = y_test_meta.reset_index(drop=True)
 
     logger.info(f"Data split completed:")
     logger.info(f"Training set size: {len(X_train)}")
@@ -52,4 +57,4 @@ def split_data(changeset_features, changeset_labels, split_ids):
     calculate_statistics(y_val, "Validation Set")
     calculate_statistics(y_test, "Test Set")
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta

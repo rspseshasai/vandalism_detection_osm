@@ -18,7 +18,7 @@ def run_hyper_classifier_pipeline(split_ids):
     changeset_features = engineer_features(changeset_per_contribution_pred_df)
 
     # Step 3: Data Splitting
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(changeset_features, changeset_labels, split_ids)
+    X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta = split_data(changeset_features, changeset_labels, split_ids)
 
     # Step 4: Model Training
     hyper_model = train_hyper_classifier(X_train, y_train, X_val, y_val)
@@ -27,4 +27,4 @@ def run_hyper_classifier_pipeline(split_ids):
     evaluation_results_hyper_classifier_model = evaluation_helper(hyper_model, X_train, y_train, X_test, y_test, split_ids['test'], 'hyper_classifier')
 
     logger.info("Hyper-classifier pipeline completed.")
-    return evaluation_results_hyper_classifier_model
+    return hyper_model, evaluation_results_hyper_classifier_model, X_test_meta

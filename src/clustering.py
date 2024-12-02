@@ -7,9 +7,9 @@ from sklearn.cluster import KMeans
 from src import config
 
 
-def perform_clustering(X_train, X_val, X_test, n_clusters=100):
+def perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=100):
     """
-    Fits KMeans clustering on training data and assigns cluster labels to training, validation, and test data.
+    Fits KMeans clustering on training data and assigns cluster labels to training, validation, test, and meta-test data.
     """
     os.environ["LOKY_MAX_CPU_COUNT"] = "4"
 
@@ -34,8 +34,8 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
     X_train['cluster_label'] = clustering_model.labels_
     logger.info("Cluster labels assigned to training data.")
 
-    # Assign cluster labels to validation and test data
-    for dataset, name in zip([X_val, X_test], ["Validation", "Test"]):
+    # Assign cluster labels to validation, test, and meta-test data
+    for dataset, name in zip([X_val, X_test, X_test_meta], ["Validation", "Test", "Meta-Test"]):
         for col in required_columns:
             if col not in dataset.columns:
                 logger.error(f"Column '{col}' not found in {name} data.")
@@ -49,10 +49,12 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
 
         if name == "Validation":
             X_val = dataset
-        else:
+        elif name == "Test":
             X_test = dataset
+        elif name == "Meta-Test":
+            X_test_meta = dataset
 
-    return X_train, X_val, X_test
+    return X_train, X_val, X_test, X_test_meta
 
 
 import matplotlib.pyplot as plt

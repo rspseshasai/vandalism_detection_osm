@@ -21,6 +21,11 @@ TEST_SIZE = 0.4  # Proportion for the temporary test set
 VAL_SIZE = 0.2  # Proportion of the temporary test set to use as the final test set
 RANDOM_STATE = 42
 
+if DATASET_TYPE == 'changeset':
+    TEST_SIZE = 0.5  # Proportion for the temporary test set
+    VAL_SIZE = 0.1  # Proportion of the temporary test set to use as the final test set
+    META_TEST_SIZE = 0.45
+
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data', f"{DATASET_TYPE}_data")
@@ -119,14 +124,6 @@ DATE_COLUMN = 'date_created'  # Column name in the DataFrame
 TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
 TEST_YEARS = [2017]
-
-# # === Hyper-Classifier Paths ===
-# HYPER_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'hyper_classifier')
-# os.makedirs(HYPER_CLASSIFIER_DIR, exist_ok=True)
-#
-# HYPER_MODEL_PATH = os.path.join(HYPER_CLASSIFIER_DIR, f'{prefix}_hyper_classifier_model.xgb')
-# HYPER_VISUALIZATION_DIR = os.path.join(VISUALIZATION_DIR, 'hyper_classifier')
-# os.makedirs(HYPER_VISUALIZATION_DIR, exist_ok=True)
 
 # Test changeset ids
 # Take the first 1000 changeset IDs for testing

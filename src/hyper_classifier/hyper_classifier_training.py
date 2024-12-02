@@ -13,11 +13,9 @@ def train_hyper_classifier(X_train, y_train, X_val, y_val):
     hyper_model = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='aucpr',
-        num_boost_round=1000,
+        n_estimators=1000,
         evals=eval_set,
-        early_stopping_rounds=20,
-        verbose_eval=10
-    )
+        early_stopping_rounds=20)
 
     hyper_model.fit(
         X_train,
