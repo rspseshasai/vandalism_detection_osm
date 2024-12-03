@@ -19,25 +19,27 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 from config import logger, VISUALIZATION_DATA_PATH
 
 
-def save_evaluation_results(y_test, y_test_pred, y_test_prob, cm):
+def save_evaluation_results(evaluation_results_main_model, cm, model_type):
     """
     Save evaluation results and confusion matrix to disk.
     """
-    evaluation_results_path = VISUALIZATION_DATA_PATH['evaluation_results']
-    confusion_matrix_path = VISUALIZATION_DATA_PATH['confusion_matrix']
+    evaluation_results_path = VISUALIZATION_DATA_PATH[f'evaluation_results_{model_type}']
+    confusion_matrix_path = VISUALIZATION_DATA_PATH[f'confusion_matrix_{model_type}']
 
     # Save evaluation results
-    pd.DataFrame({
-        'y_test': y_test,
-        'y_test_pred': y_test_pred,
-        'y_test_prob': y_test_prob
-    }).to_parquet(evaluation_results_path)
+    evaluation_results_main_model.to_parquet(evaluation_results_path)
 
     # Save confusion matrix
     np.savetxt(confusion_matrix_path, cm, delimiter=",")
 
     logger.info(f"Saved evaluation results to {evaluation_results_path}")
     logger.info(f"Saved confusion matrix to {confusion_matrix_path}")
+
+
+def print_metrics(true, pred, prob):
+    print("Accuracy:", accuracy_score(true, pred))
+    print("AUC-ROC:", roc_auc_score(true, prob))
+    print("\nClassification Report:\n", classification_report(true, pred, target_names=class_names))
 
 
 def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
@@ -49,17 +51,11 @@ def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
     y_train_prob = model.predict_proba(X_train)[:, 1]
     y_test_prob = model.predict_proba(X_test)[:, 1]
 
-    # Training set metrics
     print("\nTrain Set Evaluation\n--------------------\n")
-    print("Accuracy:", accuracy_score(y_train, y_train_pred))
-    print("AUC-ROC:", roc_auc_score(y_train, y_train_prob))
-    print("\nClassification Report (Train):\n", classification_report(y_train, y_train_pred, target_names=class_names))
+    print_metrics(y_train, y_train_pred, y_train_prob)
 
-    # Test set metrics
-    print("\nTest Set Evaluation\n-------------------\n")
-    print("Accuracy:", accuracy_score(y_test, y_test_pred))
-    print("AUC-ROC:", roc_auc_score(y_test, y_test_prob))
-    print("\nClassification Report (Test):\n", classification_report(y_test, y_test_pred, target_names=class_names))
+    print("\nTest Set Evaluation\n--------------------\n")
+    print_metrics(y_test, y_test_pred, y_test_prob)
 
     return y_test_pred, y_test_prob
 
@@ -105,15 +101,14 @@ def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
     return cm
 
 
-def plot_confusion_matrix():
+def plot_confusion_matrix(model_type):
     """
     Plot confusion matrix using saved data.
     """
-    confusion_matrix_path = VISUALIZATION_DATA_PATH['confusion_matrix']
+    confusion_matrix_path = VISUALIZATION_DATA_PATH[f'confusion_matrix_{model_type}']
     cm = np.loadtxt(confusion_matrix_path, delimiter=",")
-
     plt.figure(figsize=(6, 4))
-    sns.heatmap(cm / cm.sum(), annot=True, fmt='.2%', cmap='Blues',
+    sns.heatmap(cm / cm.sum(), annot=True, fmt='.3%', cmap='Blues',
                 xticklabels=['Not Vandalism', 'Vandalism'],
                 yticklabels=['Not Vandalism', 'Vandalism'])
     plt.title('Confusion Matrix')
@@ -122,16 +117,15 @@ def plot_confusion_matrix():
     plt.show()
 
 
-
-def plot_roc_pr_curves():
+def plot_roc_pr_curves(model_type):
     """
     Plot ROC and Precision-Recall curves using saved evaluation data.
     """
-    evaluation_results_path = VISUALIZATION_DATA_PATH['evaluation_results']
+    evaluation_results_path = VISUALIZATION_DATA_PATH[f'evaluation_results_{model_type}']
     evaluation_results = pd.read_parquet(evaluation_results_path)
 
-    y_test = evaluation_results['y_test']
-    y_test_prob = evaluation_results['y_test_prob']
+    y_test = evaluation_results[f'y_true']
+    y_test_prob = evaluation_results[f'y_prob_{model_type}']
 
     # ROC Curve
     fpr, tpr, _ = roc_curve(y_test, y_test_prob)
@@ -152,6 +146,7 @@ def plot_roc_pr_curves():
     plt.title('Precision-Recall Curve')
     plt.legend()
     plt.show()
+
 
 def evaluate_model_with_cv(X, y, best_params, cv=5):
     """

@@ -3,6 +3,7 @@ import os
 import sys
 
 import coloredlogs
+import pandas as pd
 
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
@@ -20,6 +21,11 @@ TEST_SIZE = 0.4  # Proportion for the temporary test set
 VAL_SIZE = 0.2  # Proportion of the temporary test set to use as the final test set
 RANDOM_STATE = 42
 
+if DATASET_TYPE == 'changeset':
+    TEST_SIZE = 0.5  # Proportion for the temporary test set
+    VAL_SIZE = 0.1  # Proportion of the temporary test set to use as the final test set
+    META_TEST_SIZE = 0.45
+
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data', f"{DATASET_TYPE}_data")
@@ -27,6 +33,18 @@ RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
 VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization', SPLIT_METHOD)
 MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
+
+# === Hyper-Classifier Paths ===
+HYPER_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'hyper_classifier')
+os.makedirs(HYPER_CLASSIFIER_DIR, exist_ok=True)
+
+# === Meta-Classifier Paths ===
+META_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'meta_classifier')
+os.makedirs(META_CLASSIFIER_DIR, exist_ok=True)
+
+prefix = ""
+if TEST_RUN:
+    prefix = 'test'
 
 # Ensure directories exist
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
@@ -47,11 +65,26 @@ if DATASET_TYPE == 'changeset':
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CHANGESET_DATA_RAW_FILE_NAME)
 else:
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CONTRIBUTION_DATA_RAW_FILE_NAME)
-PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, 'processed_features.parquet')
+
+PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_features.parquet')
+PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
+CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+                                     'changeset_labels.tsv')
 
 # Paths for models and hyperparameters
-BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, 'best_hyperparameters.json')
-FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, 'final_xgboost_model.pkl')
+BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
+FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
+HYPER_MODEL_PATH = os.path.join(HYPER_CLASSIFIER_DIR, f'{prefix}_hyper_classifier_model.xgb')
+META_MODEL_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_meta_classifier_model.xgb')
+META_MODEL_BEST_PARAMS_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_best_hyperparameters.json')
+
+# For Hyper Classifier
+CONTRIBUTION_FINAL_MODEL_PATH = os.path.join(os.path.join(BASE_DIR, 'models', f"contribution_model"), SPLIT_METHOD,
+                                             f'{prefix}_final_xgboost_model.pkl')
+CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(
+    os.path.join(os.path.join(BASE_DIR, 'data', f"contribution_data"), 'processed'),
+    f'{prefix}_processed_encoded_features.parquet')
+
 os.makedirs(os.path.join(MODELS_DIR, SPLIT_METHOD), exist_ok=True)
 
 # === Visualization Paths ===
@@ -66,8 +99,14 @@ VISUALIZATION_DATA_PATH = {
     'clustering_train': os.path.join(VISUALIZATION_DIR, 'clustering_train_sample.parquet'),
     'clustering_val': os.path.join(VISUALIZATION_DIR, 'clustering_val_sample.parquet'),
     'clustering_test': os.path.join(VISUALIZATION_DIR, 'clustering_test_sample.parquet'),
-    'evaluation_results': os.path.join(VISUALIZATION_DIR, 'evaluation_results.parquet'),
-    'confusion_matrix': os.path.join(VISUALIZATION_DIR, 'confusion_matrix.csv'),
+    'evaluation_results_main': os.path.join(VISUALIZATION_DIR, 'evaluation_results_main.parquet'),
+    'evaluation_results_meta_classifier': os.path.join(VISUALIZATION_DIR, 'evaluation_results_meta_classifier.csv'),
+    'evaluation_results_hyper_classifier': os.path.join(VISUALIZATION_DIR,
+                                                        'evaluation_results_hyper_classifier.parquet'),
+    'confusion_matrix_main': os.path.join(VISUALIZATION_DIR, 'confusion_matrix_main.csv'),
+    'confusion_matrix_hyper_classifier': os.path.join(VISUALIZATION_DIR, 'confusion_matrix_hyper_classifier.csv'),
+    'hyper_classifier_features_sample_path': os.path.join(VISUALIZATION_DIR,
+                                                          'hyper_classifier_features_sample.parquet'),
 }
 
 # === Bootstrapping Configurations ===
@@ -90,6 +129,14 @@ DATE_COLUMN = 'date_created'  # Column name in the DataFrame
 TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
 TEST_YEARS = [2017]
+
+# Test changeset ids
+# Take the first 1000 changeset IDs for testing
+TEST_CHANGESET_IDS = pd.read_csv(os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+                                              'test_common_changesets_1000.csv'))['changeset_id']
+
+COMMON_CHANGESET_IDS = pd.read_csv(os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+                                                '_common_changeset_ids.csv'))['changeset_id']
 
 # === Logging Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'

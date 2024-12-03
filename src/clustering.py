@@ -6,12 +6,11 @@ from sklearn.cluster import KMeans
 
 from src import config
 
-
-def perform_clustering(X_train, X_val, X_test, n_clusters=100):
+def perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=100):
     """
-    Fits KMeans clustering on training data and assigns cluster labels to training, validation, and test data.
+    Fits KMeans clustering on training data and assigns cluster labels to training, validation, test,
+    and optionally meta-test data based on the DATASET_TYPE.
     """
-    logger.info("Starting clustering...")
     os.environ["LOKY_MAX_CPU_COUNT"] = "4"
 
     # Ensure 'centroid_x' and 'centroid_y' are available
@@ -29,7 +28,6 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
         n_clusters = centroids_train.shape[0]
     clustering_model = KMeans(n_clusters=n_clusters, random_state=config.RANDOM_STATE)
     clustering_model.fit(centroids_train)
-    logger.info("Clustering model fitted on training data.")
 
     # Assign cluster labels to training data
     X_train = X_train.copy()
@@ -51,17 +49,30 @@ def perform_clustering(X_train, X_val, X_test, n_clusters=100):
 
         if name == "Validation":
             X_val = dataset
-        else:
+        elif name == "Test":
             X_test = dataset
 
-    logger.info("Clustering completed.")
+    # Assign cluster labels to meta-test data only if DATASET_TYPE is 'changeset'
+    if DATASET_TYPE == "changeset" and X_test_meta is not None:
+        for col in required_columns:
+            if col not in X_test_meta.columns:
+                logger.error(f"Column '{col}' not found in Meta-Test data.")
+                raise KeyError(f"Column '{col}' not found in Meta-Test data.")
 
-    return X_train, X_val, X_test
+        centroids = X_test_meta[required_columns].values
+        cluster_labels = clustering_model.predict(centroids)
+        X_test_meta = X_test_meta.copy()
+        X_test_meta['cluster_label'] = cluster_labels
+        logger.info("Cluster labels assigned to Meta-Test data.")
+    elif DATASET_TYPE != "changeset":
+        logger.info("Clustering not required for Meta-Test data as DATASET_TYPE is not 'changeset'.")
+
+    return X_train, X_val, X_test, X_test_meta
 
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from config import VISUALIZATION_DATA_PATH, logger
+from config import VISUALIZATION_DATA_PATH, logger, DATASET_TYPE
 
 
 def load_clustered_data():

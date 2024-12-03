@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 import src.config as config
+from config import DATASET_TYPE
 from src.config import logger
 
 
@@ -55,7 +56,17 @@ def random_split(X_encoded, y, test_size=0.4, val_size=0.2, random_state=42):
         stratify=y_temp
     )
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    X_test_meta = y_test_meta = None
+    if DATASET_TYPE == 'changeset':
+        logger.info("Splitting test set into meta test and test sets...")
+        X_test, X_test_meta, y_test, y_test_meta = train_test_split(
+            X_temp, y_temp,
+            test_size=config.META_TEST_SIZE,
+            random_state=random_state,
+            stratify=y_temp
+        )
+
+    return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta
 
 
 def temporal_split(X_encoded, y, date_column='timestamp'):
@@ -102,7 +113,7 @@ def temporal_split(X_encoded, y, date_column='timestamp'):
     X_test = X_encoded[test_mask].drop(columns=['year'])
     y_test = y[test_mask]
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    return X_train, X_val, X_test, None, y_train, y_val, y_test, None
 
 
 def geographic_split(X_encoded, y, split_key='continent', train_regions=None, val_regions=None, test_regions=None):
@@ -156,7 +167,7 @@ def geographic_split(X_encoded, y, split_key='continent', train_regions=None, va
     X_test = X_encoded[test_mask]
     y_test = y[test_mask]
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    return X_train, X_val, X_test, None, y_train, y_val, y_test, None
 
 
 def calculate_statistics(y, set_name):
@@ -181,7 +192,7 @@ def calculate_statistics(y, set_name):
     )
 
 
-def log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test):
+def log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta):
     """
     Log the shapes of the datasets.
 
@@ -195,8 +206,12 @@ def log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test):
         'X_test shape': X_test.shape,
         'y_train shape': y_train.shape,
         'y_val shape': y_val.shape,
-        'y_test shape': y_test.shape
+        'y_test shape': y_test.shape,
     }
+
+    if DATASET_TYPE == 'changeset':
+        shapes['X_test_meta shape'] = X_test_meta.shape
+        shapes['y_test_meta shape'] = y_test_meta.shape
 
     shapes_df = pd.DataFrame(shapes, index=['Number of Samples', 'Number of Features']).T
     logger.info(f"Dataset Shapes:\n{shapes_df}")

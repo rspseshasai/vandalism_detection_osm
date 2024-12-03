@@ -1,16 +1,15 @@
 import os
 import sys
 
+import pandas as pd
 from adodbapi import NotSupportedError
-
-from geographical_evaluation import geographical_evaluation
-from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
 
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
-from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE
+from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
+    PROCESSED_ENCODED_FEATURES_FILE
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -18,7 +17,9 @@ from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
 from src.training import train_final_model, save_model
-from src.evaluation import evaluate_model_with_cv
+
+from geographical_evaluation import geographical_evaluation
+from hyper_parameter_search import randomized_search_cv
 
 from src.evaluation import (
     evaluate_train_test_metrics,
@@ -36,6 +37,7 @@ from src.bootstrap_evaluation import (
 # Step 1: Load Data
 def data_loading_helper():
     logger.info("Starting data loading...")
+
     data_df = load_data(print_sample_data=False)
 
     if config.SAVE_VISUALIZATION_SAMPLES:
@@ -107,14 +109,35 @@ def data_splitting_helper(X_encoded, y, split_type):
     else:
         raise ValueError(f"Unknown split_type: {split_type}")
 
-    X_train, X_val, X_test, y_train, y_val, y_test = split_train_test_val(
+    # Ensure 'changeset_id' is retained
+    if 'changeset_id' not in X_encoded.columns:
+        raise ValueError("Column 'changeset_id' is missing in X_encoded.")
+
+    # Split the data
+    X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta = split_train_test_val(
         X_encoded, y, split_type=split_type, **split_params
     )
 
-    log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test)
+    # Extract the split IDs
+    split_ids = {
+        'train': X_train['changeset_id'].copy(),
+        'val': X_val['changeset_id'].copy(),
+        'test': X_test['changeset_id'].copy(),
+    }
+    if DATASET_TYPE == 'changeset':
+        split_ids['meta_test'] = X_test_meta['changeset_id'].copy()
+
+    # # Remove 'changeset_id' from X datasets to avoid data leakage
+    # X_train = X_train.drop(columns=['changeset_id'])
+    # X_val = X_val.drop(columns=['changeset_id'])
+    # X_test = X_test.drop(columns=['changeset_id'])
+
+    log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta)
     calculate_statistics(y_train, "Train Set")
     calculate_statistics(y_val, "Validation Set")
     calculate_statistics(y_test, "Test Set")
+    if DATASET_TYPE == 'changeset':
+        calculate_statistics(y_test_meta, "Meta Test Set")
 
     if config.SAVE_VISUALIZATION_SAMPLES:
         X_train.head(100).to_parquet(config.VISUALIZATION_DATA_PATH['data_splitting_X_train'])
@@ -123,13 +146,19 @@ def data_splitting_helper(X_encoded, y, split_type):
         logger.info("Saved all data splits for visualization.")
 
     logger.info("Data splitting completed.")
-    return X_train, X_val, X_test, y_train, y_val, y_test
+    return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids
 
 
 # Step 5: Clustering
-def clustering_helper(X_train, X_val, X_test):
+def clustering_helper(X_train, X_val, X_test, X_test_meta):
     logger.info("Starting clustering...")
-    X_train, X_val, X_test = perform_clustering(X_train, X_val, X_test, n_clusters=config.N_CLUSTERS)
+    X_train, X_val, X_test, X_test_meta = perform_clustering(X_train, X_val, X_test, X_test_meta,
+                                                             n_clusters=config.N_CLUSTERS)
+
+    X_combined = pd.concat([X_train, X_val, X_test, X_test_meta])
+    # Save to a Parquet file for hyper classifier
+    X_combined.to_parquet(PROCESSED_ENCODED_FEATURES_FILE)
+    logger.info(f"Combined data saved to {PROCESSED_ENCODED_FEATURES_FILE}")
 
     if config.SAVE_VISUALIZATION_SAMPLES:
         sample_path_train = config.VISUALIZATION_DATA_PATH['clustering_train']
@@ -141,7 +170,7 @@ def clustering_helper(X_train, X_val, X_test):
         logger.info(f"Saved clustering samples to {sample_path_train}, {sample_path_val}, and {sample_path_test}")
 
     logger.info("Clustering completed.")
-    return X_train, X_val, X_test
+    return X_train, X_val, X_test, X_test_meta
 
 
 # Step 6: Model Training
@@ -158,8 +187,8 @@ def training_helper(X_train, y_train, X_val, y_val):
 
 
 # Step 7: Model Evaluation
-def evaluation_helper(model, X_train, y_train, X_test, y_test):
-    logger.info("Starting evaluation...")
+def evaluation_helper(model, X_train, y_train, X_test, y_test, X_test_ids, model_type):
+    logger.info(f"Starting evaluation for {model_type} model...")
 
     # Evaluate train and test metrics
     y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test)
@@ -167,12 +196,22 @@ def evaluation_helper(model, X_train, y_train, X_test, y_test):
     # Calculate additional metrics and confusion matrix
     cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
 
-    # Save evaluation data for visualization
-    save_evaluation_results(y_test, y_test_pred, y_test_prob, cm)
+    # Create DataFrame with predictions and changeset_id
+    evaluation_results_main_model = pd.DataFrame({
+        'changeset_id': X_test_ids.reset_index(drop=True),
+        'y_true': y_test.reset_index(drop=True),
+        f'y_pred_{model_type}': y_test_pred,
+        f'y_prob_{model_type}': y_test_prob
+    })
 
-    # (OPTIONAL): Perform Cross-Validation on Training Data
-    evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
-    logger.info("Evaluation completed.")
+    # Save evaluation data for visualization
+    save_evaluation_results(evaluation_results_main_model, cm, model_type)
+
+    # # (OPTIONAL): Perform Cross-Validation on Training Data
+    # evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
+
+    logger.info(f"Evaluation completed for {model_type} model.")
+    return evaluation_results_main_model
 
 
 # Step 8: Bootstrapping Evaluation
@@ -221,6 +260,28 @@ def geographical_evaluation_helper(model, X_test, y_test):
     logger.info("Geographical evaluation completed.")
 
 
+# Step 10: Hyper-Classifier
+def hyper_classifier_helper(split_ids):
+    if config.DATASET_TYPE != 'changeset':
+        logger.info("Skipping hyper-classifier as it's only applicable for changeset data.")
+        return None, None, None
+    logger.info("Starting hyper-classifier pipeline...")
+    from hyper_classifier.hyper_classifier_main import run_hyper_classifier_pipeline
+    hyper_model, evaluation_results_hyper, X_test_meta_hyper = run_hyper_classifier_pipeline(split_ids)
+    logger.info("Hyper-classifier pipeline completed.")
+    return hyper_model, evaluation_results_hyper, X_test_meta_hyper
+
+
+def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model,
+                           X_test_meta, X_test_meta_hyper, y_test_meta):
+    if config.DATASET_TYPE != 'changeset':
+        logger.info("Skipping meta_classifier as it's only applicable for changeset data.")
+        return
+    from meta_classifier import meta_classifier
+    meta_classifier(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model, X_test_meta,
+                    X_test_meta_hyper, y_test_meta)
+
+
 # Main Pipeline
 def main():
     logger.info("Starting the ML pipeline...")
@@ -236,12 +297,19 @@ def main():
         ('evaluation', evaluation_helper),
         ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
         ('geographical_evaluation', geographical_evaluation_helper),
+        ('hyper_classifier', hyper_classifier_helper),  # New step added
+        ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
     X_encoded = y = None
     X_train = X_val = X_test = y_train = y_val = y_test = None
-    model = None
+    main_model = None
+    split_ids = None
+
+    # Initialize variables to capture evaluation results
+    evaluation_results_main_model = None
+    evaluation_results_hyper_classifier_model = None
 
     # Execute each step in the defined order
     for step_name, step_function in pipeline_steps:
@@ -253,17 +321,25 @@ def main():
         elif step_name == 'preprocessing':
             X_encoded, y = step_function(features_df)
         elif step_name == 'data_splitting':
-            X_train, X_val, X_test, y_train, y_val, y_test = step_function(X_encoded, y, SPLIT_METHOD)
+            X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids = step_function(
+                X_encoded, y, SPLIT_METHOD)
         elif step_name == 'clustering':
-            X_train, X_val, X_test = step_function(X_train, X_val, X_test)
+            X_train, X_val, X_test, X_test_meta = step_function(X_train, X_val, X_test, X_test_meta)
         elif step_name == 'training':
-            model = step_function(X_train, y_train, X_val, y_val)
+            main_model = step_function(X_train, y_train, X_val, y_val)
         elif step_name == 'evaluation':
-            step_function(model, X_train, y_train, X_test, y_test)
+            evaluation_results_main_model = step_function(main_model, X_train, y_train, X_test, y_test,
+                                                          split_ids['test'],
+                                                          'main')
         elif step_name == 'bootstrapping_evaluation':
-            step_function(model, X_test, y_test)
+            step_function(main_model, X_test, y_test)
         elif step_name == 'geographical_evaluation':
-            step_function(model, X_test, y_test)
+            step_function(main_model, X_test, y_test)
+        elif step_name == 'hyper_classifier':
+            hyper_model, evaluation_results_hyper_classifier_model, X_test_meta_hyper = step_function(split_ids)
+        elif step_name == 'meta_classifier':
+            step_function(evaluation_results_main_model, evaluation_results_hyper_classifier_model, main_model,
+                          hyper_model, X_test_meta, X_test_meta_hyper, y_test_meta)
         else:
             logger.warning(f"Unknown pipeline step: {step_name}")
 

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from config import PROCESSED_FEATURES_FILE, SPLIT_METHOD, DATASET_TYPE
+from config import PROCESSED_FEATURES_FILE, SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, COMMON_CHANGESET_IDS
 from config import logger
 
 
@@ -479,14 +479,9 @@ def get_or_generate_features(data_df, force_compute_features=False, test_mode=Fa
     if os.path.exists(PROCESSED_FEATURES_FILE) and not force_compute_features:
         logger.info(f"Loading features from {PROCESSED_FEATURES_FILE}...")
         features_df = pd.read_parquet(PROCESSED_FEATURES_FILE)
-        if test_mode:
-            logger.info("Test mode enabled: Limiting to 1000 entries.")
-            features_df = features_df.head(1000)
+
     else:
         logger.info("Extracting features...")
-        if test_mode:
-            logger.info("Test mode enabled: Limiting to 1000 entries.")
-            data_df = data_df.head(1000)
         if DATASET_TYPE == 'changeset':
             features_df = extract_features_changeset(data_df)
         else:
@@ -494,5 +489,12 @@ def get_or_generate_features(data_df, force_compute_features=False, test_mode=Fa
         logger.info(f"Saving features to {PROCESSED_FEATURES_FILE}...")
         features_df.to_parquet(PROCESSED_FEATURES_FILE)
 
-    logger.info(f"Features DataFrame shape: {features_df.shape}")
+    if test_mode:
+        logger.info("Test mode enabled: Limiting to entries matching Test changeset IDs.")
+        features_df = features_df[features_df['changeset_id'].isin(TEST_CHANGESET_IDS)]
+    else:
+        logger.info("Limiting to entries matching common changeset IDs.")
+        features_df = features_df[features_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
+
+    logger.info(f"Features DataFrame Shape: {features_df.shape}")
     return features_df
