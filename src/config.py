@@ -11,7 +11,7 @@ TEST_RUN = False
 FORCE_COMPUTE_FEATURES = False
 
 # === Dataset Type ===
-DATASET_TYPE = 'changeset'  # Options: 'contribution', 'changeset'
+DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
