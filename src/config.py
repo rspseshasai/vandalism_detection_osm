@@ -7,7 +7,7 @@ import pandas as pd
 
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
-TEST_RUN = True
+TEST_RUN = False
 FORCE_COMPUTE_FEATURES = False
 
 # === Dataset Type ===
@@ -129,6 +129,9 @@ TEST_YEARS = [2017]
 # Take the first 1000 changeset IDs for testing
 TEST_CHANGESET_IDS = pd.read_csv(os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                               'test_common_changesets_1000.csv'))['changeset_id']
+
+COMMON_CHANGESET_IDS = pd.read_csv(os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+                                              '_common_changeset_ids.csv'))['changeset_id']
 
 # === Logging Configuration ===
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'

@@ -7,6 +7,7 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     confusion_matrix, roc_auc_score, classification_report
 )
+from sklearn.model_selection import GridSearchCV
 from config import logger
 
 
@@ -117,13 +118,43 @@ def train_meta_classifier(X_meta_train, y_meta_train, model_type='logistic_regre
         meta_model = LogisticRegression()
         meta_model.fit(X_meta_train, y_meta_train)
     elif model_type == 'xgboost':
-        meta_model = xgb.XGBClassifier(
+        # Define the parameter grid to search
+        param_grid = {
+            'n_estimators': [100, 200, 500],
+            'max_depth': [2, 3, 4, 5],
+            'learning_rate': [0.01, 0.05, 0.1],
+            'subsample': [0.6, 0.8, 1.0],
+            'colsample_bytree': [0.6, 0.8, 1.0],
+            'gamma': [0, 0.1, 0.2],
+            'reg_alpha': [0, 0.01, 0.1],
+            'reg_lambda': [1, 1.5, 2]
+        }
+
+        xgb_model = xgb.XGBClassifier(
             objective='binary:logistic',
             eval_metric='logloss',
-            n_estimators=1000,
             random_state=42
         )
-        meta_model.fit(X_meta_train, y_meta_train)
+
+        # Initialize GridSearchCV
+        grid_search = GridSearchCV(
+            estimator=xgb_model,
+            param_grid=param_grid,
+            scoring='roc_auc',
+            cv=5,
+            n_jobs=-1,
+            verbose=1
+        )
+
+        # Perform the grid search
+        grid_search.fit(X_meta_train, y_meta_train)
+
+        # Get the best model
+        meta_model = grid_search.best_estimator_
+
+        print("Best parameters found for XGBoost meta-classifier:")
+        print(grid_search.best_params_)
+        print(f"Best AUC-ROC score from cross-validation: {grid_search.best_score_:.4f}")
     else:
         raise ValueError("Invalid model_type. Choose 'logistic_regression' or 'xgboost'.")
 
@@ -148,7 +179,7 @@ def get_meta_predictions(meta_model, X_meta_test):
 
 
 def meta_classifier_pipeline(merged_results, main_model, hyper_classifier_model, X_test_meta_main, X_test_meta_hyper,
-                             y_test_meta, model_type='logistic_regression'):
+                             y_test_meta, model_type='xgboost'):
     """
     Train the meta-classifier and evaluate it along with base models on the meta-test set.
 
@@ -168,7 +199,7 @@ def meta_classifier_pipeline(merged_results, main_model, hyper_classifier_model,
     X_meta_train = merged_results[['y_prob_main', 'y_prob_hyper_classifier']]
     y_meta_train = merged_results['y_true']
 
-    # Train the meta-classifier
+    # Train the meta-classifier with hyperparameter tuning
     meta_model = train_meta_classifier(X_meta_train, y_meta_train, model_type=model_type)
 
     # Generate predictions from base models on meta-test set
@@ -245,5 +276,10 @@ def meta_classifier_pipeline(merged_results, main_model, hyper_classifier_model,
     report = classification_report(y_meta_test, y_meta_pred, target_names=['Non-Vandalism', 'Vandalism'],
                                    zero_division=0)
     print(f"\nClassification Report:\n{report}")
+
+    # Print best parameters if XGBoost
+    if model_type == 'xgboost':
+        print("\nBest parameters used for XGBoost meta-classifier:")
+        print(meta_model.get_params())
 
     return metrics_df

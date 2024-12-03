@@ -58,5 +58,6 @@ def engineer_features(contributions_df):
         logger.info(f"Saved hyper classifier features sample to {sample_path}")
 
     logger.info("Feature aggregation completed.")
+    logger.info(f"Hyper Classifier Features DataFrame Shape: {hyper_classifier_features.shape}")
 
     return hyper_classifier_features

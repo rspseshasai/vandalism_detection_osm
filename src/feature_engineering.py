@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from config import PROCESSED_FEATURES_FILE, SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS
+from config import PROCESSED_FEATURES_FILE, SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, COMMON_CHANGESET_IDS
 from config import logger
 
 
@@ -492,6 +492,9 @@ def get_or_generate_features(data_df, force_compute_features=False, test_mode=Fa
     if test_mode:
         logger.info("Test mode enabled: Limiting to entries matching Test changeset IDs.")
         features_df = features_df[features_df['changeset_id'].isin(TEST_CHANGESET_IDS)]
+    else:
+        logger.info("Limiting to entries matching common changeset IDs.")
+        features_df = features_df[features_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
 
-    logger.info(f"Features DataFrame shape: {features_df.shape}")
+    logger.info(f"Features DataFrame Shape: {features_df.shape}")
     return features_df

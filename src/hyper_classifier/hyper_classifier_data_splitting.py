@@ -50,11 +50,13 @@ def split_data(changeset_features, changeset_labels, split_ids):
     logger.info(f"Training set size: {len(X_train)}")
     logger.info(f"Validation set size: {len(X_val)}")
     logger.info(f"Test set size: {len(X_test)}")
+    logger.info(f"Meta Test set size: {len(X_test_meta)}")
 
     # Log dataset shapes and statistics
-    log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test)
+    log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta)
     calculate_statistics(y_train, "Train Set")
     calculate_statistics(y_val, "Validation Set")
     calculate_statistics(y_test, "Test Set")
+    calculate_statistics(y_test_meta, "Meta Test Set")
 
     return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta

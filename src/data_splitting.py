@@ -192,7 +192,7 @@ def calculate_statistics(y, set_name):
     )
 
 
-def log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test):
+def log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta):
     """
     Log the shapes of the datasets.
 
@@ -206,8 +206,12 @@ def log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test):
         'X_test shape': X_test.shape,
         'y_train shape': y_train.shape,
         'y_val shape': y_val.shape,
-        'y_test shape': y_test.shape
+        'y_test shape': y_test.shape,
     }
+
+    if DATASET_TYPE == 'changeset':
+        shapes['X_test_meta shape'] = X_test_meta.shape
+        shapes['y_test_meta shape'] = y_test_meta.shape
 
     shapes_df = pd.DataFrame(shapes, index=['Number of Samples', 'Number of Features']).T
     logger.info(f"Dataset Shapes:\n{shapes_df}")

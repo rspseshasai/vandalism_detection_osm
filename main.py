@@ -4,15 +4,12 @@ import sys
 import pandas as pd
 from adodbapi import NotSupportedError
 
-from geographical_evaluation import geographical_evaluation
-from hyper_parameter_search import randomized_search_cv
-
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
-    PROCESSED_ENCODED_FEATURES_FILE
+    PROCESSED_ENCODED_FEATURES_FILE, prefix
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -20,6 +17,9 @@ from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
 from src.training import train_final_model, save_model
+
+from geographical_evaluation import geographical_evaluation
+from hyper_parameter_search import randomized_search_cv
 
 from src.evaluation import (
     evaluate_train_test_metrics,
@@ -37,6 +37,7 @@ from src.bootstrap_evaluation import (
 # Step 1: Load Data
 def data_loading_helper():
     logger.info("Starting data loading...")
+
     data_df = load_data(print_sample_data=False)
 
     if config.SAVE_VISUALIZATION_SAMPLES:
@@ -131,10 +132,11 @@ def data_splitting_helper(X_encoded, y, split_type):
     # X_val = X_val.drop(columns=['changeset_id'])
     # X_test = X_test.drop(columns=['changeset_id'])
 
-    log_dataset_shapes(X_train, X_val, X_test, y_train, y_val, y_test)
+    log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta)
     calculate_statistics(y_train, "Train Set")
     calculate_statistics(y_val, "Validation Set")
     calculate_statistics(y_test, "Test Set")
+    calculate_statistics(y_test_meta, "Meta Test Set")
 
     if config.SAVE_VISUALIZATION_SAMPLES:
         X_train.head(100).to_parquet(config.VISUALIZATION_DATA_PATH['data_splitting_X_train'])
@@ -149,7 +151,8 @@ def data_splitting_helper(X_encoded, y, split_type):
 # Step 5: Clustering
 def clustering_helper(X_train, X_val, X_test, X_test_meta):
     logger.info("Starting clustering...")
-    X_train, X_val, X_test, X_test_meta = perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=config.N_CLUSTERS)
+    X_train, X_val, X_test, X_test_meta = perform_clustering(X_train, X_val, X_test, X_test_meta,
+                                                             n_clusters=config.N_CLUSTERS)
 
     X_combined = pd.concat([X_train, X_val, X_test, X_test_meta])
     # Save to a Parquet file for hyper classifier
@@ -268,12 +271,14 @@ def hyper_classifier_helper(split_ids):
     return hyper_model, evaluation_results_hyper, X_test_meta_hyper
 
 
-def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model, X_test_meta, X_test_meta_hyper, y_test_meta):
+def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model,
+                           X_test_meta, X_test_meta_hyper, y_test_meta):
     if config.DATASET_TYPE != 'changeset':
         logger.info("Skipping meta_classifier as it's only applicable for changeset data.")
         return
     from meta_classifier import meta_classifier
-    meta_classifier(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model, X_test_meta, X_test_meta_hyper, y_test_meta)
+    meta_classifier(evaluation_results_main_model, evaluation_results_hyper, main_model, hyper_model, X_test_meta,
+                    X_test_meta_hyper, y_test_meta)
 
 
 # Main Pipeline
