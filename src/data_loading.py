@@ -6,8 +6,7 @@ from config import logger
 from src import config
 
 
-def load_data(print_sample_data=False):
-    data_path = config.RAW_DATA_FILE
+def load_data(data_path, print_sample_data=False):
     logger.info(f"Loading data from {data_path}...")
     contribution_df = pd.read_parquet(data_path, engine='pyarrow')
 

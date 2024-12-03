@@ -59,24 +59,39 @@ N_CLUSTERS = 100  # Default number of clusters for KMeans
 N_JOBS = 11  # -1 to use all available cores
 
 # === File Paths ===
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions.parquet'
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
+UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
+
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions.parquet'
+UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = 'contributions_unlabelled_data.parquet'
+
 if DATASET_TYPE == 'changeset':
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CHANGESET_DATA_RAW_FILE_NAME)
+    UNLABELLED_RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME)
+
 else:
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CONTRIBUTION_DATA_RAW_FILE_NAME)
+    UNLABELLED_RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME)
 
 PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_features.parquet')
+UNLABELLED_PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_features.parquet')
+
 PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
+UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_encoded_features.parquet')
+
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
 
 # Paths for models and hyperparameters
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
+
+CLUSTER_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_kmeans_clustering_model.pkl')
+
 HYPER_MODEL_PATH = os.path.join(HYPER_CLASSIFIER_DIR, f'{prefix}_hyper_classifier_model.xgb')
-META_MODEL_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_meta_classifier_model.xgb')
+
 META_MODEL_BEST_PARAMS_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_best_hyperparameters.json')
+META_MODEL_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_meta_classifier_model.xgb')
 
 # For Hyper Classifier
 CONTRIBUTION_FINAL_MODEL_PATH = os.path.join(os.path.join(BASE_DIR, 'models', f"contribution_model"), SPLIT_METHOD,

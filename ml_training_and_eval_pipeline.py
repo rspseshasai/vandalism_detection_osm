@@ -1,6 +1,7 @@
 import os
 import sys
 
+import joblib
 import pandas as pd
 from adodbapi import NotSupportedError
 
@@ -9,7 +10,7 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
-    PROCESSED_ENCODED_FEATURES_FILE
+    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -38,7 +39,7 @@ from src.bootstrap_evaluation import (
 def data_loading_helper():
     logger.info("Starting data loading...")
 
-    data_df = load_data(print_sample_data=False)
+    data_df = load_data(data_path=config.RAW_DATA_FILE, print_sample_data=False)
 
     if config.SAVE_VISUALIZATION_SAMPLES:
         sample_path = config.VISUALIZATION_DATA_PATH['data_loading']
@@ -54,8 +55,10 @@ def feature_engineering_helper(data_df):
     logger.info("Starting feature engineering...")
     features_df = get_or_generate_features(
         data_df,
+        True,
+        PROCESSED_FEATURES_FILE,
         force_compute_features=FORCE_COMPUTE_FEATURES,
-        test_mode=TEST_RUN
+        test_mode=TEST_RUN,
     )
 
     if config.SAVE_VISUALIZATION_SAMPLES:
@@ -70,7 +73,7 @@ def feature_engineering_helper(data_df):
 # Step 3: Preprocessing
 def preprocessing_helper(features_df):
     logger.info("Starting preprocessing...")
-    X_encoded, y = preprocess_features(features_df)
+    X_encoded, y = preprocess_features(features_df, True)
 
     if config.SAVE_VISUALIZATION_SAMPLES:
         sample_path_X = config.VISUALIZATION_DATA_PATH['preprocessing_X']
@@ -152,8 +155,12 @@ def data_splitting_helper(X_encoded, y, split_type):
 # Step 5: Clustering
 def clustering_helper(X_train, X_val, X_test, X_test_meta):
     logger.info("Starting clustering...")
-    X_train, X_val, X_test, X_test_meta = perform_clustering(X_train, X_val, X_test, X_test_meta,
-                                                             n_clusters=config.N_CLUSTERS)
+    X_train, X_val, X_test, X_test_meta, clustering_model = perform_clustering(
+        X_train, X_val, X_test, X_test_meta, n_clusters=config.N_CLUSTERS
+    )
+
+    # Save the clustering model (already done in perform_clustering)
+    joblib.dump(clustering_model, CLUSTER_MODEL_PATH)
 
     X_combined = pd.concat([X_train, X_val, X_test, X_test_meta])
     # Save to a Parquet file for hyper classifier

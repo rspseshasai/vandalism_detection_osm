@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from config import PROCESSED_FEATURES_FILE, SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, COMMON_CHANGESET_IDS
+from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, COMMON_CHANGESET_IDS
 from config import logger
 
 
@@ -390,7 +390,7 @@ def extract_map_features(contribution):
     return features
 
 
-def extract_features(contribution_df):
+def extract_features(contribution_df, is_training):
     feature_list = []
 
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
@@ -431,7 +431,8 @@ def extract_features(contribution_df):
         features.update(extract_map_features(contribution))
 
         # Target label
-        features['vandalism'] = contribution['vandalism']
+        if is_training:
+            features['vandalism'] = contribution['vandalism']
 
         feature_list.append(features)
 
@@ -464,7 +465,8 @@ def extract_features_changeset(data_df):
     return data_df
 
 
-def get_or_generate_features(data_df, force_compute_features=False, test_mode=False):
+def get_or_generate_features(data_df, is_training, processed_features_file_path, force_compute_features=False,
+                             test_mode=False):
     """
     Load existing features or generate them if not available.
 
@@ -476,25 +478,26 @@ def get_or_generate_features(data_df, force_compute_features=False, test_mode=Fa
     Returns:
     - pd.DataFrame: DataFrame containing extracted features.
     """
-    if os.path.exists(PROCESSED_FEATURES_FILE) and not force_compute_features:
-        logger.info(f"Loading features from {PROCESSED_FEATURES_FILE}...")
-        features_df = pd.read_parquet(PROCESSED_FEATURES_FILE)
+    if os.path.exists(processed_features_file_path) and not force_compute_features:
+        logger.info(f"Loading features from {processed_features_file_path}...")
+        features_df = pd.read_parquet(processed_features_file_path)
 
     else:
         logger.info("Extracting features...")
         if DATASET_TYPE == 'changeset':
             features_df = extract_features_changeset(data_df)
         else:
-            features_df = extract_features(data_df)
-        logger.info(f"Saving features to {PROCESSED_FEATURES_FILE}...")
-        features_df.to_parquet(PROCESSED_FEATURES_FILE)
+            features_df = extract_features(data_df, is_training)
+        logger.info(f"Saving features to {processed_features_file_path}...")
+        features_df.to_parquet(processed_features_file_path)
 
-    if test_mode:
-        logger.info("Test mode enabled: Limiting to entries matching Test changeset IDs.")
-        features_df = features_df[features_df['changeset_id'].isin(TEST_CHANGESET_IDS)]
-    else:
-        logger.info("Limiting to entries matching common changeset IDs.")
-        features_df = features_df[features_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
+    if is_training:
+        if test_mode:
+            logger.info("Test mode enabled: Limiting to entries matching Test changeset IDs.")
+            features_df = features_df[features_df['changeset_id'].isin(TEST_CHANGESET_IDS)]
+        else:
+            logger.info("Limiting to entries matching common changeset IDs.")
+            features_df = features_df[features_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
 
     logger.info(f"Features DataFrame Shape: {features_df.shape}")
     return features_df

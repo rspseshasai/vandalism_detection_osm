@@ -70,7 +70,7 @@ def preprocess_changeset_features(features_df):
     return X_encoded, y
 
 
-def preprocess_contribution_features(features_df):
+def preprocess_contribution_features(features_df, is_training):
     logger.info("Starting preprocessing of contribution features...")
 
     # Shuffle the data entries
@@ -96,8 +96,11 @@ def preprocess_contribution_features(features_df):
     features_df.columns = features_df.columns.str.replace(' ', '_', regex=True)
 
     # Split into features and target
-    X = features_df.drop('vandalism', axis=1).copy()
-    y = features_df['vandalism'].copy()
+    if is_training:
+        X = features_df.drop('vandalism', axis=1).copy()
+        y = features_df['vandalism'].copy()
+    else:
+        y = None
 
     # One-hot encode 'countries' if it exists
     if 'countries' in X.columns:
@@ -125,7 +128,7 @@ def preprocess_contribution_features(features_df):
     return X_encoded, y
 
 
-def preprocess_features(features_df):
+def preprocess_features(features_df, is_training):
     """
     Preprocess the features DataFrame for ML training.
 
@@ -140,4 +143,4 @@ def preprocess_features(features_df):
     if DATASET_TYPE == 'changeset':
         return preprocess_changeset_features(features_df)
 
-    return preprocess_contribution_features(features_df)
+    return preprocess_contribution_features(features_df, is_training)

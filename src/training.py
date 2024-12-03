@@ -39,3 +39,29 @@ def save_model(model, model_path):
     logger.info(f"Saving model to {model_path}...")
     dump(model, model_path)
     logger.info("Model saved successfully.")
+
+import os
+import joblib
+from config import logger
+
+def load_model(model_path):
+    """
+    Load a trained machine learning model from the specified path.
+
+    Parameters:
+    - model_path: str, path to the saved model file.
+
+    Returns:
+    - model: The loaded model.
+    """
+    if not os.path.exists(model_path):
+        logger.error(f"Model file not found at {model_path}")
+        raise FileNotFoundError(f"Model file not found at {model_path}")
+
+    try:
+        model = joblib.load(model_path)
+        logger.info(f"Model loaded successfully from {model_path}")
+        return model
+    except Exception as e:
+        logger.error(f"Failed to load model from {model_path}: {str(e)}")
+        raise
