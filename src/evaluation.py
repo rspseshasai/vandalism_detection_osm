@@ -117,7 +117,6 @@ def plot_confusion_matrix(model_type):
     plt.show()
 
 
-
 def plot_roc_pr_curves(model_type):
     """
     Plot ROC and Precision-Recall curves using saved evaluation data.
@@ -147,6 +146,7 @@ def plot_roc_pr_curves(model_type):
     plt.title('Precision-Recall Curve')
     plt.legend()
     plt.show()
+
 
 def evaluate_model_with_cv(X, y, best_params, cv=5):
     """

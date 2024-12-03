@@ -9,7 +9,7 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
-    PROCESSED_ENCODED_FEATURES_FILE, prefix
+    PROCESSED_ENCODED_FEATURES_FILE
 from src import config
 from src.data_loading import load_data
 from src.feature_engineering import get_or_generate_features
@@ -136,7 +136,8 @@ def data_splitting_helper(X_encoded, y, split_type):
     calculate_statistics(y_train, "Train Set")
     calculate_statistics(y_val, "Validation Set")
     calculate_statistics(y_test, "Test Set")
-    calculate_statistics(y_test_meta, "Meta Test Set")
+    if DATASET_TYPE == 'changeset':
+        calculate_statistics(y_test_meta, "Meta Test Set")
 
     if config.SAVE_VISUALIZATION_SAMPLES:
         X_train.head(100).to_parquet(config.VISUALIZATION_DATA_PATH['data_splitting_X_train'])

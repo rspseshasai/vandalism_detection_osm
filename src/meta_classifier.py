@@ -1,5 +1,8 @@
 # meta_classifier.py
 
+import json
+import os
+
 import pandas as pd
 import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
@@ -8,7 +11,8 @@ from sklearn.metrics import (
     confusion_matrix, roc_auc_score, classification_report
 )
 from sklearn.model_selection import GridSearchCV
-from config import logger
+
+from config import logger, META_MODEL_PATH, META_MODEL_BEST_PARAMS_PATH, VISUALIZATION_DATA_PATH
 
 
 def check_for_data_consistency(evaluation_results_main_model, evaluation_results_hyper_classifier_model):
@@ -118,45 +122,74 @@ def train_meta_classifier(X_meta_train, y_meta_train, model_type='logistic_regre
         meta_model = LogisticRegression()
         meta_model.fit(X_meta_train, y_meta_train)
     elif model_type == 'xgboost':
-        # Define the parameter grid to search
-        param_grid = {
-            'n_estimators': [100, 200, 500],
-            'max_depth': [2, 3, 4, 5],
-            'learning_rate': [0.01, 0.05, 0.1],
-            'subsample': [0.6, 0.8, 1.0],
-            'colsample_bytree': [0.6, 0.8, 1.0],
-            'gamma': [0, 0.1, 0.2],
-            'reg_alpha': [0, 0.01, 0.1],
-            'reg_lambda': [1, 1.5, 2]
-        }
+        # Define the hyperparameter file path
+        hyperparams_file = META_MODEL_BEST_PARAMS_PATH
 
-        xgb_model = xgb.XGBClassifier(
-            objective='binary:logistic',
-            eval_metric='logloss',
-            random_state=42
-        )
+        if os.path.exists(hyperparams_file):
+            # Load hyperparameters from file
+            with open(hyperparams_file, 'r') as f:
+                best_params = json.load(f)
+            print("Loaded meta classifier's hyperparameters from file:")
+            print(best_params)
 
-        # Initialize GridSearchCV
-        grid_search = GridSearchCV(
-            estimator=xgb_model,
-            param_grid=param_grid,
-            scoring='roc_auc',
-            cv=5,
-            n_jobs=-1,
-            verbose=1
-        )
+            # Initialize the model with best parameters
+            meta_model = xgb.XGBClassifier(
+                objective='binary:logistic',
+                eval_metric='logloss',
+                random_state=42,
+                **best_params
+            )
+            meta_model.fit(X_meta_train, y_meta_train)
+        else:
+            # Perform hyperparameter tuning
+            # Define the parameter grid to search
+            param_grid = {
+                'n_estimators': [100, 200, 500],
+                'max_depth': [2, 3, 4, 5],
+                'learning_rate': [0.01, 0.05, 0.1],
+                'subsample': [0.6, 0.8, 1.0],
+                'colsample_bytree': [0.6, 0.8, 1.0],
+                'gamma': [0, 0.1, 0.2],
+                'reg_alpha': [0, 0.01, 0.1],
+                'reg_lambda': [1, 1.5, 2]
+            }
 
-        # Perform the grid search
-        grid_search.fit(X_meta_train, y_meta_train)
+            xgb_model = xgb.XGBClassifier(
+                objective='binary:logistic',
+                eval_metric='logloss',
+                random_state=42
+            )
 
-        # Get the best model
-        meta_model = grid_search.best_estimator_
+            # Initialize GridSearchCV
+            grid_search = GridSearchCV(
+                estimator=xgb_model,
+                param_grid=param_grid,
+                scoring='roc_auc',
+                cv=5,
+                n_jobs=-1,
+                verbose=1
+            )
 
-        print("Best parameters found for XGBoost meta-classifier:")
-        print(grid_search.best_params_)
-        print(f"Best AUC-ROC score from cross-validation: {grid_search.best_score_:.4f}")
+            # Perform the grid search
+            grid_search.fit(X_meta_train, y_meta_train)
+
+            # Get the best model
+            meta_model = grid_search.best_estimator_
+
+            print("Best parameters found for XGBoost meta-classifier:")
+            print(grid_search.best_params_)
+            print(f"Best AUC-ROC score from cross-validation: {grid_search.best_score_:.4f}")
+
+            # Save best hyperparameters to file
+            with open(hyperparams_file, 'w') as f:
+                json.dump(grid_search.best_params_, f)
+            print(f"Best hyperparameters saved to {hyperparams_file}")
     else:
         raise ValueError("Invalid model_type. Choose 'logistic_regression' or 'xgboost'.")
+
+    # Save model
+    meta_model.save_model(META_MODEL_PATH)
+    logger.info(f"Hyper-classifier model saved to {META_MODEL_PATH}")
 
     return meta_model
 
@@ -281,5 +314,18 @@ def meta_classifier_pipeline(merged_results, main_model, hyper_classifier_model,
     if model_type == 'xgboost':
         print("\nBest parameters used for XGBoost meta-classifier:")
         print(meta_model.get_params())
+
+    # Save results for visualization
+    results_df = pd.DataFrame({
+        'y_true': y_meta_test,
+        'y_pred_main_model': y_pred_main_meta,
+        'y_prob_main_model': y_prob_main_meta,
+        'y_pred_hyper_classifier': y_pred_hyper_meta,
+        'y_prob_hyper_classifier': y_prob_hyper_meta,
+        'y_pred_meta_classifier': y_meta_pred,
+        'y_prob_meta_classifier': y_meta_prob
+    })
+    results_df.to_csv(VISUALIZATION_DATA_PATH['evaluation_results_meta_classifier'], index=False)
+    print(f"\nMeta-classifier results saved to '{VISUALIZATION_DATA_PATH['evaluation_results_meta_classifier']}' for visualization.")
 
     return metrics_df
