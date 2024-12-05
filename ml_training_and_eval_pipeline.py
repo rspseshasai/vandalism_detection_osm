@@ -161,6 +161,7 @@ def clustering_helper(X_train, X_val, X_test, X_test_meta):
 
     # Save the clustering model (already done in perform_clustering)
     joblib.dump(clustering_model, CLUSTER_MODEL_PATH)
+    logger.info(f"Clustering model saved to '{CLUSTER_MODEL_PATH}'.")
 
     X_combined = pd.concat([X_train, X_val, X_test, X_test_meta])
     # Save to a Parquet file for hyper classifier

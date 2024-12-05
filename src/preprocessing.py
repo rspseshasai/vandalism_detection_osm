@@ -100,6 +100,7 @@ def preprocess_contribution_features(features_df, is_training):
         X = features_df.drop('vandalism', axis=1).copy()
         y = features_df['vandalism'].copy()
     else:
+        X = features_df
         y = None
 
     # One-hot encode 'countries' if it exists

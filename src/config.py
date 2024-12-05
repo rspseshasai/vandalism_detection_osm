@@ -33,6 +33,7 @@ RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
 VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization', SPLIT_METHOD)
 MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
+OUTPUT_DIR = os.path.join(DATA_DIR, 'output')
 
 # === Hyper-Classifier Paths ===
 HYPER_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'hyper_classifier')
@@ -51,6 +52,7 @@ os.makedirs(RAW_DATA_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 os.makedirs(VISUALIZATION_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # === Clustering Configuration ===
 N_CLUSTERS = 100  # Default number of clusters for KMeans
@@ -77,7 +79,8 @@ PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_
 UNLABELLED_PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_features.parquet')
 
 PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
-UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_encoded_features.parquet')
+UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
+                                                          f'{prefix}_unlabelled_processed_encoded_features.parquet')
 
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
@@ -101,6 +104,7 @@ CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(
     f'{prefix}_processed_encoded_features.parquet')
 
 os.makedirs(os.path.join(MODELS_DIR, SPLIT_METHOD), exist_ok=True)
+UNLABELLED_PROCESSED_OUTPUT_CSV_FILE = os.path.join(OUTPUT_DIR, f'{prefix}_unlabelled_predictions.csv')
 
 # === Visualization Paths ===
 VISUALIZATION_DATA_PATH = {

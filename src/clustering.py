@@ -40,10 +40,6 @@ def perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=100):
     clustering_model = KMeans(n_clusters=n_clusters, random_state=config.RANDOM_STATE)
     clustering_model.fit(centroids_train)
 
-    # Save the clustering model
-    joblib.dump(clustering_model, 'kmeans_clustering_model.pkl')
-    logger.info("Clustering model saved to 'kmeans_clustering_model.pkl'.")
-
     # Assign cluster labels to training data
     X_train = X_train.copy()
     X_train['cluster_label'] = clustering_model.labels_
