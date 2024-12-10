@@ -3,13 +3,17 @@
 import xgboost as xgb
 from joblib import dump
 
-from src.config import logger
+from src.config import logger, FINAL_TRAINED_FEATURES_PATH
 
 
 def train_final_model(X_train, y_train, X_val, y_val, best_params):
     """
     Train the final XGBoost model using the best hyperparameters.
     """
+    trained_feature_names = X_train.columns.tolist()
+    joblib.dump(trained_feature_names, FINAL_TRAINED_FEATURES_PATH)
+
+
     logger.info("Training final model with best hyperparameters...")
     final_model = xgb.XGBClassifier(
         objective='binary:logistic',

@@ -386,6 +386,8 @@ def extract_map_features(contribution):
 
     # Add each map feature as a separate column
     for feature_name, feature_value in map_features.items():
+        if feature_value == None:
+            feature_value = False
         features[feature_name] = int(feature_value)  # Store as 0 or 1
     return features
 
@@ -496,8 +498,9 @@ def get_or_generate_features(data_df, is_training, processed_features_file_path,
             logger.info("Test mode enabled: Limiting to entries matching Test changeset IDs.")
             features_df = features_df[features_df['changeset_id'].isin(TEST_CHANGESET_IDS)]
         else:
-            logger.info("Limiting to entries matching common changeset IDs.")
-            features_df = features_df[features_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
+            pass
+            # logger.info("Limiting to entries matching common changeset IDs.")
+            # features_df = features_df[features_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
 
     logger.info(f"Features DataFrame Shape: {features_df.shape}")
     return features_df
