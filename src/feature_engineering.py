@@ -4,9 +4,10 @@ from datetime import timedelta
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from tqdm import tqdm
 
-from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, COMMON_CHANGESET_IDS
+from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS
 from config import logger
 
 
@@ -131,32 +132,33 @@ def calculate_time_since_last_edit(contribution, contribution_df):
     return time_since_last_edit
 
 
-def calculate_edit_history_features(contribution_df):
+import logging
+from multiprocessing import Pool, cpu_count
+
+
+def _process_chunk(df_chunk):
     """
-    Calculate historical features for each OSM element.
-
-    Parameters:
-    - contribution_df (pd.DataFrame): DataFrame containing contribution data.
-
-    Returns:
-    - Tuple[dict, dict, dict]: Dictionaries for edit frequency, number of past edits,
-      and last edit time per osm_id.
+    Process a chunk of the DataFrame that is guaranteed to contain whole osm_id groups.
+    Assumes df_chunk is already sorted by osm_id and valid_from.
     """
-    logger.info("Calculating historical features for OSM elements...")
-
-    # Initialize dictionaries to store historical features
     edit_frequency = {}
     number_of_past_edits = {}
     last_edit_time = {}
 
-    for osm_id, group in tqdm(contribution_df.groupby('osm_id'), desc="Historical Feature Calculation"):
-        sorted_group = group.sort_values('valid_from')  # Sort by timestamp
-        num_edits = len(sorted_group)
+    current_osm_id = None
+    current_indices = []
+    current_timestamps = []
 
-        # Calculate historical validity categories
+    # Helper function to finalize a group once we reach the end of that osm_id
+    def finalize_group(osm_id, indices, timestamps):
+        if not indices:
+            return
+        num_edits = len(indices)
+
+        # Determine validity
         if num_edits <= 5:
             validity = 'rarely_edited'
-        elif 5 < num_edits <= 20:
+        elif num_edits <= 20:
             validity = 'moderately_edited'
         else:
             validity = 'frequently_edited'
@@ -164,16 +166,108 @@ def calculate_edit_history_features(contribution_df):
         edit_frequency[osm_id] = validity
         number_of_past_edits[osm_id] = num_edits
 
-        # Calculate the time since the last edit for each contribution in the group
-        timestamps = sorted_group['valid_from'].values
-        last_edit_times = [0]  # First edit has no previous edit
-        for i in range(1, len(timestamps)):
+        # Compute last edit times
+        last_times = [0]  # First edit has no previous edit
+        for i in range(1, num_edits):
             time_since_last = (timestamps[i] - timestamps[i - 1]) / np.timedelta64(1, 'h')
-            last_edit_times.append(time_since_last)
+            last_times.append(time_since_last)
 
-        # Store the last edit time for each contribution
-        for i, row in enumerate(sorted_group.itertuples()):
-            last_edit_time[row.Index] = last_edit_times[i]
+        for idx, lt in zip(indices, last_times):
+            last_edit_time[idx] = lt
+
+    # Iterate over chunk rows
+    for row in df_chunk.itertuples():
+        osm_id = getattr(row, 'osm_id')
+        valid_from = getattr(row, 'valid_from')
+        idx = row.Index
+
+        # If we moved to a new osm_id, finalize the previous one
+        if osm_id != current_osm_id and current_osm_id is not None:
+            finalize_group(current_osm_id, current_indices, current_timestamps)
+            current_indices = []
+            current_timestamps = []
+
+        current_osm_id = osm_id
+        current_indices.append(idx)
+        current_timestamps.append(valid_from)
+
+    # Finalize the last group in the chunk
+    if current_osm_id is not None:
+        finalize_group(current_osm_id, current_indices, current_timestamps)
+
+    return edit_frequency, number_of_past_edits, last_edit_time
+
+
+def calculate_edit_history_features(contribution_df, num_partitions=None):
+    """
+    Calculate historical features for each OSM element in parallel.
+
+    Parameters:
+    - contribution_df (pd.DataFrame): DataFrame containing contribution data.
+    - num_partitions (int, optional): Number of parallel partitions. Defaults to number of CPUs.
+
+    Returns:
+    - Tuple[dict, dict, dict]: Dictionaries for edit frequency, number of past edits,
+      and last edit time per osm_id.
+    """
+    logger.info("Calculating historical features for OSM elements...")
+
+    if num_partitions is None:
+        num_partitions = cpu_count()
+
+    # Sort the entire DataFrame once by osm_id and valid_from
+    logger.info("Sorting the DataFrame...")
+    contribution_df = contribution_df.sort_values(['osm_id', 'valid_from'])
+
+    # Extract series for detecting group boundaries
+    osm_ids = contribution_df['osm_id'].values
+    n = len(osm_ids)
+
+    # Find indices where osm_id changes, so we can partition by osm_id boundaries
+    logger.info("Determining partitions...")
+    change_points = np.where(osm_ids[:-1] != osm_ids[1:])[0] + 1
+    # Add start and end boundaries
+    boundaries = np.concatenate(([0], change_points, [n]))
+
+    # We'll aim for num_partitions large chunks by dividing the data evenly by count of rows
+    # But we must ensure chunks start and end at osm_id boundaries
+    desired_chunk_size = n // num_partitions
+    chunk_starts = [0]
+    for i in range(1, num_partitions):
+        # Find the boundary close to i * desired_chunk_size
+        target = i * desired_chunk_size
+        # Closest boundary to target
+        boundary_idx = np.searchsorted(boundaries, target, side='right') - 1
+        chunk_starts.append(boundaries[boundary_idx])
+    chunk_starts.append(n)
+
+    # Create chunk slices
+    chunk_slices = []
+    for i in range(len(chunk_starts)-1):
+        start = chunk_starts[i]
+        end = chunk_starts[i+1]
+        chunk_slices.append((start, end))
+
+    # Extract chunks
+    # We'll store DataFrame views for each chunk
+    logger.info("Creating chunks for parallel processing...")
+    df_chunks = [contribution_df.iloc[slice(*slc)] for slc in chunk_slices]
+
+    # Process in parallel
+    logger.info("Starting parallel computation...")
+    with Pool(processes=num_partitions) as pool:
+        results = list(tqdm(pool.imap(_process_chunk, df_chunks), total=len(df_chunks)))
+
+    # Combine results
+    logger.info("Combining results from all chunks...")
+    edit_frequency = {}
+    number_of_past_edits = {}
+    last_edit_time = {}
+
+    for ef, npe, let in results:
+        edit_frequency.update(ef)
+        number_of_past_edits.update(npe)
+        last_edit_time.update(let)
 
     return edit_frequency, number_of_past_edits, last_edit_time
 
