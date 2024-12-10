@@ -65,7 +65,7 @@ CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.p
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
 CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v2.parquet'
-UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
+UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
 
 if DATASET_TYPE == 'changeset':
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CHANGESET_DATA_RAW_FILE_NAME)

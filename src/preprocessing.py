@@ -19,7 +19,7 @@ def encode_multilabel_column(df, column_name, prefix):
     Returns:
     - Updated DataFrame with the original column replaced by one-hot encoded columns.
     """
-    logger.info(f"Encoding multi-label column '{column_name}' with prefix '{prefix}'")
+    # logger.info(f"Encoding multi-label column '{column_name}' with prefix '{prefix}'")
     # Initialize the MultiLabelBinarizer
     mlb = MultiLabelBinarizer()
 
@@ -75,7 +75,6 @@ def preprocess_contribution_features(features_df, is_training):
 
     # Shuffle the data entries
     features_df = features_df.sample(frac=1, random_state=config.RANDOM_STATE).reset_index(drop=True)
-    logger.info("Shuffled the features DataFrame.")
 
     # Handle 'xzcode' column
     if 'xzcode' in features_df.columns:
@@ -83,7 +82,6 @@ def preprocess_contribution_features(features_df, is_training):
         xzcode_df = pd.json_normalize(features_df['xzcode'])
         features_df[['code', 'level']] = xzcode_df[['code', 'level']]
         features_df.drop('xzcode', axis=1, inplace=True)
-        logger.info("Processed 'xzcode' column.")
 
     # Drop unnecessary columns
     columns_to_drop = ['geometry', 'osm_id', 'members', 'status', 'editor_used',

@@ -147,13 +147,11 @@ def calculate_edit_history_features(contribution_df, num_partitions=None):
     if num_partitions is None:
         num_partitions = cpu_count()
 
-    logger.info("Sorting the DataFrame...")
     contribution_df = contribution_df.sort_values(['osm_id', 'valid_from'])
 
     osm_ids = contribution_df['osm_id'].values
     n = len(osm_ids)
 
-    logger.info("Determining partitions...")
     change_points = np.where(osm_ids[:-1] != osm_ids[1:])[0] + 1
     boundaries = np.concatenate(([0], change_points, [n]))
 
@@ -171,14 +169,11 @@ def calculate_edit_history_features(contribution_df, num_partitions=None):
         end = chunk_starts[i + 1]
         chunk_slices.append((start, end))
 
-    logger.info("Creating chunks for parallel processing...")
     df_chunks = [contribution_df.iloc[slice(*slc)] for slc in chunk_slices]
 
-    logger.info("Starting parallel computation...")
     with Pool(processes=num_partitions) as pool:
         results = list(tqdm(pool.imap(_process_chunk, df_chunks), total=len(df_chunks)))
 
-    logger.info("Combining results from all chunks...")
     edit_frequency = {}
     number_of_past_edits = {}
     last_edit_time = {}
@@ -433,20 +428,17 @@ def _process_records(records):
 
 
 def extract_features(contribution_df, is_training):
-    logger.info("Precomputing user edit frequencies and historical features...")
+
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
     edit_freq, num_past_edits, last_edit_time = calculate_edit_history_features(contribution_df)
 
     # Precompute time_since_last_edit for each contribution
-    logger.info("Precomputing time_since_last_edit...")
     tsle_dict = calculate_all_time_since_last_edit(contribution_df)
     # Add this as a column so we don't need the df in extract_temporal_features
     contribution_df = contribution_df.assign(time_since_last_edit=contribution_df.index.map(tsle_dict))
 
     # Also store original index for historical features
     contribution_df = contribution_df.assign(original_index=contribution_df.index)
-
-    logger.info("Converting DataFrame to records...")
     records = contribution_df.to_dict('records')
 
     num_partitions = cpu_count()
@@ -462,7 +454,6 @@ def extract_features(contribution_df, is_training):
         for res in tqdm(results_iter, total=len(index_chunks), desc="Parallel Feature Extraction"):
             results.append(res)
 
-    logger.info("Combining results...")
     features_df = pd.concat(results, ignore_index=True)
     return features_df
 
@@ -494,8 +485,9 @@ def get_or_generate_features(data_df, is_training, processed_features_file_path,
             features_df = extract_features_changeset(data_df)
         else:
             features_df = extract_features(data_df, is_training)
-        logger.info(f"Saving features to {processed_features_file_path}...")
-        features_df.to_parquet(processed_features_file_path)
+        if is_training:
+            logger.info(f"Saving features to {processed_features_file_path}...")
+            features_df.to_parquet(processed_features_file_path)
 
     if is_training:
         if test_mode:
