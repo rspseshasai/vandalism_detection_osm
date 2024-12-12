@@ -12,7 +12,10 @@ sys.path.append(os.path.join(project_dir, 'src'))
 from config import logger, FINAL_MODEL_PATH, UNLABELLED_RAW_DATA_FILE, CLUSTER_MODEL_PATH, \
     UNLABELLED_PROCESSED_OUTPUT_CSV_FILE, UNLABELLED_PROCESSED_FEATURES_FILE, FINAL_TRAINED_FEATURES_PATH
 from training import load_model
-from src.feature_engineering import get_or_generate_features
+
+# from src.feature_engineering import get_or_generate_features
+from src.feature_engineering_parallel import get_or_generate_features
+
 from src.preprocessing import preprocess_features
 
 
@@ -54,7 +57,7 @@ def main():
 
     for i, chunk in enumerate(load_parquet_in_chunks(data_path, batch_size=batch_size)):
         logger.info(f"Processing chunk {i + 1}...")
-        if i == 50:
+        if i == 5:
             break
         features_df = get_or_generate_features(
             chunk,
