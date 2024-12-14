@@ -1,11 +1,10 @@
 import math
 import os
 from datetime import timedelta
+from multiprocessing import Pool, cpu_count
+
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-import logging
-from multiprocessing import Pool, cpu_count
 
 from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS
 from config import logger
@@ -62,32 +61,101 @@ def get_continents_for_bbox(xmin, xmax, ymin, ymax):
     return continents if continents else ['Other']
 
 
+from tqdm import tqdm
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
 def calculate_all_time_since_last_edit(contribution_df):
     """
     Precompute the time_since_last_edit for each row to avoid global DataFrame lookups later.
-    We mimic the logic in `calculate_time_since_last_edit`, but do it in one pass for all rows.
+    This version closely matches the original logic:
+    - Sort by user_id and valid_from so that previous contributions are contiguous.
+    - For each contribution by a user, if there's a strictly previous edit time < current_time,
+      compute the delta. If current_time is the same as last recorded edit time or no previous edit,
+      assign the 10-year placeholder.
     """
 
-    # Sort by user_id and valid_from so previous contributions for a user are contiguous
+    # Sort by user_id and valid_from
     df = contribution_df.sort_values(['user_id', 'valid_from'])
     time_since_last = []
     last_edit_per_user = {}
+    placeholder_hours = 10 * 365 * 24  # 10 years in hours
 
     for idx, row in df.iterrows():
         user_id = row['user_id']
         current_time = row['valid_from']
+
         if user_id in last_edit_per_user:
             last_time = last_edit_per_user[user_id]
-            delta_hours = (current_time - last_time).total_seconds() / 3600.0
-            time_since_last.append((idx, delta_hours))
+            # Only if current_time > last_time do we compute the actual delta
+            # If current_time == last_time, this should mimic the original logic,
+            # which would find no strictly previous edit with < current_time.
+            if current_time > last_time:
+                delta_hours = (current_time - last_time).total_seconds() / 3600.0
+                time_since_last.append((idx, delta_hours))
+            else:
+                # current_time == last_time or something not strictly greater
+                # In original logic, that means no strictly previous contribution
+                time_since_last.append((idx, placeholder_hours))
         else:
-            # No previous edit: 10 years in hours
-            time_since_last.append((idx, 10 * 365 * 24))
+            # No previous edit for this user
+            time_since_last.append((idx, placeholder_hours))
+
+        # Update the last_edit_per_user only after processing
+        # This is consistent with original logic since once we "consider" this contribution,
+        # it can serve as a previous edit for future contributions with strictly greater times.
         last_edit_per_user[user_id] = current_time
 
-    # Convert to a dictionary
     ts_dict = {i: t for i, t in time_since_last}
+    return ts_dict
 
+
+def calculate_all_time_since_last_edit(contribution_df):
+    """
+    Precompute the time_since_last_edit for each row to avoid global DataFrame lookups later.
+    This version closely matches the original logic:
+    - Sort by user_id and valid_from so that previous contributions are contiguous.
+    - For each contribution by a user, if there's a strictly previous edit time < current_time,
+      compute the delta. If current_time is the same as last recorded edit time or no previous edit,
+      assign the 10-year placeholder.
+    """
+
+    # Sort by user_id and valid_from
+    df = contribution_df.sort_values(['user_id', 'valid_from'])
+    time_since_last = []
+    last_edit_per_user = {}
+    placeholder_hours = 10 * 365 * 24  # 10 years in hours
+
+    for idx, row in df.iterrows():
+        user_id = row['user_id']
+        current_time = row['valid_from']
+
+        if user_id in last_edit_per_user:
+            last_time = last_edit_per_user[user_id]
+            # Only if current_time > last_time do we compute the actual delta
+            # If current_time == last_time, this should mimic the original logic,
+            # which would find no strictly previous edit with < current_time.
+            if current_time > last_time:
+                delta_hours = (current_time - last_time).total_seconds() / 3600.0
+                time_since_last.append((idx, delta_hours))
+            else:
+                # current_time == last_time or something not strictly greater
+                # In original logic, that means no strictly previous contribution
+                time_since_last.append((idx, placeholder_hours))
+        else:
+            # No previous edit for this user
+            time_since_last.append((idx, placeholder_hours))
+
+        # Update the last_edit_per_user only after processing
+        # This is consistent with original logic since once we "consider" this contribution,
+        # it can serve as a previous edit for future contributions with strictly greater times.
+        last_edit_per_user[user_id] = current_time
+
+    ts_dict = {i: t for i, t in time_since_last}
     return ts_dict
 
 
@@ -195,6 +263,7 @@ def get_grid_cell_id(lat, lon, grid_size=0.1):
 def extract_user_behavior_features(contribution, user_edit_frequencies):
     features = {}
     user_id = contribution['user_id']
+    features['user_id'] = user_id
     user_frequency = user_edit_frequencies.get(user_id, {})
     features.update(user_frequency)
 
@@ -237,7 +306,7 @@ def extract_temporal_features(contribution):
     features['day_of_week'] = timestamp.weekday()
     features['is_weekend'] = int(timestamp.weekday() >= 5)
 
-    # Now we use precomputed time_since_last_edit directly from contribution
+    # # Now we use precomputed time_since_last_edit directly from contribution
     features['time_since_last_edit'] = contribution['time_since_last_edit']
 
     if SPLIT_METHOD == 'temporal':
@@ -428,10 +497,10 @@ def _process_records(records):
 
 
 def extract_features(contribution_df, is_training):
-
     user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
     edit_freq, num_past_edits, last_edit_time = calculate_edit_history_features(contribution_df)
 
+    # Commented as the data is mismatching with non-parallel implementation
     # Precompute time_since_last_edit for each contribution
     tsle_dict = calculate_all_time_since_last_edit(contribution_df)
     # Add this as a column so we don't need the df in extract_temporal_features

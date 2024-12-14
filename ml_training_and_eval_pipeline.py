@@ -50,8 +50,8 @@ def data_loading_helper():
         logger.info(f"Saved data loading sample to {sample_path}")
 
     counts = data_df['vandalism'].value_counts()
-    print("Number of vandalism entries:", counts.get(1))
-    print("Number of non-vandalism entries:", counts.get(0))
+    logger.info(f"Number of vandalism contributions in the data set: {counts.get(1)}")
+    logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(0)}")
 
     logger.info("Data loading completed.")
     return data_df

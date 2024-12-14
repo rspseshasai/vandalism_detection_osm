@@ -7,7 +7,7 @@ import pandas as pd
 
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
-TEST_RUN = True
+TEST_RUN = False
 FORCE_COMPUTE_FEATURES = True
 
 # === Dataset Type ===
@@ -65,7 +65,8 @@ CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.p
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
 CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v2.parquet'
-UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
+# UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
+UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 
 if DATASET_TYPE == 'changeset':
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CHANGESET_DATA_RAW_FILE_NAME)
@@ -84,6 +85,8 @@ UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
 
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
+
+PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted')
 
 # Paths for models and hyperparameters
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')

@@ -243,6 +243,7 @@
 #     features['day_of_week'] = timestamp.weekday()  # 0 = Monday, 6 = Sunday
 #     features['is_weekend'] = int(timestamp.weekday() >= 5)  # 1 if Saturday or Sunday
 #
+#     # Commented as it is mismatching with parallel feature extraction's output
 #     # Time since last edit
 #     features['time_since_last_edit'] = calculate_time_since_last_edit(contribution, contribution_df)
 #
