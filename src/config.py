@@ -87,6 +87,7 @@ CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data',
                                      'changeset_labels.tsv')
 
 PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted')
+HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 
 # Paths for models and hyperparameters
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')

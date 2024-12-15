@@ -9,7 +9,7 @@ import pyarrow.dataset as ds
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
-TEST_PREDICTION_RUN = True
+TEST_PREDICTION_RUN = False
 
 from config import (
     logger,

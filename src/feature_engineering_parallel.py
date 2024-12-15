@@ -511,8 +511,17 @@ def extract_features(contribution_df, is_training):
     records = contribution_df.to_dict('records')
 
     num_partitions = cpu_count()
-    chunk_size = len(records) // num_partitions if num_partitions > 1 else len(records)
-    index_chunks = [records[i:i + chunk_size] for i in range(0, len(records), chunk_size)]
+    record_count = len(records)
+    if record_count == 0:
+        # No records, skip parallel processing, just return empty DataFrame
+        return pd.DataFrame()
+
+    chunk_size = record_count // num_partitions if num_partitions > 1 else record_count
+    if chunk_size == 0 and record_count > 0:
+        # If record_count > 0 but still chunk_size is 0, set chunk_size to 1
+        chunk_size = 1
+
+    index_chunks = [records[i:i + chunk_size] for i in range(0, record_count, chunk_size)]
 
     logger.info("Starting parallel feature extraction...")
     with Pool(processes=num_partitions,
