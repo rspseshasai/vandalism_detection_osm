@@ -149,9 +149,9 @@ TEST_REGIONS = ['North America', 'Asia']
 
 # === Temporal Split Parameters ===
 DATE_COLUMN = 'date_created'  # Column name in the DataFrame
-TRAIN_YEARS = [2018, 2019]
+TRAIN_YEARS = [2018, 2017]
 VAL_YEARS = [2015]
-TEST_YEARS = [2017]
+TEST_YEARS = [2019]
 
 # Test changeset ids
 # Take the first 1000 changeset IDs for testing
