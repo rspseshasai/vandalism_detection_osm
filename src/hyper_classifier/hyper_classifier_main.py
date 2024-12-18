@@ -5,7 +5,7 @@ from hyper_classifier.hyper_classfier_data_collection import data_loading
 from hyper_classifier.hyper_classifier_data_splitting import split_data
 from hyper_classifier.hyper_classifier_feature_engineering import engineer_features
 from hyper_classifier.hyper_classifier_training import train_hyper_classifier
-from main import evaluation_helper
+from ml_training_and_eval_pipeline import evaluation_helper
 
 
 def run_hyper_classifier_pipeline(split_ids):

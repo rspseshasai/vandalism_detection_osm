@@ -8,7 +8,7 @@ import pandas as pd
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
-FORCE_COMPUTE_FEATURES = False
+FORCE_COMPUTE_FEATURES = True
 
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
@@ -33,6 +33,7 @@ RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
 VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization', SPLIT_METHOD)
 MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
+OUTPUT_DIR = os.path.join(DATA_DIR, 'output')
 
 # === Hyper-Classifier Paths ===
 HYPER_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'hyper_classifier')
@@ -51,6 +52,7 @@ os.makedirs(RAW_DATA_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 os.makedirs(VISUALIZATION_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # === Clustering Configuration ===
 N_CLUSTERS = 100  # Default number of clusters for KMeans
@@ -59,24 +61,45 @@ N_CLUSTERS = 100  # Default number of clusters for KMeans
 N_JOBS = 11  # -1 to use all available cores
 
 # === File Paths ===
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions.parquet'
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
+UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
+
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v2.parquet'
+# UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
+UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
+
 if DATASET_TYPE == 'changeset':
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CHANGESET_DATA_RAW_FILE_NAME)
+    UNLABELLED_RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME)
+
 else:
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CONTRIBUTION_DATA_RAW_FILE_NAME)
+    UNLABELLED_RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME)
 
 PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_features.parquet')
+UNLABELLED_PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_features.parquet')
+
 PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
+UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
+                                                          f'{prefix}_unlabelled_processed_encoded_features.parquet')
+
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
+
+PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted')
+HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 
 # Paths for models and hyperparameters
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
+FINAL_TRAINED_FEATURES_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_trained_features.pkl')
+
+CLUSTER_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_kmeans_clustering_model.pkl')
+
 HYPER_MODEL_PATH = os.path.join(HYPER_CLASSIFIER_DIR, f'{prefix}_hyper_classifier_model.xgb')
-META_MODEL_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_meta_classifier_model.xgb')
+
 META_MODEL_BEST_PARAMS_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_best_hyperparameters.json')
+META_MODEL_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_meta_classifier_model.xgb')
 
 # For Hyper Classifier
 CONTRIBUTION_FINAL_MODEL_PATH = os.path.join(os.path.join(BASE_DIR, 'models', f"contribution_model"), SPLIT_METHOD,
@@ -86,6 +109,7 @@ CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(
     f'{prefix}_processed_encoded_features.parquet')
 
 os.makedirs(os.path.join(MODELS_DIR, SPLIT_METHOD), exist_ok=True)
+UNLABELLED_PROCESSED_OUTPUT_CSV_FILE = os.path.join(OUTPUT_DIR, f'{prefix}_unlabelled_predictions.csv')
 
 # === Visualization Paths ===
 VISUALIZATION_DATA_PATH = {
