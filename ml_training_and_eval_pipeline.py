@@ -48,7 +48,11 @@ def data_loading_helper():
         data_df.head(100).to_parquet(sample_path)
         logger.info(f"Saved data loading sample to {sample_path}")
 
-    counts = data_df['vandalism'].value_counts()
+    try:
+        counts = data_df['vandalism'].value_counts()
+    except KeyError:
+        counts = data_df['label'].value_counts()
+
     logger.info(f"Number of vandalism contributions in the data set: {counts.get(1)}")
     logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(0)}")
 
