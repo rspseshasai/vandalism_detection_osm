@@ -111,7 +111,7 @@ def preprocess_contribution_features(features_df, is_training):
 
     # List of categorical columns to one-hot encode
     categorical_columns = ['osm_type', 'contribution_type', 'geometry_type',
-                           'edit_frequency_of_osm_element', 'time_of_day']
+                           'time_of_day']
 
     # Perform one-hot encoding
     X_encoded = pd.get_dummies(X, columns=categorical_columns)

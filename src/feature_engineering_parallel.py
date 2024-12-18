@@ -9,36 +9,12 @@ import pandas as pd
 from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS
 from config import logger
 
+from tqdm import tqdm
+import logging
 
-def calculate_user_edit_frequency(contributions):
-    logger.info("Calculating user edit frequencies over different time windows...")
-    user_edit_frequencies = {}
-
-    max_timestamp = contributions['valid_from'].max()
-
-    windows = {
-        '7d': timedelta(days=7),
-        '14d': timedelta(days=14),
-        '30d': timedelta(days=30),
-        '60d': timedelta(days=60),
-        '180d': timedelta(days=180),
-        '365d': timedelta(days=365),
-        'all': max_timestamp - contributions['valid_from'].min(),
-    }
-
-    for user_id, group in tqdm(contributions.groupby('user_id'), desc="User Edit Frequency"):
-        user_contributions = group.sort_values('valid_from')
-        frequencies = {}
-        for window_name, window_timedelta in windows.items():
-            window_start = max_timestamp - window_timedelta
-            window_contributions = user_contributions[user_contributions['valid_from'] >= window_start]
-            total_edits = len(window_contributions)
-            days_in_window = max(window_timedelta.days, 1)
-            edit_frequency = total_edits / days_in_window
-            frequencies[f'edit_frequency_{window_name}'] = edit_frequency
-        user_edit_frequencies[user_id] = frequencies
-
-    return user_edit_frequencies
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def get_continents_for_bbox(xmin, xmax, ymin, ymax):
@@ -59,217 +35,6 @@ def get_continents_for_bbox(xmin, xmax, ymin, ymax):
             continents.append(continent)
 
     return continents if continents else ['Other']
-
-
-from tqdm import tqdm
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-def calculate_all_time_since_last_edit(contribution_df):
-    """
-    Precompute the time_since_last_edit for each row to avoid global DataFrame lookups later.
-    This version closely matches the original logic:
-    - Sort by user_id and valid_from so that previous contributions are contiguous.
-    - For each contribution by a user, if there's a strictly previous edit time < current_time,
-      compute the delta. If current_time is the same as last recorded edit time or no previous edit,
-      assign the 10-year placeholder.
-    """
-
-    # Sort by user_id and valid_from
-    df = contribution_df.sort_values(['user_id', 'valid_from'])
-    time_since_last = []
-    last_edit_per_user = {}
-    placeholder_hours = 10 * 365 * 24  # 10 years in hours
-
-    for idx, row in df.iterrows():
-        user_id = row['user_id']
-        current_time = row['valid_from']
-
-        if user_id in last_edit_per_user:
-            last_time = last_edit_per_user[user_id]
-            # Only if current_time > last_time do we compute the actual delta
-            # If current_time == last_time, this should mimic the original logic,
-            # which would find no strictly previous edit with < current_time.
-            if current_time > last_time:
-                delta_hours = (current_time - last_time).total_seconds() / 3600.0
-                time_since_last.append((idx, delta_hours))
-            else:
-                # current_time == last_time or something not strictly greater
-                # In original logic, that means no strictly previous contribution
-                time_since_last.append((idx, placeholder_hours))
-        else:
-            # No previous edit for this user
-            time_since_last.append((idx, placeholder_hours))
-
-        # Update the last_edit_per_user only after processing
-        # This is consistent with original logic since once we "consider" this contribution,
-        # it can serve as a previous edit for future contributions with strictly greater times.
-        last_edit_per_user[user_id] = current_time
-
-    ts_dict = {i: t for i, t in time_since_last}
-    return ts_dict
-
-
-def calculate_all_time_since_last_edit(contribution_df):
-    """
-    Precompute the time_since_last_edit for each row to avoid global DataFrame lookups later.
-    This version closely matches the original logic:
-    - Sort by user_id and valid_from so that previous contributions are contiguous.
-    - For each contribution by a user, if there's a strictly previous edit time < current_time,
-      compute the delta. If current_time is the same as last recorded edit time or no previous edit,
-      assign the 10-year placeholder.
-    """
-
-    # Sort by user_id and valid_from
-    df = contribution_df.sort_values(['user_id', 'valid_from'])
-    time_since_last = []
-    last_edit_per_user = {}
-    placeholder_hours = 10 * 365 * 24  # 10 years in hours
-
-    for idx, row in df.iterrows():
-        user_id = row['user_id']
-        current_time = row['valid_from']
-
-        if user_id in last_edit_per_user:
-            last_time = last_edit_per_user[user_id]
-            # Only if current_time > last_time do we compute the actual delta
-            # If current_time == last_time, this should mimic the original logic,
-            # which would find no strictly previous edit with < current_time.
-            if current_time > last_time:
-                delta_hours = (current_time - last_time).total_seconds() / 3600.0
-                time_since_last.append((idx, delta_hours))
-            else:
-                # current_time == last_time or something not strictly greater
-                # In original logic, that means no strictly previous contribution
-                time_since_last.append((idx, placeholder_hours))
-        else:
-            # No previous edit for this user
-            time_since_last.append((idx, placeholder_hours))
-
-        # Update the last_edit_per_user only after processing
-        # This is consistent with original logic since once we "consider" this contribution,
-        # it can serve as a previous edit for future contributions with strictly greater times.
-        last_edit_per_user[user_id] = current_time
-
-    ts_dict = {i: t for i, t in time_since_last}
-    return ts_dict
-
-
-def _process_chunk(df_chunk):
-    edit_frequency = {}
-    number_of_past_edits = {}
-    last_edit_time = {}
-
-    current_osm_id = None
-    current_indices = []
-    current_timestamps = []
-
-    def finalize_group(osm_id, indices, timestamps):
-        if not indices:
-            return
-        num_edits = len(indices)
-        if num_edits <= 5:
-            validity = 'rarely_edited'
-        elif num_edits <= 20:
-            validity = 'moderately_edited'
-        else:
-            validity = 'frequently_edited'
-
-        edit_frequency[osm_id] = validity
-        number_of_past_edits[osm_id] = num_edits
-
-        last_times = [0]
-        for i in range(1, num_edits):
-            time_since_last = (timestamps[i] - timestamps[i - 1]) / np.timedelta64(1, 'h')
-            last_times.append(time_since_last)
-
-        for idx, lt in zip(indices, last_times):
-            last_edit_time[idx] = lt
-
-    for row in df_chunk.itertuples():
-        osm_id = getattr(row, 'osm_id')
-        valid_from = getattr(row, 'valid_from')
-        idx = row.Index
-        if osm_id != current_osm_id and current_osm_id is not None:
-            finalize_group(current_osm_id, current_indices, current_timestamps)
-            current_indices = []
-            current_timestamps = []
-
-        current_osm_id = osm_id
-        current_indices.append(idx)
-        current_timestamps.append(valid_from)
-
-    if current_osm_id is not None:
-        finalize_group(current_osm_id, current_indices, current_timestamps)
-
-    return edit_frequency, number_of_past_edits, last_edit_time
-
-
-def calculate_edit_history_features(contribution_df, num_partitions=None):
-    logger.info("Calculating historical features for OSM elements...")
-
-    if num_partitions is None:
-        num_partitions = cpu_count()
-
-    contribution_df = contribution_df.sort_values(['osm_id', 'valid_from'])
-
-    osm_ids = contribution_df['osm_id'].values
-    n = len(osm_ids)
-
-    change_points = np.where(osm_ids[:-1] != osm_ids[1:])[0] + 1
-    boundaries = np.concatenate(([0], change_points, [n]))
-
-    desired_chunk_size = n // num_partitions
-    chunk_starts = [0]
-    for i in range(1, num_partitions):
-        target = i * desired_chunk_size
-        boundary_idx = np.searchsorted(boundaries, target, side='right') - 1
-        chunk_starts.append(boundaries[boundary_idx])
-    chunk_starts.append(n)
-
-    chunk_slices = []
-    for i in range(len(chunk_starts) - 1):
-        start = chunk_starts[i]
-        end = chunk_starts[i + 1]
-        chunk_slices.append((start, end))
-
-    df_chunks = [contribution_df.iloc[slice(*slc)] for slc in chunk_slices]
-
-    with Pool(processes=num_partitions) as pool:
-        results = list(tqdm(pool.imap(_process_chunk, df_chunks), total=len(df_chunks)))
-
-    edit_frequency = {}
-    number_of_past_edits = {}
-    last_edit_time = {}
-
-    for ef, npe, let in results:
-        edit_frequency.update(ef)
-        number_of_past_edits.update(npe)
-        last_edit_time.update(let)
-
-    return edit_frequency, number_of_past_edits, last_edit_time
-
-
-def get_grid_cell_id(lat, lon, grid_size=0.1):
-    x_index = int((lon + 180) / grid_size)
-    y_index = int((lat + 90) / grid_size)
-    return f"{x_index}_{y_index}"
-
-
-def extract_user_behavior_features(contribution, user_edit_frequencies):
-    features = {}
-    user_id = contribution['user_id']
-    features['user_id'] = user_id
-    user_frequency = user_edit_frequencies.get(user_id, {})
-    features.update(user_frequency)
-
-    editor = contribution['changeset']['editor'].split('/')[0]
-    features['editor_used'] = editor
-    return features
 
 
 def extract_geometric_features(contribution):
@@ -306,8 +71,8 @@ def extract_temporal_features(contribution):
     features['day_of_week'] = timestamp.weekday()
     features['is_weekend'] = int(timestamp.weekday() >= 5)
 
-    # # Now we use precomputed time_since_last_edit directly from contribution
-    features['time_since_last_edit'] = contribution['time_since_last_edit']
+    # Previously we used precomputed time_since_last_edit, but now removed
+    # so we won't set 'time_since_last_edit' here anymore.
 
     if SPLIT_METHOD == 'temporal':
         features['date_created'] = contribution['valid_from']
@@ -364,6 +129,16 @@ def extract_spatial_features(contribution):
     latitude = contribution['centroid']['y']
     longitude = contribution['centroid']['x']
 
+    # We no longer use user_edit_frequencies or historical features,
+    # so no need for complex logic here.
+    # Just compute spatial features as before.
+
+    # grid cell
+    def get_grid_cell_id(lat, lon, grid_size=0.1):
+        x_index = int((lon + 180) / grid_size)
+        y_index = int((lat + 90) / grid_size)
+        return f"{x_index}_{y_index}"
+
     grid_cell_id = get_grid_cell_id(latitude, longitude, grid_size=0.1)
     features['grid_cell_id'] = grid_cell_id
 
@@ -376,16 +151,6 @@ def extract_spatial_features(contribution):
     features['xzcode'] = contribution['xzcode']
     features['continents'] = get_continents_for_bbox(xmin, xmax, ymin, ymax)
 
-    return features
-
-
-def extract_historical_features(contribution, edit_frequency, num_past_edits, last_edit_time):
-    features = {}
-    osm_id = contribution['osm_id']
-    features['edit_frequency_of_osm_element'] = edit_frequency.get(osm_id, 'unknown')
-    features['number_of_past_edits_of_osm_element'] = num_past_edits.get(osm_id, 0)
-    # Use contribution's index (name) to get last_edit_time_of_osm_element
-    features['last_edit_time_of_osm_element'] = last_edit_time.get(contribution['original_index'], 0)
     return features
 
 
@@ -440,47 +205,31 @@ def extract_map_features(contribution):
     return features
 
 
-# ----------- PARALLEL EXTRACTION SETUP ----------- #
-GLOBAL_EDIT_FREQ = None
-GLOBAL_NUM_PAST_EDITS = None
-GLOBAL_LAST_EDIT_TIME = None
-GLOBAL_USER_EDIT_FREQ = None
+# Previously we had GLOBAL_* vars and complex logic for historical and user frequencies.
+# Now we remove them since we are not using these complicated features.
+
 GLOBAL_IS_TRAINING = None
 
 
-def _init_worker(user_edit_frequencies, edit_freq, num_past_edits, last_edit_time, is_training):
-    global GLOBAL_USER_EDIT_FREQ
-    global GLOBAL_EDIT_FREQ
-    global GLOBAL_NUM_PAST_EDITS
-    global GLOBAL_LAST_EDIT_TIME
+def _init_worker(is_training):
     global GLOBAL_IS_TRAINING
-
-    GLOBAL_USER_EDIT_FREQ = user_edit_frequencies
-    GLOBAL_EDIT_FREQ = edit_freq
-    GLOBAL_NUM_PAST_EDITS = num_past_edits
-    GLOBAL_LAST_EDIT_TIME = last_edit_time
     GLOBAL_IS_TRAINING = is_training
 
 
 def _process_records(records):
-    # records is a list of row dicts
-    # Global vars are set
     results = []
     for contribution in records:
         features = {}
-        # 1. User Behavior
-        features.update(extract_user_behavior_features(contribution, GLOBAL_USER_EDIT_FREQ))
+        # Removed user_edit_frequencies and historical features
+
         # 2. Geometric
         features.update(extract_geometric_features(contribution))
-        # 3. Temporal (no df needed now)
+        # 3. Temporal
         features.update(extract_temporal_features(contribution))
         # 4. Content
         features.update(extract_content_features(contribution))
         # 5. Spatial
         features.update(extract_spatial_features(contribution))
-        # 6. Historical
-        features.update(
-            extract_historical_features(contribution, GLOBAL_EDIT_FREQ, GLOBAL_NUM_PAST_EDITS, GLOBAL_LAST_EDIT_TIME))
         # 7. Derived
         features.update(extract_derived_features(contribution))
         # 8. Changeset
@@ -497,36 +246,26 @@ def _process_records(records):
 
 
 def extract_features(contribution_df, is_training):
-    user_edit_frequencies = calculate_user_edit_frequency(contribution_df)
-    edit_freq, num_past_edits, last_edit_time = calculate_edit_history_features(contribution_df)
+    # We no longer calculate user_edit_frequencies, historical features, or time_since_last_edit dict.
+    # Just directly extract features based on data.
 
-    # Commented as the data is mismatching with non-parallel implementation
-    # Precompute time_since_last_edit for each contribution
-    tsle_dict = calculate_all_time_since_last_edit(contribution_df)
-    # Add this as a column so we don't need the df in extract_temporal_features
-    contribution_df = contribution_df.assign(time_since_last_edit=contribution_df.index.map(tsle_dict))
-
-    # Also store original index for historical features
-    contribution_df = contribution_df.assign(original_index=contribution_df.index)
     records = contribution_df.to_dict('records')
 
     num_partitions = cpu_count()
     record_count = len(records)
     if record_count == 0:
-        # No records, skip parallel processing, just return empty DataFrame
         return pd.DataFrame()
 
     chunk_size = record_count // num_partitions if num_partitions > 1 else record_count
     if chunk_size == 0 and record_count > 0:
-        # If record_count > 0 but still chunk_size is 0, set chunk_size to 1
         chunk_size = 1
 
     index_chunks = [records[i:i + chunk_size] for i in range(0, record_count, chunk_size)]
 
-    logger.info("Starting parallel feature extraction...")
+    logger.info("Starting parallel feature extraction without complicated user/historical/time_since_last_edit features...")
     with Pool(processes=num_partitions,
               initializer=_init_worker,
-              initargs=(user_edit_frequencies, edit_freq, num_past_edits, last_edit_time, is_training)) as pool:
+              initargs=(is_training,)) as pool:
         results_iter = pool.imap(_process_records, index_chunks)
         results = []
         for res in tqdm(results_iter, total=len(index_chunks), desc="Parallel Feature Extraction"):
@@ -558,7 +297,7 @@ def get_or_generate_features(data_df, is_training, processed_features_file_path,
         logger.info(f"Loading features from {processed_features_file_path}...")
         features_df = pd.read_parquet(processed_features_file_path)
     else:
-        logger.info("Extracting features...")
+        logger.info("Extracting features without complicated user/historical/time_since_last_edit features...")
         if DATASET_TYPE == 'changeset':
             features_df = extract_features_changeset(data_df)
         else:
