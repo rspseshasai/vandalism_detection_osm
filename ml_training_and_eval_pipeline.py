@@ -14,8 +14,7 @@ from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPU
 from src import config
 from src.data_loading import load_data
 
-# from src.feature_engineering import get_or_generate_features
-from src.feature_engineering_parallel import get_or_generate_features
+from src.feature_engineering import get_or_generate_features
 
 from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes

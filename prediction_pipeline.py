@@ -21,7 +21,7 @@ from config import (
     UNLABELLED_PROCESSED_FEATURES_FILE
 )
 from training import load_model
-from src.feature_engineering_parallel import get_or_generate_features
+from src.feature_engineering import get_or_generate_features
 from src.preprocessing import preprocess_features
 
 
