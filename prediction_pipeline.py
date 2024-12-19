@@ -25,14 +25,14 @@ from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 
 
-def load_parquet_in_chunks(data_path, batch_size=100000):
+def load_parquet_in_chunks(data_path, batch_size=1000000):
     dataset = ds.dataset(data_path, format="parquet")
     scanner = dataset.to_batches(batch_size=batch_size)
     for record_batch in scanner:
         yield record_batch.to_pandas()
 
 
-def process_file(input_file, model, clustering_model, trained_feature_names, batch_size=100000):
+def process_file(input_file, model, clustering_model, trained_feature_names, batch_size=1000000):
     """Process a single Parquet file in chunks and predict vandalism entries."""
     required_columns = ['centroid_x', 'centroid_y']
 

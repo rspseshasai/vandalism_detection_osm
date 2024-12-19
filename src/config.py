@@ -64,7 +64,7 @@ N_JOBS = 11  # -1 to use all available cores
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v2.parquet'
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v4.parquet'
 # UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
 UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 

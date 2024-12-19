@@ -34,7 +34,7 @@ feature_importance_df = pd.concat(importance_data, axis=0).groupby('feature').su
 feature_importance_df = feature_importance_df.sort_values(by='gain', ascending=False)
 
 # Top 15 important features
-top_15_features = feature_importance_df.head(15)
+top_15_features = feature_importance_df.head(30)
 
 # Features with very low importance
 gain_threshold = 0.01 * feature_importance_df['gain'].max()  # 1% of max gain

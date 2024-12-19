@@ -5,7 +5,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 # Path to the directory containing the .parquet files
-input_directory = '../../../data/contribution_data/output/'
+input_directory = '../../../data/contribution_data/raw/temp/'
 
 # List all .parquet files in the directory
 parquet_files = [os.path.join(input_directory, f) for f in os.listdir(input_directory) if f.endswith('.parquet')]
@@ -34,7 +34,7 @@ def convert_df_to_arrow_table(df):
 arrow_table = convert_df_to_arrow_table(merged_df)
 
 # Save the Arrow Table as a single Parquet file
-output_file = '../../../data/contribution_data/output/osm_labelled_contributions_v2.parquet'
+output_file = '../../../data/contribution_data/raw/osm_labelled_contributions_v3.parquet'
 pq.write_table(arrow_table, output_file)
 
 print(f"Merged all parquet files into {output_file}")

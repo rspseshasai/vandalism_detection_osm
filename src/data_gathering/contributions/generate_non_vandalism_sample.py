@@ -1,85 +1,80 @@
 import os
-import sys
-import datetime
-import pyarrow.dataset as ds
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+import logging
 
-from config import OUTPUT_DIR, RAW_DATA_DIR
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-# Parameters
-start_date = datetime.date(2022, 1, 1)
-end_date = datetime.date(2024, 2, 1)
-per_file = 5769       # rows to read (random) per file
-total_needed = 150000 # total rows required
-output_file = os.path.join(OUTPUT_DIR, "non_vandalism_sample.parquet")
+# Path to the directory containing the .parquet files
+input_directory = '../../../data/contribution_data/raw/non_vandalism_files/'
 
-# Function to get the next month
-def next_month(d):
-    # increment month by 1
-    if d.month == 12:
-        return datetime.date(d.year + 1, 1, 1)
-    else:
-        return datetime.date(d.year, d.month + 1, 1)
+# Output file path for the sampled DataFrame
+sampled_output_file = '../../../data/contribution_data/output/osm_sampled_contributions_with_no_vandalism.parquet'
 
-current_date = start_date
-all_dfs = []
-current_count = 0
+# Total number of entries required
+total_entries = 149994
 
-while current_date <= end_date and current_count < total_needed:
-    file_name = os.path.join(RAW_DATA_DIR, f"{current_date.isoformat()}.parquet")
-    print(f"reading {file_name}")
-    if not os.path.exists(file_name):
-        # If file doesn't exist, skip to next month
-        current_date = next_month(current_date)
-        continue
+# List all .parquet files in the directory
+parquet_files = [os.path.join(input_directory, f) for f in os.listdir(input_directory) if f.endswith('.parquet')]
 
-    # Create a dataset from the single file
-    dataset = ds.dataset(file_name, format="parquet")
+if len(parquet_files) == 0:
+    logger.error("No .parquet files found in the directory.")
+    raise ValueError("No .parquet files to process.")
 
-    # Read entire file into a DataFrame
+# Calculate the sample size per file dynamically
+sample_size_per_file = total_entries // len(parquet_files)
+logger.info(f"Number of files: {len(parquet_files)}")
+logger.info(f"Sample size per file: {sample_size_per_file}")
+
+
+# Function to sample contributions randomly from files and add 'vandalism' column
+def sample_and_add_vandalism(parquet_files, output_file, sample_size_per_file):
+    sampled_dataframes = []
+
+    for parquet_file in parquet_files:
+        try:
+            # Read the parquet file
+            df = pd.read_parquet(parquet_file)
+            logger.info(f"File {parquet_file} contains {len(df)} rows.")
+
+            # Skip the first few entries and randomly sample
+            if len(df) > sample_size_per_file:
+                sampled_df = df.iloc[sample_size_per_file:].sample(n=sample_size_per_file, random_state=42)
+            else:
+                sampled_df = df.sample(n=min(len(df), sample_size_per_file), random_state=42)
+            logger.info(f"Sampled {len(sampled_df)} rows from {parquet_file}.")
+
+            # Add 'vandalism' column
+            sampled_df['vandalism'] = 0
+
+            # Append sampled DataFrame
+            sampled_dataframes.append(sampled_df)
+        except Exception as e:
+            logger.error(f"Error processing {parquet_file}: {e}")
+            continue
+
+    # Concatenate all sampled DataFrames into a single DataFrame
     try:
-        df = dataset.to_table().to_pandas()
+        sampled_merged_df = pd.concat(sampled_dataframes, ignore_index=True)
+        logger.info(f"Successfully merged sampled DataFrames. Total rows: {sampled_merged_df.shape[0]}")
+    except ValueError as e:
+        logger.error(f"Error concatenating sampled DataFrames: {e}")
+        raise
+
+    # Convert the sampled DataFrame to PyArrow Table
+    arrow_table = pa.Table.from_pandas(sampled_merged_df, preserve_index=False)
+
+    # Save the Arrow Table as a single Parquet file
+    try:
+        pq.write_table(arrow_table, output_file)
+        logger.info(f"Sampled contributions with 'vandalism' column saved to {output_file}")
     except Exception as e:
-        print(f"Error reading {file_name}: {e}")
-        current_date = next_month(current_date)
-        continue
+        logger.error(f"Error writing sampled Parquet file: {e}")
+        raise
 
-    if df.empty:
-        # If file is empty, move on
-        current_date = next_month(current_date)
-        continue
 
-    # If file has fewer rows than per_file, take all; else sample
-    if len(df) <= per_file:
-        sampled_df = df.copy()
-    else:
-        # Randomly sample per_file rows
-        # Set a random_state if you want reproducible results
-        sampled_df = df.sample(n=per_file, random_state=42)
-
-    # Mark these entries as non-vandalism
-    sampled_df['vandalism'] = 0
-
-    all_dfs.append(sampled_df)
-    current_count += len(sampled_df)
-
-    # Move to next month
-    current_date = next_month(current_date)
-
-# If we collected more than needed, trim the last DataFrame
-if current_count > total_needed and all_dfs:
-    excess = current_count - total_needed
-    last_df = all_dfs[-1]
-    # Keep only the rows needed
-    all_dfs[-1] = last_df.iloc[:-excess]
-
-# Concatenate all collected DataFrames
-if all_dfs:
-    final_df = pd.concat(all_dfs, ignore_index=True)
-else:
-    final_df = pd.DataFrame(columns=['vandalism'])  # Empty DF if no data found
-
-# Save the combined sample to parquet
-final_df.to_parquet(output_file, index=False)
-
-print(f"Saved {len(final_df)} rows of non-vandalism samples to {output_file}")
+# Run the sampling function
+sample_and_add_vandalism(parquet_files, sampled_output_file, sample_size_per_file)
