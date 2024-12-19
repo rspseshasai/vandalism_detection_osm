@@ -5,7 +5,12 @@ import joblib
 import pandas as pd
 from adodbapi import NotSupportedError
 
+# TODO: Classification report for GEo eval with and without user features
+#TODO: Boostrap geo split
 # Adjust the path to import modules from src
+# 16th JAn 3.30pm
+# TODO: Changeset ids of labelled set send to benni.
+
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
@@ -313,10 +318,10 @@ def main():
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
-        ('geographical_evaluation', geographical_evaluation_helper),
-        ('hyper_classifier', hyper_classifier_helper),  # New step added
-        ('meta_classifier', meta_classifier_helper),
+        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        # ('geographical_evaluation', geographical_evaluation_helper),
+        # ('hyper_classifier', hyper_classifier_helper),  # New step added
+        # ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
