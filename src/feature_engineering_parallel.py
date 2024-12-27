@@ -1,16 +1,13 @@
+import logging
 import math
 import os
-from datetime import timedelta
 from multiprocessing import Pool, cpu_count
 
-import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS
 from config import logger
-
-from tqdm import tqdm
-import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -191,6 +188,7 @@ def extract_changeset_features(contribution):
     features['source_reliability'] = int(any(s in source_lower for s in reliable_sources))
     features['changeset_id'] = contribution['changeset']['id']
     features['source_used'] = source if source else 'unknown'
+    # features['changeset_timestamp'] = contribution['changeset_timestamp']
 
     return features
 
@@ -216,19 +214,42 @@ def _init_worker(is_training):
     GLOBAL_IS_TRAINING = is_training
 
 
+def extract_osm_element_features(contribution):
+    features = {}
+    features['element_n_users_cum'] = contribution['element_n_users_cum']
+    features['element_n_versions'] = contribution['element_n_versions']
+    features['element_previous_edit_timestamp'] = contribution['element_previous_edit_timestamp']
+    features['element_time_since_previous_edit'] = contribution['element_time_since_previous_edit']
+    return features
+
+
+def extract_user_features(contribution):
+    features = {}
+    features['n_edits'] = contribution['n_edits']
+    features['user_n_changesets_cum'] = contribution['user_n_changesets_cum']
+    features['user_n_edits_cum'] = contribution['user_n_edits_cum']
+    features['user_n_edit_days_cum'] = contribution['user_n_edit_days_cum']
+    features['user_previous_edit_timestamp'] = contribution['user_previous_edit_timestamp']
+    features['user_time_since_previous_edit'] = contribution['user_time_since_previous_edit']
+    return features
+
+
 def _process_records(records):
     results = []
     for contribution in records:
         features = {}
-        # Removed user_edit_frequencies and historical features
 
-        # 2. Geometric
+        # 1. OSM Element features
+        features.update(extract_osm_element_features(contribution))
+        # 2. User  features
+        features.update(extract_user_features(contribution))
+        # 3. Geometric
         features.update(extract_geometric_features(contribution))
-        # 3. Temporal
+        # 4. Temporal
         features.update(extract_temporal_features(contribution))
-        # 4. Content
+        # 5. Content
         features.update(extract_content_features(contribution))
-        # 5. Spatial
+        # 6. Spatial
         features.update(extract_spatial_features(contribution))
         # 7. Derived
         features.update(extract_derived_features(contribution))
@@ -262,7 +283,8 @@ def extract_features(contribution_df, is_training):
 
     index_chunks = [records[i:i + chunk_size] for i in range(0, record_count, chunk_size)]
 
-    logger.info("Starting parallel feature extraction without complicated user/historical/time_since_last_edit features...")
+    logger.info(
+        "Starting parallel feature extraction without complicated user/historical/time_since_last_edit features...")
     with Pool(processes=num_partitions,
               initializer=_init_worker,
               initargs=(is_training,)) as pool:

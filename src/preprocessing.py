@@ -1,4 +1,5 @@
 # src/preprocessing.py
+import struct
 
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -70,9 +71,50 @@ def preprocess_changeset_features(features_df):
     return X_encoded, y
 
 
+def preprocess_user_and_osm_element_features(df):
+    # Preprocess User Features
+    # Convert timestamps to datetime, handling NULL values
+    for column in ['element_previous_edit_timestamp', 'user_previous_edit_timestamp']:
+        df[column] = pd.to_datetime(df[column], format='%d/%m/%Y %H:%M', errors='coerce')
+
+    # Convert datetime to numerical values (e.g., Unix timestamp)
+    df['element_previous_edit_timestamp'] = df['element_previous_edit_timestamp'].apply(
+        lambda x: x.timestamp() if not pd.isnull(x) else -1
+    )
+
+    df['user_previous_edit_timestamp'] = df['user_previous_edit_timestamp'].apply(
+        lambda x: x.timestamp() if not pd.isnull(x) else -1
+    )
+
+    # Preprocess OSM Element Features
+    # Function to decode binary time format into total seconds
+    def decode_binary_time(binary_data):
+        if binary_data is None:  # Handle missing data
+            return -1
+        try:
+            # Unpack the binary data
+            months = struct.unpack('<I', binary_data[0:4])[0]
+            days = struct.unpack('<I', binary_data[4:8])[0]
+            milliseconds = struct.unpack('<I', binary_data[8:12])[0]
+
+            # Convert to total seconds
+            total_seconds = (months * 30 * 24 * 3600) + (days * 24 * 3600) + (milliseconds / 1000)
+            return total_seconds
+        except Exception as e:
+            print(f"Error decoding value {binary_data}: {e}")
+            return -1
+
+    # Apply the decoding function to both columns
+    df['element_time_since_previous_edit'] = df['element_time_since_previous_edit'].apply(decode_binary_time)
+    df['user_time_since_previous_edit'] = df['user_time_since_previous_edit'].apply(decode_binary_time)
+
+    return df
+
+
 def preprocess_contribution_features(features_df, is_training):
     logger.info("Starting preprocessing of contribution features...")
 
+    features_df = preprocess_user_and_osm_element_features(features_df)
     # Shuffle the data entries
     features_df = features_df.sample(frac=1, random_state=config.RANDOM_STATE).reset_index(drop=True)
 
