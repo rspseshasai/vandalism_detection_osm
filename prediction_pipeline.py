@@ -1,6 +1,7 @@
 import glob
 import os
 import sys
+from datetime import datetime
 
 import joblib
 import pandas as pd
@@ -39,7 +40,13 @@ def process_file(input_file, model, clustering_model, trained_feature_names, bat
     # Prepare output file
     base_name = os.path.basename(input_file)
     output_file_name = base_name.replace('.parquet', '_prediction_output.csv')
-    output_file = os.path.join(OUTPUT_DIR, output_file_name)
+    predict_output_folder = os.path.join(
+        OUTPUT_DIR,
+        'predictions_output',
+        f"{os.path.basename(PREDICTIONS_INPUT_DATA_DIR)}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    )
+    os.makedirs(predict_output_folder, exist_ok=True)
+    output_file = os.path.join(predict_output_folder, output_file_name)
 
     # Write the header only once
     with open(output_file, 'w') as f:

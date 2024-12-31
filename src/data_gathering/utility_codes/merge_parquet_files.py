@@ -21,20 +21,23 @@ for parquet_file in parquet_files:
 # Concatenate all DataFrames into a single DataFrame
 merged_df = pd.concat(dataframes, ignore_index=True)
 
+# Shuffle the merged DataFrame
+shuffled_df = merged_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
 
 # Function to convert a DataFrame to a PyArrow Table using the specified schema
 def convert_df_to_arrow_table(df):
-    # uncomment below line for contribution data
+    # Uncomment the following line to include a schema if required
     # table = pa.Table.from_pandas(df, schema=get_osm_contribution_schema(), preserve_index=False)
     table = pa.Table.from_pandas(df, preserve_index=False)
     return table
 
 
-# Convert the merged DataFrame to PyArrow Table using the schema
-arrow_table = convert_df_to_arrow_table(merged_df)
+# Convert the shuffled DataFrame to PyArrow Table
+arrow_table = convert_df_to_arrow_table(shuffled_df)
 
 # Save the Arrow Table as a single Parquet file
-output_file = '../../../data/contribution_data/raw/osm_labelled_contributions_v3.parquet'
+output_file = '../../../data/contribution_data/raw/training_contributions_with_complex_features_balanced.parquet'
 pq.write_table(arrow_table, output_file)
 
-print(f"Merged all parquet files into {output_file}")
+print(f"Merged and shuffled all parquet files into {output_file}")

@@ -1,18 +1,16 @@
 import os
+
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-import logging
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from config import logger
 
 # Path to the directory containing the .parquet files
-input_directory = '../../../data/contribution_data/raw/non_vandalism_files/'
+input_directory = '../../../data/contribution_data/raw/to_be_included_in_training_data/'
 
 # Output file path for the sampled DataFrame
-sampled_output_file = '../../../data/contribution_data/output/osm_sampled_contributions_with_no_vandalism.parquet'
+sampled_output_file = '../../../data/contribution_data/output/osm_sampled_contributions_with_no_vandalism_pre_computed_features.parquet'
 
 # Total number of entries required
 total_entries = 149994
@@ -52,6 +50,12 @@ def sample_and_add_vandalism(parquet_files, output_file, sample_size_per_file):
 
             # Append sampled DataFrame
             sampled_dataframes.append(sampled_df)
+
+            # Remove the sampled entries and save the remaining entries
+            remaining_df = df.drop(sampled_df.index)
+            remaining_file_name = parquet_file.replace('.parquet', '_remaining.parquet')
+            remaining_df.to_parquet(remaining_file_name, index=False)
+            logger.info(f"Remaining entries saved to {remaining_file_name}.")
         except Exception as e:
             logger.error(f"Error processing {parquet_file}: {e}")
             continue

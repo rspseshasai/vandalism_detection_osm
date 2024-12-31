@@ -218,7 +218,10 @@ def extract_osm_element_features(contribution):
     features = {}
     features['element_n_users_cum'] = contribution['element_n_users_cum']
     features['element_n_versions'] = contribution['element_n_versions']
-    features['element_previous_edit_timestamp'] = contribution['element_previous_edit_timestamp']
+    try:
+        features['element_previous_edit_timestamp'] = contribution['element_previous_edit_timestamp']
+    except KeyError:
+        features['element_previous_edit_timestamp'] = contribution['element_previous_edit_valid']
     features['element_time_since_previous_edit'] = contribution['element_time_since_previous_edit']
     return features
 
