@@ -8,8 +8,8 @@ import pandas as pd
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
-FORCE_COMPUTE_FEATURES = False
-
+FORCE_COMPUTE_FEATURES = True
+SHOULD_BALANCE_DATASET = True
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
@@ -64,7 +64,7 @@ N_JOBS = 11  # -1 to use all available cores
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'training_contributions_with_complex_features_balanced.parquet'
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'training_data_osm_contributions_labeled.parquet'
 # UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
 UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 
@@ -93,6 +93,7 @@ HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
 FINAL_TRAINED_FEATURES_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_trained_features.pkl')
+OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_optimal_threshold_for_inference.pkl')
 
 CLUSTER_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_kmeans_clustering_model.pkl')
 

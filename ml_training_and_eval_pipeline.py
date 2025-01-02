@@ -10,7 +10,7 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
-    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH
+    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH
 from src import config
 from src.data_loading import load_data
 
@@ -20,7 +20,7 @@ from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
-from src.training import train_final_model, save_model
+from src.training import train_final_model, save_model, compute_optimal_threshold
 
 from geographical_evaluation import geographical_evaluation
 from hyper_parameter_search import randomized_search_cv
@@ -50,8 +50,8 @@ def data_loading_helper():
         logger.info(f"Saved data loading sample to {sample_path}")
 
     counts = data_df['vandalism'].value_counts()
-    logger.info(f"Number of vandalism contributions in the data set: {counts.get(True)}")
-    logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(False)}")
+    logger.info(f"Number of vandalism contributions in the data set: {counts.get(1)}")
+    logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(0)}")
 
     logger.info("Data loading completed.")
     return data_df
@@ -196,6 +196,7 @@ def training_helper(X_train, y_train, X_val, y_val):
 
     logger.info("Starting model training...")
     final_model = train_final_model(X_train, y_train, X_val, y_val, best_params)
+    compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
     save_model(final_model, config.FINAL_MODEL_PATH)
     logger.info("Model training completed.")
     return final_model

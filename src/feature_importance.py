@@ -31,7 +31,7 @@ for metric in metrics:
 feature_importance_df = pd.concat(importance_data, axis=0).groupby('feature').sum().reset_index()
 
 # Sort by 'gain' for better interpretation
-feature_importance_df = feature_importance_df.sort_values(by='gain', ascending=False)
+feature_importance_df = feature_importance_df.sort_values(by='total_gain', ascending=False)
 
 # Top 15 important features
 top_15_features = feature_importance_df.head(30)

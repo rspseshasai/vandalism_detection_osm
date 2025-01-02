@@ -7,13 +7,13 @@ import pyarrow.parquet as pq
 from config import logger
 
 # Path to the directory containing the .parquet files
-input_directory = '../../../data/contribution_data/raw/to_be_included_in_training_data/'
+input_directory = '../../../data/contribution_data/raw/non_vandalism_files/with_pre_computed_complex_features'
 
 # Output file path for the sampled DataFrame
 sampled_output_file = '../../../data/contribution_data/output/osm_sampled_contributions_with_no_vandalism_pre_computed_features.parquet'
 
 # Total number of entries required
-total_entries = 149994
+total_entries = 152416
 
 # List all .parquet files in the directory
 parquet_files = [os.path.join(input_directory, f) for f in os.listdir(input_directory) if f.endswith('.parquet')]
