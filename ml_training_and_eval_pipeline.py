@@ -120,7 +120,7 @@ def data_splitting_helper(X_encoded, y, split_type):
         raise ValueError(f"Unknown split_type: {split_type}")
 
     # Ensure 'changeset_id' is retained
-    if 'changeset_id' not in X_encoded.columns:
+    if 'changeset_id' not in X_encoded.columns and DATASET_TYPE == 'changeset':
         raise ValueError("Column 'changeset_id' is missing in X_encoded.")
 
     # Split the data
@@ -129,18 +129,12 @@ def data_splitting_helper(X_encoded, y, split_type):
     )
 
     # Extract the split IDs
-    split_ids = {
-        'train': X_train['changeset_id'].copy(),
-        'val': X_val['changeset_id'].copy(),
-        'test': X_test['changeset_id'].copy(),
-    }
+    split_ids = {}
     if DATASET_TYPE == 'changeset':
+        split_ids['train'] = X_train['changeset_id'].copy()
+        split_ids['val'] = X_val['changeset_id'].copy()
+        split_ids['test'] = X_test['changeset_id'].copy()
         split_ids['meta_test'] = X_test_meta['changeset_id'].copy()
-
-    # # Remove 'changeset_id' from X datasets to avoid data leakage
-    # X_train = X_train.drop(columns=['changeset_id'])
-    # X_val = X_val.drop(columns=['changeset_id'])
-    # X_test = X_test.drop(columns=['changeset_id'])
 
     log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta)
     calculate_statistics(y_train, "Train Set")
@@ -196,7 +190,7 @@ def training_helper(X_train, y_train, X_val, y_val):
 
     logger.info("Starting model training...")
     final_model = train_final_model(X_train, y_train, X_val, y_val, best_params)
-    compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
+    # compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
     save_model(final_model, config.FINAL_MODEL_PATH)
     logger.info("Model training completed.")
     return final_model
@@ -212,13 +206,20 @@ def evaluation_helper(model, X_train, y_train, X_test, y_test, X_test_ids, model
     # Calculate additional metrics and confusion matrix
     cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
 
-    # Create DataFrame with predictions and changeset_id
-    evaluation_results_main_model = pd.DataFrame({
-        'changeset_id': X_test_ids.reset_index(drop=True),
-        'y_true': y_test.reset_index(drop=True),
-        f'y_pred_{model_type}': y_test_pred,
-        f'y_prob_{model_type}': y_test_prob
-    })
+    if DATASET_TYPE == 'contribution':
+        evaluation_results_main_model = pd.DataFrame({
+            'y_true': y_test.reset_index(drop=True),
+            f'y_pred_{model_type}': y_test_pred,
+            f'y_prob_{model_type}': y_test_prob
+        })
+    else:
+        # Create DataFrame with predictions and changeset_id
+        evaluation_results_main_model = pd.DataFrame({
+            'changeset_id': X_test_ids.reset_index(drop=True),
+            'y_true': y_test.reset_index(drop=True),
+            f'y_pred_{model_type}': y_test_pred,
+            f'y_prob_{model_type}': y_test_prob
+        })
 
     # Save evaluation data for visualization
     save_evaluation_results(evaluation_results_main_model, cm, model_type)
@@ -311,7 +312,7 @@ def main():
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
         ('geographical_evaluation', geographical_evaluation_helper),
         ('hyper_classifier', hyper_classifier_helper),  # New step added
         ('meta_classifier', meta_classifier_helper),
@@ -344,8 +345,11 @@ def main():
         elif step_name == 'training':
             main_model = step_function(X_train, y_train, X_val, y_val)
         elif step_name == 'evaluation':
+            split_ids_temp = {}
+            if DATASET_TYPE == 'changeset':
+                split_ids_temp = split_ids['test']
             evaluation_results_main_model = step_function(main_model, X_train, y_train, X_test, y_test,
-                                                          split_ids['test'],
+                                                          split_ids_temp,
                                                           'main')
         elif step_name == 'bootstrapping_evaluation':
             step_function(main_model, X_test, y_test)

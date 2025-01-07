@@ -1,10 +1,8 @@
 # src/preprocessing.py
-import struct
 
-import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from config import logger, DATASET_TYPE
+from config import logger, DATASET_TYPE, SHOULD_INCLUDE_USERFEATURES, SHOULD_INCLUDE_OSM_ELEMENT_FEATURES
 from src import config
 
 
@@ -71,22 +69,52 @@ def preprocess_changeset_features(features_df):
     return X_encoded, y
 
 
-def preprocess_user_and_osm_element_features(df):
-    # Preprocess User Features
+import struct
+import pandas as pd
+
+
+def preprocess_user_features(df):
+    """
+    Preprocess user-related features in the DataFrame.
+
+    Parameters:
+    - df: The input DataFrame.
+
+    Returns:
+    - df: The DataFrame with preprocessed user-related features.
+    """
     # Convert timestamps to datetime, handling NULL values
-    for column in ['element_previous_edit_timestamp', 'user_previous_edit_timestamp']:
+    for column in ['user_previous_edit_timestamp']:
         df[column] = pd.to_datetime(df[column], format='%d/%m/%Y %H:%M', errors='coerce')
+
+    # Convert datetime to numerical values (e.g., Unix timestamp)
+    df['user_previous_edit_timestamp'] = df['user_previous_edit_timestamp'].apply(
+        lambda x: x.timestamp() if not pd.isnull(x) else -1
+    )
+
+    return df
+
+
+def preprocess_osm_element_features(df):
+    """
+    Preprocess OSM element-related features in the DataFrame.
+
+    Parameters:
+    - df: The input DataFrame.
+
+    Returns:
+    - df: The DataFrame with preprocessed OSM element-related features.
+    """
+    # Convert timestamps to datetime, handling NULL values
+    df['element_previous_edit_timestamp'] = pd.to_datetime(
+        df['element_previous_edit_timestamp'], format='%d/%m/%Y %H:%M', errors='coerce'
+    )
 
     # Convert datetime to numerical values (e.g., Unix timestamp)
     df['element_previous_edit_timestamp'] = df['element_previous_edit_timestamp'].apply(
         lambda x: x.timestamp() if not pd.isnull(x) else -1
     )
 
-    df['user_previous_edit_timestamp'] = df['user_previous_edit_timestamp'].apply(
-        lambda x: x.timestamp() if not pd.isnull(x) else -1
-    )
-
-    # Preprocess OSM Element Features
     # Function to decode binary time format into total seconds
     def decode_binary_time(binary_data):
         if binary_data is None:  # Handle missing data
@@ -114,7 +142,12 @@ def preprocess_user_and_osm_element_features(df):
 def preprocess_contribution_features(features_df, is_training):
     logger.info("Starting preprocessing of contribution features...")
 
-    features_df = preprocess_user_and_osm_element_features(features_df)
+    if SHOULD_INCLUDE_OSM_ELEMENT_FEATURES:
+        features_df = preprocess_osm_element_features(features_df)
+
+    if SHOULD_INCLUDE_USERFEATURES:
+        features_df = preprocess_user_features(features_df)
+
     # Shuffle the data entries
     features_df = features_df.sample(frac=1, random_state=config.RANDOM_STATE).reset_index(drop=True)
 
@@ -125,8 +158,13 @@ def preprocess_contribution_features(features_df, is_training):
         features_df[['code', 'level']] = xzcode_df[['code', 'level']]
         features_df.drop('xzcode', axis=1, inplace=True)
 
-    # Drop unnecessary columns
-    columns_to_drop = ['geometry', 'osm_id', 'members', 'status', 'editor_used',
+    # Remove 'changeset_id' column for contribution model
+    if 'changeset_id' in features_df.columns and DATASET_TYPE == 'contribution':
+        features_df.drop('changeset_id', axis=1, inplace=True)
+        logger.info(f"Dropped column: changeset_id")
+
+    # Drop other unnecessary columns
+    columns_to_drop = ['geometry', 'code', 'osm_id', 'members', 'status', 'editor_used',
                        'source_used', 'grid_cell_id']
     existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]
     features_df.drop(existing_columns_to_drop, axis=1, inplace=True)

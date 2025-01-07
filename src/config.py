@@ -10,6 +10,8 @@ SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
 FORCE_COMPUTE_FEATURES = True
 SHOULD_BALANCE_DATASET = True
+SHOULD_INCLUDE_USERFEATURES = True
+SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
@@ -80,6 +82,11 @@ PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_
 UNLABELLED_PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_features.parquet')
 
 PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
+
+# Validation dataset paths
+VALIDATION_DATASET_PATH = os.path.join(PROCESSED_DATA_DIR, 'validation_dataset.parquet')
+VALIDATION_LABELS_PATH = os.path.join(PROCESSED_DATA_DIR, 'validation_labels.parquet')
+
 UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
                                                           f'{prefix}_unlabelled_processed_encoded_features.parquet')
 

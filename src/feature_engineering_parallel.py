@@ -6,7 +6,8 @@ from multiprocessing import Pool, cpu_count
 import pandas as pd
 from tqdm import tqdm
 
-from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS
+from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, SHOULD_INCLUDE_USERFEATURES, \
+    SHOULD_INCLUDE_OSM_ELEMENT_FEATURES
 from config import logger
 
 # Configure logging
@@ -187,6 +188,9 @@ def extract_changeset_features(contribution):
     source_lower = source.lower() if source else ''
     features['source_reliability'] = int(any(s in source_lower for s in reliable_sources))
     features['changeset_id'] = contribution['changeset']['id']
+    # TODO: add contribution key instead: 'valid_from', 'osm_id', 'osm_version'
+    # features['contribution_key'] = str(contribution['valid_from']) + "__" + str(contribution['osm_id']) + "__" + str(contribution[
+    #     'osm_version'])
     features['source_used'] = source if source else 'unknown'
     # features['changeset_timestamp'] = contribution['changeset_timestamp']
 
@@ -242,10 +246,12 @@ def _process_records(records):
     for contribution in records:
         features = {}
 
-        # 1. OSM Element features
-        features.update(extract_osm_element_features(contribution))
-        # 2. User  features
-        features.update(extract_user_features(contribution))
+        if SHOULD_INCLUDE_OSM_ELEMENT_FEATURES:
+            # 1. OSM Element features
+            features.update(extract_osm_element_features(contribution))
+        if SHOULD_INCLUDE_USERFEATURES:
+            # 2. User  features
+            features.update(extract_user_features(contribution))
         # 3. Geometric
         features.update(extract_geometric_features(contribution))
         # 4. Temporal
@@ -269,7 +275,7 @@ def _process_records(records):
     return pd.DataFrame(results)
 
 
-def extract_features(contribution_df, is_training):
+def extract_features_contributions(contribution_df, is_training):
     # We no longer calculate user_edit_frequencies, historical features, or time_since_last_edit dict.
     # Just directly extract features based on data.
 
@@ -326,7 +332,7 @@ def get_or_generate_features(data_df, is_training, processed_features_file_path,
         if DATASET_TYPE == 'changeset':
             features_df = extract_features_changeset(data_df)
         else:
-            features_df = extract_features(data_df, is_training)
+            features_df = extract_features_contributions(data_df, is_training)
         if is_training:
             logger.info(f"Saving features to {processed_features_file_path}...")
             features_df.to_parquet(processed_features_file_path)

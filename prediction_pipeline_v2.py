@@ -11,7 +11,8 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 TEST_PREDICTION_RUN = False
-OUTPUT_FOLDER_SUFFIX = "threshold_0.9"
+OPTIMAL_THRESHOLD = 0.5
+OUTPUT_FOLDER_SUFFIX = F"no_user_edits_threshold_{OPTIMAL_THRESHOLD}"
 
 from config import (
     logger,
@@ -184,7 +185,7 @@ def process_file(input_file: str, model, clustering_model, trained_feature_names
         threshold = joblib.load(OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
         logger.info(f"Loaded custom threshold: {threshold:.4f}")
     else:
-        threshold = 0.9  # fallback
+        threshold = OPTIMAL_THRESHOLD  # fallback
         logger.warning(f"No custom threshold found. Using default {threshold}")
 
     y_prob = model.predict_proba(X_encoded_aligned)[:, 1]

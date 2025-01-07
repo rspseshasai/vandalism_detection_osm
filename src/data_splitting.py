@@ -1,4 +1,5 @@
 # src/data_splitting.py
+import os
 
 # src/data_splitting.py
 
@@ -35,7 +36,7 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
 
 def random_split(X_encoded, y, test_size=0.4, val_size=0.2, random_state=42):
     """
-    Performs a random split of the data.
+    Performs a random split of the data and saves the validation dataset for explainability.
 
     Returns:
     - X_train, X_val, X_test, y_train, y_val, y_test
@@ -65,6 +66,13 @@ def random_split(X_encoded, y, test_size=0.4, val_size=0.2, random_state=42):
             random_state=random_state,
             stratify=y_temp
         )
+
+    # Save validation dataset for explainability
+    logger.info(f"Saving validation dataset to {config.VALIDATION_DATASET_PATH}")
+    X_val.to_parquet(config.VALIDATION_DATASET_PATH)
+    y_val.to_frame(name='label').to_parquet(config.VALIDATION_LABELS_PATH)  # Save labels as a DataFrame
+
+    logger.info("Validation dataset saved successfully.")
 
     return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta
 
