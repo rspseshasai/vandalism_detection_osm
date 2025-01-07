@@ -11,6 +11,7 @@ import pyarrow.dataset as ds
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 TEST_PREDICTION_RUN = False
+OUTPUT_FOLDER_SUFFIX = F"no_user_and_osm_element_features"
 
 from config import (
     logger,
@@ -43,7 +44,7 @@ def process_file(input_file, model, clustering_model, trained_feature_names, bat
     predict_output_folder = os.path.join(
         OUTPUT_DIR,
         'predictions_output',
-        f"{os.path.basename(PREDICTIONS_INPUT_DATA_DIR)}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        f"{OUTPUT_FOLDER_SUFFIX}__{os.path.basename(PREDICTIONS_INPUT_DATA_DIR)}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
     )
     os.makedirs(predict_output_folder, exist_ok=True)
     output_file = os.path.join(predict_output_folder, output_file_name)

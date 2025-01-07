@@ -10,8 +10,8 @@ SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
 FORCE_COMPUTE_FEATURES = True
 SHOULD_BALANCE_DATASET = True
-SHOULD_INCLUDE_USERFEATURES = True
-SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
+SHOULD_INCLUDE_USERFEATURES = False
+SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = False
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
@@ -93,7 +93,7 @@ UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
 
-PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted', '12-30-2024-14-30-58_files_list')
+PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted', '2022_jan_to_july')
 HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 
 # Paths for models and hyperparameters
