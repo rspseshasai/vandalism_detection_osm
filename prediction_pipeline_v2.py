@@ -12,7 +12,7 @@ sys.path.append(os.path.join(project_dir, 'src'))
 
 TEST_PREDICTION_RUN = False
 OPTIMAL_THRESHOLD = 0.5
-OUTPUT_FOLDER_SUFFIX = F"all_{OPTIMAL_THRESHOLD}"
+OUTPUT_FOLDER_SUFFIX = F"pre_computed_user_features_branch_all_{OPTIMAL_THRESHOLD}"
 
 from config import (
     logger,
