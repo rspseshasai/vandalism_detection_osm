@@ -11,7 +11,7 @@ import pyarrow.dataset as ds
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 TEST_PREDICTION_RUN = False
-OUTPUT_FOLDER_SUFFIX = F"no_user_and_osm_element_features"
+OUTPUT_FOLDER_SUFFIX = F"no_user_features_branch"
 
 from config import (
     logger,
@@ -34,18 +34,14 @@ def load_parquet_in_chunks(data_path, batch_size=1000000):
         yield record_batch.to_pandas()
 
 
-def process_file(input_file, model, clustering_model, trained_feature_names, batch_size=1000000):
+def process_file(input_file, model, clustering_model, trained_feature_names, predict_output_folder, batch_size=1000000):
     """Process a single Parquet file in chunks and predict vandalism entries."""
     required_columns = ['centroid_x', 'centroid_y']
 
     # Prepare output file
     base_name = os.path.basename(input_file)
     output_file_name = base_name.replace('.parquet', '_prediction_output.csv')
-    predict_output_folder = os.path.join(
-        OUTPUT_DIR,
-        'predictions_output',
-        f"{OUTPUT_FOLDER_SUFFIX}__{os.path.basename(PREDICTIONS_INPUT_DATA_DIR)}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-    )
+
     os.makedirs(predict_output_folder, exist_ok=True)
     output_file = os.path.join(predict_output_folder, output_file_name)
 
@@ -138,11 +134,17 @@ def main():
     input_files = glob.glob(os.path.join(PREDICTIONS_INPUT_DATA_DIR, "*.parquet"))
     logger.info(f"Found {len(input_files)} input files in {PREDICTIONS_INPUT_DATA_DIR}.")
 
+    predict_output_folder = os.path.join(
+        OUTPUT_DIR,
+        'predictions_output',
+        f"{OUTPUT_FOLDER_SUFFIX}__{os.path.basename(PREDICTIONS_INPUT_DATA_DIR)}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    )
+
     for file_idx, input_file in enumerate(input_files, start=1):
         logger.info(f"===================================================================")
         logger.info(f"Processing file {file_idx}/{len(input_files)}: {input_file}")
         logger.info(f"===================================================================")
-        process_file(input_file, model, clustering_model, trained_feature_names, batch_size=100000)
+        process_file(input_file, model, clustering_model, trained_feature_names, predict_output_folder, batch_size=100000)
 
     logger.info("All files processed successfully.")
 
