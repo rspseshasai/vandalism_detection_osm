@@ -11,7 +11,7 @@ import pyarrow.dataset as ds
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 TEST_PREDICTION_RUN = False
-OUTPUT_FOLDER_SUFFIX = F"no_user_features_branch"
+OUTPUT_FOLDER_SUFFIX = F"nuof_month_files_may_june_features_v4"
 
 from config import (
     logger,
