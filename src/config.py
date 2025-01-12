@@ -9,7 +9,7 @@ import pandas as pd
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
 FORCE_COMPUTE_FEATURES = True
-SHOULD_BALANCE_DATASET = True
+SHOULD_BALANCE_DATASET = False
 SHOULD_INCLUDE_USERFEATURES = True
 SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
 # === Dataset Type ===
@@ -27,6 +27,8 @@ if DATASET_TYPE == 'changeset':
     TEST_SIZE = 0.5  # Proportion for the temporary test set
     VAL_SIZE = 0.1  # Proportion of the temporary test set to use as the final test set
     META_TEST_SIZE = 0.45
+
+REAL_VANDAL_RATIO = 0.004
 
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -61,6 +63,8 @@ N_CLUSTERS = 100  # Default number of clusters for KMeans
 
 # Number of jobs for parallel processing
 N_JOBS = 11  # -1 to use all available cores
+
+DEFAULT_THRESHOLD_FOR_EVALUATION = 0.5
 
 # === File Paths ===
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
@@ -100,7 +104,8 @@ HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
 FINAL_TRAINED_FEATURES_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_trained_features.pkl')
-OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_optimal_threshold_for_inference.pkl')
+OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD,
+                                                    f'{prefix}_optimal_threshold_for_inference.pkl')
 
 CLUSTER_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_kmeans_clustering_model.pkl')
 

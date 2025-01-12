@@ -10,7 +10,8 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
-    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH
+    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, \
+    DEFAULT_THRESHOLD_FOR_EVALUATION
 from src import config
 from src.data_loading import load_data
 
@@ -190,7 +191,7 @@ def training_helper(X_train, y_train, X_val, y_val):
 
     logger.info("Starting model training...")
     final_model = train_final_model(X_train, y_train, X_val, y_val, best_params)
-    # compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
+    compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
     save_model(final_model, config.FINAL_MODEL_PATH)
     logger.info("Model training completed.")
     return final_model
@@ -200,8 +201,15 @@ def training_helper(X_train, y_train, X_val, y_val):
 def evaluation_helper(model, X_train, y_train, X_test, y_test, X_test_ids, model_type):
     logger.info(f"Starting evaluation for {model_type} model...")
 
+    if os.path.exists(OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH):
+        threshold = joblib.load(OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
+        logger.info(f"Loaded custom threshold: {threshold:.4f}")
+    else:
+        threshold = DEFAULT_THRESHOLD_FOR_EVALUATION  # fallback
+        logger.warning(f"No custom threshold found. Using default {threshold}")
+
     # Evaluate train and test metrics
-    y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test)
+    y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test, threshold)
 
     # Calculate additional metrics and confusion matrix
     cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)

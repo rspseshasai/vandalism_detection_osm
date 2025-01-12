@@ -1,21 +1,32 @@
 import os
+
 import joblib
 import xgboost as xgb
 from joblib import dump
-
-from config import logger, FINAL_TRAINED_FEATURES_PATH
 from sklearn.metrics import precision_recall_curve
+
+from config import logger, FINAL_TRAINED_FEATURES_PATH, REAL_VANDAL_RATIO
 
 
 def train_final_model(X_train, y_train, X_val, y_val, best_params):
     """
-    Train the final XGBoost model using the best hyperparameters.
+    Train the final XGBoost model using the best hyperparameters
+    and real-world ratio for scale_pos_weight.
     """
+    # 1) Derive scale_pos_weight from real ratio = 0.4% vandalism
+    # 0.996 / 0.004 => ~249
+    spw = (1 - REAL_VANDAL_RATIO) / REAL_VANDAL_RATIO
+
+    # 2) Update best_params to include spw (don't hardcode!)
+    best_params['scale_pos_weight'] = spw
+
     # Save the feature names for future alignment
     trained_feature_names = X_train.columns.tolist()
     joblib.dump(trained_feature_names, FINAL_TRAINED_FEATURES_PATH)
 
+    logger.info(f"Using scale_pos_weight = {spw:.2f}")
     logger.info("Training final model with best hyperparameters...")
+
     final_model = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='aucpr',
@@ -23,13 +34,10 @@ def train_final_model(X_train, y_train, X_val, y_val, best_params):
         **best_params
     )
 
-    # Define evaluation set (validation data only)
     eval_set = [(X_val, y_val)]
 
-    # Fit the model and track evaluation metrics
     final_model.fit(
-        X_train,
-        y_train,
+        X_train, y_train,
         eval_set=eval_set,
         verbose=False
     )
@@ -39,30 +47,21 @@ def train_final_model(X_train, y_train, X_val, y_val, best_params):
 
 def compute_optimal_threshold(model, X_val, y_val, threshold_file_path):
     """
-    Compute the optimal threshold based on the validation set
-    and save it to a .pkl file.
-
-    This example finds the threshold that maximizes the F1 score
-    from the precision-recall curve.
-
-    :param model: Trained XGBoost model
-    :param X_val: Validation features
-    :param y_val: Validation labels
-    :param threshold_file_path: Where to save the best threshold
-    :return: best_threshold used for classification
+    Use the validation set to compute the optimal threshold that maximizes F1,
+    then save it to threshold_file_path.
     """
-    # Get predicted probabilities on validation set
     y_val_prob = model.predict_proba(X_val)[:, 1]
 
-    # Compute precision-recall curve
     precision, recall, thresholds = precision_recall_curve(y_val, y_val_prob)
-
-    # Avoid division by zero
     f1_scores = 2 * precision * recall / (precision + recall + 1e-9)
-    best_index = f1_scores.argmax()
-    best_threshold = thresholds[best_index] if best_index < len(thresholds) else 0.5
 
-    # Save the best threshold
+    best_index = f1_scores.argmax()
+    if best_index < len(thresholds):
+        best_threshold = thresholds[best_index]
+    else:
+        logger.warning("Optimal Threshold Calculation: FALLBACK - Best Threshold 0.5")
+        best_threshold = 0.5  # Fallback
+
     joblib.dump(best_threshold, threshold_file_path)
     logger.info(f"Optimal threshold computed: {best_threshold:.4f}")
     logger.info(f"Saved threshold to {threshold_file_path}")

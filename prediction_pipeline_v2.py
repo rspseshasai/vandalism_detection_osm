@@ -11,8 +11,6 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 TEST_PREDICTION_RUN = False
-OPTIMAL_THRESHOLD = 0.5
-OUTPUT_FOLDER_SUFFIX = F"pre_computed_user_features_branch_all_{OPTIMAL_THRESHOLD}"
 
 from config import (
     logger,
@@ -21,11 +19,13 @@ from config import (
     FINAL_TRAINED_FEATURES_PATH,
     PREDICTIONS_INPUT_DATA_DIR,
     OUTPUT_DIR,
-    UNLABELLED_PROCESSED_FEATURES_FILE, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH
+    UNLABELLED_PROCESSED_FEATURES_FILE, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, DEFAULT_THRESHOLD_FOR_EVALUATION
 )
 from training import load_model
 from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
+
+OUTPUT_FOLDER_SUFFIX = F"pre_computed_user_features_branch_all_{DEFAULT_THRESHOLD_FOR_EVALUATION}"
 
 
 def extract_year_month_from_filename(filename: str) -> str:
@@ -120,7 +120,7 @@ def update_overall_summary_csv(
         summary_df.loc[idx, "Vandalism Count"] += vandalism_count
 
         vandalism_percent = (summary_df.loc[idx, "Vandalism Count"] / summary_df.loc[idx, "Total Entries"] * 100.0) if \
-        summary_df.loc[idx, "Total Entries"] > 0 else 0.0
+            summary_df.loc[idx, "Total Entries"] > 0 else 0.0
 
         summary_df.loc[idx, "Vandalism Percentage"] = f"{vandalism_percent:.4f}"
         summary_df.loc[idx, "UpdatedAt"] = new_row["UpdatedAt"]
@@ -185,7 +185,7 @@ def process_file(input_file: str, model, clustering_model, trained_feature_names
         threshold = joblib.load(OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
         logger.info(f"Loaded custom threshold: {threshold:.4f}")
     else:
-        threshold = OPTIMAL_THRESHOLD  # fallback
+        threshold = DEFAULT_THRESHOLD_FOR_EVALUATION  # fallback
         logger.warning(f"No custom threshold found. Using default {threshold}")
 
     y_prob = model.predict_proba(X_encoded_aligned)[:, 1]
