@@ -13,18 +13,11 @@ def train_final_model(X_train, y_train, X_val, y_val, best_params):
     Train the final XGBoost model using the best hyperparameters
     and real-world ratio for scale_pos_weight.
     """
-    # 1) Derive scale_pos_weight from real ratio = 0.4% vandalism
-    # 0.996 / 0.004 => ~249
-    spw = (1 - REAL_VANDAL_RATIO) / REAL_VANDAL_RATIO
-
-    # 2) Update best_params to include spw (don't hardcode!)
-    best_params['scale_pos_weight'] = spw
 
     # Save the feature names for future alignment
     trained_feature_names = X_train.columns.tolist()
     joblib.dump(trained_feature_names, FINAL_TRAINED_FEATURES_PATH)
 
-    logger.info(f"Using scale_pos_weight = {spw:.2f}")
     logger.info("Training final model with best hyperparameters...")
 
     final_model = xgb.XGBClassifier(

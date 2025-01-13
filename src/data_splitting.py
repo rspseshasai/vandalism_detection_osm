@@ -30,7 +30,7 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
             y=y,  # Labels Series
             val_size=50000,  # Total validation set size
             test_size=50000,  # Total test set size
-            vandal_ratio=REAL_VANDAL_RATIO,  # Real-world vandalism ratio (0.4%)
+            vandal_ratio=REAL_VANDAL_RATIO,  # Real-world vandalism ratio
             random_state=42  # Random seed for reproducibility
         )
     elif split_type == 'geographic':

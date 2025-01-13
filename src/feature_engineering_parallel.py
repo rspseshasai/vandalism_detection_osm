@@ -72,8 +72,7 @@ def extract_temporal_features(contribution):
     # Previously we used precomputed time_since_last_edit, but now removed
     # so we won't set 'time_since_last_edit' here anymore.
 
-    if SPLIT_METHOD == 'temporal':
-        features['date_created'] = contribution['valid_from']
+    features['date_created'] = contribution['valid_from']
     return features
 
 
@@ -188,9 +187,7 @@ def extract_changeset_features(contribution):
     source_lower = source.lower() if source else ''
     features['source_reliability'] = int(any(s in source_lower for s in reliable_sources))
     features['changeset_id'] = contribution['changeset']['id']
-    # TODO: add contribution key instead: 'valid_from', 'osm_id', 'osm_version'
-    # features['contribution_key'] = str(contribution['valid_from']) + "__" + str(contribution['osm_id']) + "__" + str(contribution[
-    #     'osm_version'])
+    features['contribution_key'] = str(contribution['valid_from']) + "__" + str(contribution['osm_id']) + "__" + str(contribution['osm_version'])
     features['source_used'] = source if source else 'unknown'
     # features['changeset_timestamp'] = contribution['changeset_timestamp']
 
@@ -282,6 +279,8 @@ def extract_features_contributions(contribution_df, is_training):
     records = contribution_df.to_dict('records')
 
     num_partitions = cpu_count()
+    if not is_training:
+        num_partitions = max(1, os.cpu_count() // 2)
     record_count = len(records)
     if record_count == 0:
         return pd.DataFrame()

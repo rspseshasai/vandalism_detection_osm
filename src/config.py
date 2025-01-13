@@ -8,7 +8,7 @@ import pandas as pd
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
-FORCE_COMPUTE_FEATURES = True
+FORCE_COMPUTE_FEATURES = False
 SHOULD_BALANCE_DATASET = False
 SHOULD_INCLUDE_USERFEATURES = True
 SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
@@ -28,7 +28,7 @@ if DATASET_TYPE == 'changeset':
     VAL_SIZE = 0.1  # Proportion of the temporary test set to use as the final test set
     META_TEST_SIZE = 0.45
 
-REAL_VANDAL_RATIO = 0.004
+REAL_VANDAL_RATIO = 0.2
 
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -70,7 +70,7 @@ DEFAULT_THRESHOLD_FOR_EVALUATION = 0.5
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'training_data_osm_contributions_labeled.parquet'
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'training_contributions_with_complex_features_balanced.parquet'
 # UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
 UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 

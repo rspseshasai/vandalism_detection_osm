@@ -191,7 +191,7 @@ def training_helper(X_train, y_train, X_val, y_val):
 
     logger.info("Starting model training...")
     final_model = train_final_model(X_train, y_train, X_val, y_val, best_params)
-    compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
+    # compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
     save_model(final_model, config.FINAL_MODEL_PATH)
     logger.info("Model training completed.")
     return final_model
@@ -320,7 +320,7 @@ def main():
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
         ('geographical_evaluation', geographical_evaluation_helper),
         ('hyper_classifier', hyper_classifier_helper),  # New step added
         ('meta_classifier', meta_classifier_helper),

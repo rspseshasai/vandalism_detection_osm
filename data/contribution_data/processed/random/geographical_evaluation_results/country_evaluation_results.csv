@@ -1,175 +1,184 @@
 Country Name,Total Samples,Total Correct Predictions,Total Incorrect Predictions,True Positives (TP),True Negatives (TN),False Positives (FP),False Negatives (FN),Accuracy,Precision,Recall,F1-score,AUC-ROC,AUC-PR
-AFG,41,0,41,0,0,41,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-AGO,72,11,61,0,11,61,0,0.1527777777777778,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ALB,5,3,2,0,3,2,0,0.6,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ARE,48,10,38,0,10,38,0,0.20833333333333334,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ARG,227,1,226,0,1,226,0,0.004405286343612335,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ARM,12,0,12,0,0,12,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-AUS,468,26,442,6,20,442,0,0.05555555555555555,0.013392857142857142,1.0,0.02643171806167401,0.9357864357864358,0.677536231884058
-AUT,776,592,184,1,591,184,0,0.7628865979381443,0.005405405405405406,1.0,0.010752688172043012,0.9774193548387097,0.027777777777777776
-AZE,29,0,29,0,0,29,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BDI,6,0,6,0,0,6,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BEL,480,200,280,1,199,280,0,0.4166666666666667,0.0035587188612099642,1.0,0.0070921985815602835,0.9613778705636743,0.02631578947368421
-BEN,9,0,9,0,0,9,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BFA,61,1,60,0,1,60,0,0.01639344262295082,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BGD,369,111,258,1,110,258,0,0.3008130081300813,0.003861003861003861,1.0,0.007692307692307693,0.9782608695652174,0.058823529411764705
-BGR,65,1,64,1,0,64,0,0.015384615384615385,0.015384615384615385,1.0,0.030303030303030304,0.75,0.058823529411764705
-BHS,13,0,13,0,0,13,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BIH,79,1,78,0,1,78,0,0.012658227848101266,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BLR,309,7,302,0,7,302,0,0.022653721682847898,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BLZ,22,0,22,0,0,22,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BOL,31,0,31,0,0,31,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BRA,856,298,558,5,293,558,0,0.34813084112149534,0.008880994671403197,1.0,0.017605633802816902,0.990834312573443,0.8120481927710844
-BRB,30,0,30,0,0,30,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-BWA,112,112,0,0,112,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CAF,25,3,22,0,3,22,0,0.12,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CAN,1827,1176,651,7,1169,651,0,0.6436781609195402,0.010638297872340425,1.0,0.021052631578947368,0.9660910518053375,0.8594207614708753
-CHE,356,153,203,0,153,203,0,0.4297752808988764,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CHL,86,6,80,6,0,80,0,0.06976744186046512,0.06976744186046512,1.0,0.13043478260869565,0.8833333333333333,0.7117527862208712
-CHN,1020,414,606,1,413,606,0,0.40588235294117647,0.0016474464579901153,1.0,0.003289473684210526,0.8518155053974484,0.005747126436781609
-CIV,67,0,67,0,0,67,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CMR,642,602,40,0,602,40,0,0.9376947040498442,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-COD,404,353,51,0,353,51,0,0.8737623762376238,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-COG,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-COL,104,14,90,0,14,90,0,0.1346153846153846,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-COM,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CPV,10,2,8,0,2,8,0,0.2,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CRI,32,20,12,0,20,12,0,0.625,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CUB,32,0,32,0,0,32,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CYP,3,1,2,0,1,2,0,0.3333333333333333,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-CZE,481,351,130,26,325,130,0,0.7297297297297297,0.16666666666666666,1.0,0.2857142857142857,1.0,1.0
-DEU,4029,1677,2352,1,1676,2352,0,0.4162323157110946,0.00042498937526561835,1.0,0.0008496176720475786,0.7807845084409136,0.0011312217194570137
-DMA,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-DNK,297,207,90,0,207,90,0,0.696969696969697,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-DOM,36,0,36,0,0,36,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-DZA,126,3,123,0,3,123,0,0.023809523809523808,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ECU,161,0,161,0,0,161,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-EGY,72,10,62,0,10,62,0,0.1388888888888889,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ERI,21,0,21,0,0,21,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ESP,813,200,613,6,194,613,0,0.24600246002460024,0.009693053311793215,1.0,0.0192,0.9008674101610905,0.03614457831325301
-EST,4,0,4,0,0,4,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ETH,58,0,58,0,0,58,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-FIN,228,23,205,1,22,205,0,0.10087719298245613,0.0048543689320388345,1.0,0.00966183574879227,0.9515418502202644,0.043478260869565216
-FJI,3,0,3,0,0,3,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-FLK,6,0,6,0,0,6,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-FRA,2335,581,1754,8,573,1754,0,0.2488222698072805,0.004540295119182747,1.0,0.00903954802259887,0.7746830683283197,0.008402452448395575
-FRO,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-FSM,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GAB,12,0,12,0,0,12,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GBR,1034,174,860,1,173,860,0,0.16827852998065765,0.0011614401858304297,1.0,0.002320185614849188,0.9428848015488868,0.008403361344537815
-GEO,58,2,56,0,2,56,0,0.034482758620689655,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GHA,78,10,68,0,10,68,0,0.1282051282051282,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GIN,138,138,0,0,138,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GRC,134,21,113,2,19,113,0,0.15671641791044777,0.017391304347826087,1.0,0.03418803418803419,0.9772727272727273,0.25
-GRD,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GTM,63,0,63,0,0,63,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-GUY,11,0,11,0,0,11,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-HND,24,2,22,0,2,22,0,0.08333333333333333,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-HRV,108,10,98,2,8,98,0,0.09259259259259259,0.02,1.0,0.0392156862745098,0.7688679245283019,0.040271132376395534
-HTI,104,4,100,0,4,100,0,0.038461538461538464,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-HUN,187,42,145,1,41,145,0,0.22459893048128343,0.00684931506849315,1.0,0.013605442176870748,0.9623655913978494,0.06666666666666667
-IDN,2447,1413,1034,20,1393,1034,0,0.5774417654270535,0.018975332068311195,1.0,0.037243947858473,0.8970127729707458,0.2752737437988081
-IND,929,479,450,2,477,450,0,0.5156081808396125,0.004424778761061947,1.0,0.00881057268722467,0.9552319309600864,0.023529411764705882
-IRL,101,8,93,0,8,93,0,0.07920792079207921,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-IRN,158,15,143,6,9,143,0,0.0949367088607595,0.040268456375838924,1.0,0.07741935483870968,0.9396929824561404,0.8478260869565217
-IRQ,39,0,39,0,0,39,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ISL,26,0,26,0,0,26,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ISR,182,170,12,0,170,12,0,0.9340659340659341,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ITA,1357,590,767,8,582,767,0,0.43478260869565216,0.01032258064516129,1.0,0.020434227330779056,0.8945515196441809,0.3911347517730496
-JAM,13,0,13,0,0,13,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-JOR,37,8,29,0,8,29,0,0.21621621621621623,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-JPN,1584,293,1291,3,290,1291,0,0.1849747474747475,0.00231839258114374,1.0,0.004626060138781804,0.8181530676786843,0.006967562953478447
-KAZ,339,335,4,0,335,4,0,0.9882005899705014,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-KEN,213,146,67,0,146,67,0,0.6854460093896714,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-KGZ,4,0,4,0,0,4,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-KHM,34,0,34,0,0,34,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-KNA,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-KOR,80,0,80,0,0,80,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-KWT,63,0,63,0,0,63,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LAO,23,0,23,0,0,23,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LBN,32,0,32,0,0,32,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LBR,35,1,34,0,1,34,0,0.02857142857142857,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LBY,42,1,41,0,1,41,0,0.023809523809523808,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LCA,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LIE,28,0,28,0,0,28,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LKA,81,1,80,0,1,80,0,0.012345679012345678,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LSO,189,178,11,0,178,11,0,0.9417989417989417,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LTU,142,104,38,0,104,38,0,0.7323943661971831,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LUX,7,0,7,0,0,7,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-LVA,47,0,47,0,0,47,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MAR,137,137,0,0,137,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MDA,51,9,42,1,8,42,0,0.17647058823529413,0.023255813953488372,1.0,0.045454545454545456,0.99,0.5
-MDG,44,0,44,0,0,44,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MEX,393,76,317,5,71,317,0,0.19338422391857507,0.015527950310559006,1.0,0.03058103975535168,0.8456185567010309,0.0481923704733692
-MKD,5,2,3,0,2,3,0,0.4,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MLI,258,9,249,0,9,249,0,0.03488372093023256,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MLT,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MMR,115,10,105,0,10,105,0,0.08695652173913043,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MNE,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MNG,5,0,5,0,0,5,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MOZ,366,4,362,1,3,362,0,0.01092896174863388,0.0027548209366391185,1.0,0.005494505494505495,0.6945205479452055,0.007575757575757576
-MRT,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MUS,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MWI,204,1,203,0,1,203,0,0.004901960784313725,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-MYS,164,36,128,2,34,128,0,0.21951219512195122,0.015384615384615385,1.0,0.030303030303030304,0.7932098765432098,0.047619047619047616
-NAM,7,5,2,0,5,2,0,0.7142857142857143,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-NER,40,0,40,0,0,40,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-NGA,182,4,178,0,4,178,0,0.02197802197802198,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-NIC,8,0,8,0,0,8,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-NLD,2918,2320,598,2,2318,598,0,0.7950651130911583,0.0033333333333333335,1.0,0.006644518272425249,0.9801954732510288,0.01915173434160776
-NOR,244,70,174,2,68,174,0,0.28688524590163933,0.011363636363636364,1.0,0.02247191011235955,0.984504132231405,0.5588235294117647
-NPL,219,217,2,0,217,2,0,0.9908675799086758,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-NZL,397,271,126,2,269,126,0,0.6826196473551638,0.015625,1.0,0.03076923076923077,0.9829113924050633,0.14090909090909093
-OMN,9,0,9,0,0,9,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-PAK,37,2,35,0,2,35,0,0.05405405405405406,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-PAN,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-PER,123,1,122,0,1,122,0,0.008130081300813009,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-PHL,329,26,303,3,23,303,0,0.0790273556231003,0.00980392156862745,1.0,0.019417475728155338,0.45143149284253575,0.01231860529245735
-PNG,9,7,2,0,7,2,0,0.7777777777777778,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-POL,1396,814,582,0,814,582,0,0.5830945558739254,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-PRK,4,0,4,0,0,4,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-PRT,347,1,346,1,0,346,0,0.002881844380403458,0.002881844380403458,1.0,0.005747126436781609,0.2471098265895954,0.0037593984962406013
-PRY,63,0,63,0,0,63,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-QAT,19,0,19,0,0,19,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ROU,75,14,61,2,12,61,0,0.18666666666666668,0.031746031746031744,1.0,0.06153846153846154,0.8938356164383562,0.1875
-RUS,3409,2803,606,4,2799,606,0,0.8222352596069229,0.006557377049180328,1.0,0.013029315960912053,0.9850954478707782,0.2781580687830688
-RWA,84,57,27,0,57,27,0,0.6785714285714286,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SAU,69,0,69,0,0,69,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SDN,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SEN,25,23,2,23,0,2,0,0.92,0.92,1.0,0.9583333333333334,1.0,1.0
-SGP,27,1,26,0,1,26,0,0.037037037037037035,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SLE,42,1,41,1,0,41,0,0.023809523809523808,0.023809523809523808,1.0,0.046511627906976744,1.0,1.0
-SLV,3,0,3,0,0,3,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SOM,107,107,0,0,107,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SRB,141,5,136,0,5,136,0,0.03546099290780142,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SSD,118,84,34,0,84,34,0,0.711864406779661,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SUR,20,0,20,0,0,20,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SVK,152,78,74,2,76,74,0,0.5131578947368421,0.02631578947368421,1.0,0.05128205128205128,0.9333333333333333,0.09090909090909091
-SVN,24,5,19,0,5,19,0,0.20833333333333334,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SWE,278,109,169,1,108,169,0,0.3920863309352518,0.0058823529411764705,1.0,0.011695906432748537,0.9187725631768954,0.021739130434782608
-SWZ,36,0,36,0,0,36,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SYC,1,0,1,0,0,1,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-SYR,6,4,2,0,4,2,0,0.6666666666666666,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TCD,62,0,62,0,0,62,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TGO,28,0,28,0,0,28,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-THA,185,3,182,0,3,182,0,0.016216216216216217,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TKM,10,0,10,0,0,10,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TLS,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TTO,4,0,4,0,0,4,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TUN,60,2,58,0,2,58,0,0.03333333333333333,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TUR,179,103,76,0,103,76,0,0.5754189944134078,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TWN,924,827,97,0,827,97,0,0.895021645021645,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-TZA,702,666,36,0,666,36,0,0.9487179487179487,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-UGA,357,320,37,0,320,37,0,0.896358543417367,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-UKR,633,52,581,1,51,581,0,0.08214849921011058,0.001718213058419244,1.0,0.003430531732418525,1.0,1.0
-URY,85,0,85,0,0,85,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-USA,5818,1198,4620,29,1169,4620,0,0.2059126847713991,0.006237900623790062,1.0,0.012398460880718255,0.7809281574448568,0.11480545553977549
-UZB,9,0,9,0,0,9,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-VAT,2,2,0,0,2,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-VEN,38,0,38,0,0,38,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-VNM,165,4,161,1,3,161,0,0.024242424242424242,0.006172839506172839,1.0,0.012269938650306749,0.9481707317073171,0.05555555555555555
-XKX,2,0,2,0,0,2,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-YEM,4,0,4,0,0,4,0,0.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ZAF,121,20,101,0,20,101,0,0.1652892561983471,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ZMB,119,15,104,0,15,104,0,0.12605042016806722,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
-ZWE,194,2,192,0,2,192,0,0.010309278350515464,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+AFG,31,30,1,0,30,1,0,0.967741935483871,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+AGO,42,42,0,6,36,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+ALB,10,8,2,0,8,2,0,0.8,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+AND,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ARE,44,44,0,0,44,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ARG,184,180,4,20,160,4,0,0.9782608695652174,0.8333333333333334,1.0,0.9090909090909091,0.999390243902439,0.9951190476190477
+ARM,18,18,0,1,17,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+AUS,720,719,1,310,409,0,1,0.9986111111111111,1.0,0.9967845659163987,0.998389694041868,0.9999685532118964,0.9999591690910019
+AUT,541,539,2,48,491,2,0,0.9963031423290203,0.96,1.0,0.9795918367346939,1.0,1.0
+AZE,17,16,1,2,14,1,0,0.9411764705882353,0.6666666666666666,1.0,0.8,0.9666666666666667,0.8333333333333333
+BDI,15,14,1,0,14,1,0,0.9333333333333333,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BEL,487,484,3,63,421,3,0,0.9938398357289527,0.9545454545454546,1.0,0.9767441860465116,0.9996256364180892,0.9974136069235118
+BEN,10,10,0,0,10,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BFA,30,30,0,0,30,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BGD,447,445,2,147,298,2,0,0.9955257270693513,0.9865771812080537,1.0,0.9932432432432432,0.9999999999999999,1.0
+BGR,70,70,0,2,68,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+BHR,67,67,0,0,67,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BHS,7,6,1,0,6,1,0,0.8571428571428571,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BIH,54,53,1,0,53,1,0,0.9814814814814815,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BLR,257,256,1,10,246,0,1,0.9961089494163424,1.0,0.9090909090909091,0.9523809523809523,1.0,1.0
+BLZ,19,19,0,2,17,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+BOL,36,36,0,0,36,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BRA,899,891,8,225,666,8,0,0.9911012235817576,0.9656652360515021,1.0,0.982532751091703,1.0,1.0
+BRB,13,13,0,0,13,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BRN,2,2,0,0,2,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BTN,3,3,0,0,3,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+BWA,50,50,0,0,50,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+CAF,42,42,0,0,42,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+CAN,1384,1376,8,341,1035,8,0,0.9942196531791907,0.9770773638968482,1.0,0.9884057971014493,0.9998284893283812,0.9994335982636738
+CHE,265,263,2,24,239,2,0,0.9924528301886792,0.9230769230769231,1.0,0.96,1.0,0.9999999999999999
+CHL,608,605,3,469,136,3,0,0.9950657894736842,0.9936440677966102,1.0,0.9968119022316685,1.0,1.0000000000000002
+CHN,900,897,3,48,849,3,0,0.9966666666666667,0.9411764705882353,1.0,0.9696969696969697,0.9999755477308294,0.9995748299319728
+CIV,46,45,1,10,35,1,0,0.9782608695652174,0.9090909090909091,1.0,0.9523809523809523,1.0,0.9999999999999999
+CMR,308,308,0,0,308,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+COD,467,467,0,3,464,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+COG,3,3,0,0,3,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+COL,396,394,2,27,367,2,0,0.9949494949494949,0.9310344827586207,1.0,0.9642857142857143,0.9997992572518317,0.9973544973544972
+COM,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+CPV,18,18,0,0,18,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+CRI,28,28,0,0,28,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+CUB,48,47,1,0,47,1,0,0.9791666666666666,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+CYP,20,20,0,8,12,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+CZE,1705,1700,5,1330,370,5,0,0.9970674486803519,0.9962546816479401,1.0,0.99812382739212,0.999975939849624,0.9999931934726115
+DEU,3363,3349,14,154,3195,12,2,0.9958370502527505,0.927710843373494,0.9871794871794872,0.9565217391304348,0.9990725416356847,0.9931369999140045
+DMA,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+DNK,223,223,0,5,218,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+DOM,18,18,0,0,18,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+DZA,69,68,1,0,68,1,0,0.9855072463768116,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ECU,114,113,1,8,105,1,0,0.9912280701754386,0.8888888888888888,1.0,0.9411764705882353,1.0,1.0
+EGY,40,40,0,0,40,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ERI,10,10,0,0,10,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ESP,905,882,23,295,587,23,0,0.974585635359116,0.9276729559748428,1.0,0.9624796084828712,0.9993553764934704,0.998622147382684
+EST,8,8,0,0,8,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ETH,36,36,0,0,36,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+FIN,229,228,1,4,224,1,0,0.9956331877729258,0.8,1.0,0.8888888888888888,1.0,1.0
+FJI,3,3,0,2,1,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+FLK,4,4,0,0,4,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+FRA,2084,2080,4,172,1908,4,0,0.9980806142034548,0.9772727272727273,1.0,0.9885057471264368,1.0,1.0
+FRO,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+GAB,10,10,0,0,10,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+GBR,1360,1337,23,114,1223,23,0,0.9830882352941176,0.8321167883211679,1.0,0.9083665338645418,0.9998873588465546,0.9987056100072932
+GEO,31,31,0,0,31,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+GHA,53,53,0,0,53,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+GIN,54,54,0,0,54,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+GRC,166,163,3,39,124,3,0,0.9819277108433735,0.9285714285714286,1.0,0.9629629629629629,1.0,1.0
+GRD,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+GRL,1,1,0,1,0,0,0,1.0,1.0,1.0,1.0,Not defined (single class),Not defined (single class)
+GTM,158,157,1,8,149,1,0,0.9936708860759493,0.8888888888888888,1.0,0.9411764705882353,0.9991666666666668,0.9861111111111112
+GUY,9,9,0,0,9,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+HND,13,13,0,0,13,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+HRV,135,132,3,59,73,3,0,0.9777777777777777,0.9516129032258065,1.0,0.9752066115702479,0.9991079393398751,0.9988926059437868
+HTI,62,62,0,0,62,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+HUN,185,184,1,16,168,1,0,0.9945945945945946,0.9411764705882353,1.0,0.9696969696969697,1.0,1.0
+IDN,2673,2668,5,960,1708,5,0,0.998129442573887,0.9948186528497409,1.0,0.9974025974025974,0.9999993919050398,0.9999989160596601
+IMN,2,2,0,0,2,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+IND,884,880,4,49,831,4,0,0.995475113122172,0.9245283018867925,1.0,0.9607843137254902,1.0,1.0
+IRL,178,176,2,17,159,2,0,0.9887640449438202,0.8947368421052632,1.0,0.9444444444444444,0.9999999999999999,1.0
+IRN,624,619,5,512,107,5,0,0.9919871794871795,0.9903288201160542,1.0,0.9951409135082604,0.9999128069196429,0.999980963606985
+IRQ,536,535,1,2,533,1,0,0.9981343283582089,0.6666666666666666,1.0,0.8,0.9999999999999999,1.0
+ISL,11,11,0,0,11,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ISR,104,102,2,7,95,2,0,0.9807692307692307,0.7777777777777778,1.0,0.875,0.9985272459499264,0.982142857142857
+ITA,1471,1456,15,576,880,15,0,0.9898028552005439,0.9746192893401016,1.0,0.987146529562982,0.9999398665425202,0.9999052240757802
+JAM,7,7,0,0,7,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+JEY,1,1,0,1,0,0,0,1.0,1.0,1.0,1.0,Not defined (single class),Not defined (single class)
+JOR,28,28,0,0,28,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+JPN,1188,1183,5,111,1072,5,0,0.9957912457912458,0.9568965517241379,1.0,0.9779735682819384,0.9998745263369218,0.9987737589182907
+KAZ,195,194,1,35,159,1,0,0.9948717948717949,0.9722222222222222,1.0,0.9859154929577465,1.0,1.0
+KEN,353,353,0,0,353,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+KGZ,1,1,0,1,0,0,0,1.0,1.0,1.0,1.0,Not defined (single class),Not defined (single class)
+KHM,20,20,0,3,17,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+KIR,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+KOR,106,101,5,28,73,5,0,0.9528301886792453,0.8484848484848485,1.0,0.9180327868852459,1.0,0.9999999999999999
+KWT,45,45,0,1,44,0,0,1.0,1.0,1.0,1.0,0.9999999999999999,1.0
+LAO,8,8,0,0,8,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LBN,81,81,0,4,77,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+LBR,24,24,0,0,24,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LBY,40,40,0,0,40,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LCA,5,5,0,0,5,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LIE,9,9,0,0,9,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LKA,69,66,3,8,58,3,0,0.9565217391304348,0.7272727272727273,1.0,0.8421052631578947,1.0,1.0
+LSO,82,81,1,0,81,1,0,0.9878048780487805,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LTU,88,88,0,0,88,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+LUX,24,24,0,1,23,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+LVA,111,109,2,51,58,2,0,0.9819819819819819,0.9622641509433962,1.0,0.9807692307692307,0.9993464052287582,0.9992384585810192
+MAR,94,94,0,0,94,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+MDA,83,82,1,44,38,0,1,0.9879518072289156,1.0,0.9777777777777777,0.9887640449438202,0.9970760233918129,0.9977777777777778
+MDG,447,447,0,0,447,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+MDV,2,2,0,0,2,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+MEX,414,411,3,155,256,3,0,0.9927536231884058,0.9810126582278481,1.0,0.9904153354632588,1.0,1.0
+MKD,7,7,0,5,2,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+MLI,163,162,1,19,143,1,0,0.9938650306748467,0.95,1.0,0.9743589743589743,1.0,0.9999999999999998
+MLT,4,4,0,4,0,0,0,1.0,1.0,1.0,1.0,Not defined (single class),Not defined (single class)
+MMR,61,60,1,1,59,1,0,0.9836065573770492,0.5,1.0,0.6666666666666666,1.0,1.0
+MNE,7,7,0,2,5,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+MNG,10,9,1,0,9,1,0,0.9,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+MOZ,228,228,0,7,221,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999998
+MRT,67,67,0,5,62,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+MSR,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+MUS,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+MWI,170,170,0,59,111,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999998
+MYS,150,148,2,24,124,2,0,0.9866666666666667,0.9230769230769231,1.0,0.96,1.0,0.9999999999999999
+NAM,11,11,0,0,11,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+NER,38,38,0,0,38,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+NGA,525,524,1,9,515,1,0,0.9980952380952381,0.9,1.0,0.9473684210526315,0.9999999999999999,1.0
+NIC,12,12,0,0,12,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+NLD,1625,1620,5,131,1489,5,0,0.9969230769230769,0.9632352941176471,1.0,0.9812734082397003,0.9998773720837549,0.9985981006881484
+NOR,464,464,0,158,306,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+NPL,328,328,0,0,328,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+NZL,325,323,2,81,242,2,0,0.9938461538461538,0.9759036144578314,1.0,0.9878048780487805,0.9997976118194697,0.9993864317430661
+OMN,7,7,0,0,7,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+PAK,164,162,2,0,162,2,0,0.9878048780487805,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+PAN,7,7,0,1,6,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+PER,88,88,0,5,83,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+PHL,319,315,4,106,209,4,0,0.987460815047022,0.9636363636363636,1.0,0.9814814814814815,0.9997342545841084,0.9994709619638502
+PNG,25,25,0,17,8,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+POL,1078,1076,2,10,1066,2,0,0.9981447124304267,0.8333333333333334,1.0,0.9090909090909091,0.9999999999999999,1.0
+PRK,49,49,0,0,49,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+PRT,240,238,2,19,219,2,0,0.9916666666666667,0.9047619047619048,1.0,0.95,1.0,0.9999999999999998
+PRY,57,56,1,5,51,1,0,0.9824561403508771,0.8333333333333334,1.0,0.9090909090909091,1.0,1.0
+QAT,36,36,0,0,36,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ROU,130,129,1,49,80,1,0,0.9923076923076923,0.98,1.0,0.98989898989899,1.0,1.0
+RUS,2019,2011,8,87,1924,8,0,0.9960376423972264,0.9157894736842105,1.0,0.9560439560439561,0.9999881011875016,0.9997372656409517
+RWA,47,47,0,0,47,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+SAU,61,60,1,2,58,1,0,0.9836065573770492,0.6666666666666666,1.0,0.8,1.0,1.0
+SDN,25,25,0,0,25,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+SEN,1028,1028,0,1017,11,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+SGP,23,23,0,7,16,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999998
+SLE,47,47,0,31,16,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999999
+SLV,4,4,0,0,4,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+SOM,193,193,0,0,193,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+SRB,90,89,1,3,86,1,0,0.9888888888888889,0.75,1.0,0.8571428571428571,1.0,1.0
+SSD,165,165,0,0,165,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+SUR,13,13,0,0,13,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+SVK,140,140,0,24,116,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999999
+SVN,48,48,0,10,38,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999999
+SWE,237,235,2,19,216,2,0,0.9915611814345991,0.9047619047619048,1.0,0.95,1.0,1.0
+SWZ,24,24,0,3,21,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+SYC,7,7,0,4,3,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+SYR,4,4,0,0,4,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+TCD,80,80,0,0,80,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+TGO,40,40,0,0,40,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+THA,150,148,2,18,130,2,0,0.9866666666666667,0.9,1.0,0.9473684210526315,0.9995791245791246,0.9970760233918129
+TKM,18,18,0,1,17,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+TLS,3,3,0,0,3,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+TTO,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+TUN,30,30,0,4,26,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+TUR,200,200,0,19,181,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+TWN,489,487,2,6,481,2,0,0.9959100204498977,0.75,1.0,0.8571428571428571,0.9999999999999999,1.0
+TZA,413,412,1,3,409,1,0,0.9975786924939467,0.75,1.0,0.8571428571428571,1.0,1.0
+UGA,272,271,1,1,270,1,0,0.9963235294117647,0.5,1.0,0.6666666666666666,1.0,1.0
+UKR,475,469,6,29,440,6,0,0.9873684210526316,0.8285714285714286,1.0,0.90625,0.9990722127725374,0.9846863509036121
+URY,40,40,0,0,40,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+USA,6698,6660,38,1306,5354,38,0,0.9943266646760227,0.9717261904761905,1.0,0.9856603773584905,0.9998951285098223,0.9995126572202528
+UZB,191,191,0,1,190,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+VCT,6,6,0,0,6,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+VEN,31,31,0,3,28,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+VNM,189,185,4,78,107,4,0,0.9788359788359788,0.9512195121951219,1.0,0.975,0.9995379995379995,0.9993381583539426
+WSM,1,1,0,0,1,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+XKX,15,15,0,2,13,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+YEM,81,81,0,0,81,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ZAF,84,84,0,0,84,0,0,1.0,0.0,0.0,0.0,Not defined (single class),Not defined (single class)
+ZMB,122,122,0,3,119,0,0,1.0,1.0,1.0,1.0,1.0,1.0
+ZWE,146,146,0,62,84,0,0,1.0,1.0,1.0,1.0,1.0,0.9999999999999999

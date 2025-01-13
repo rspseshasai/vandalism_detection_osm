@@ -117,15 +117,16 @@ def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
     f1 = f1_score(y_test, y_test_pred)
 
     # Print statistics
-    print(f"\nStatistics:\n-----------")
-    print(f"True Negatives (TN): {TN}")
-    print(f"False Positives (FP): {FP}")
-    print(f"False Negatives (FN): {FN}")
-    print(f"True Positives (TP): {TP}")
-    print(f"\nAccuracy: {accuracy:.4f}")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"F1 Score: {f1:.4f}")
+    print("\nStatistics:\n-----------")
+    print(f"True Negatives (TN, correctly identified non-vandalism): {TN}")
+    print(f"False Positives (FP, non-vandalism incorrectly classified as vandalism): {FP}")
+    print(f"False Negatives (FN, vandalism incorrectly classified as non-vandalism): {FN}")
+    print(f"True Positives (TP, correctly identified vandalism): {TP}")
+    print("\nPerformance Metrics:")
+    print(f"Accuracy (overall correctness of the model): {accuracy:.4f}")
+    print(f"Precision (proportion of predicted vandalism that is actually vandalism): {precision:.4f}")
+    print(f"Recall (sensitivity, proportion of actual vandalism correctly identified): {recall:.4f}")
+    print(f"F1 Score (harmonic mean of precision and recall): {f1:.4f}")
 
     return cm
 

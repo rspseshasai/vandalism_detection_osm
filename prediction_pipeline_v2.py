@@ -25,7 +25,7 @@ from training import load_model
 from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 
-OUTPUT_FOLDER_SUFFIX = F"pre_computed_user_features_branch_all_{DEFAULT_THRESHOLD_FOR_EVALUATION}"
+OUTPUT_FOLDER_SUFFIX = F"pcuf_branch__balanced__scale_pos_weight_1__real_vandal_ratio_0.2__threshold_{DEFAULT_THRESHOLD_FOR_EVALUATION}"
 
 
 def extract_year_month_from_filename(filename: str) -> str:
@@ -199,9 +199,17 @@ def process_file(input_file: str, model, clustering_model, trained_feature_names
         f"For file {base_name}: total {total_entries}, predicted vandalism {vandal_count}."
     )
 
+    # Create the contribution_key column using element-wise concatenation
+    features_df['contribution_key'] = (
+            features_df['date_created'].astype(str) + "__" +
+            features_df['osm_id'].astype(str) + "__" +
+            features_df['osm_version'].astype(str)
+    )
+
     # Create DataFrame of only vandalism
     vandalism_df = pd.DataFrame({
-        "changeset_id": features_df["changeset_id"][vandal_mask],
+        "contribution_key": features_df.loc[vandal_mask, "contribution_key"],
+        "changeset_id": features_df.loc[vandal_mask, "changeset_id"],
         "y_pred": y_pred[vandal_mask],
         "y_prob": y_prob[vandal_mask],
     })
@@ -222,8 +230,25 @@ def process_file(input_file: str, model, clustering_model, trained_feature_names
     logger.info(f"Done processing {base_name}. Vandalism count: {vandal_count} (month {month_str})")
 
 
+# Function to read exclusion list from a file
+def read_exclusion_list(file_path):
+    if not os.path.exists(file_path):
+        logger.warning(f"Exclusion list file not found: {file_path}. Proceeding without exclusions.")
+        return set()
+
+    with open(file_path, 'r') as f:
+        excluded_files = {line.strip() for line in f if line.strip()}
+
+    logger.info(f"Loaded {len(excluded_files)} files from exclusion list.")
+    return excluded_files
+
+
 def main():
     logger.info("Starting prediction on unlabeled contributions data for daily files (entire load).")
+
+    # Load exclusion list
+    exclusion_list_path = "C:\\Users\Pavan\Downloads\processed_files_exclusion_list.txt"
+    exclusion_list = read_exclusion_list(exclusion_list_path)
 
     # 1) Load XGBoost model
     model = load_model(FINAL_MODEL_PATH)
@@ -242,6 +267,9 @@ def main():
     # 4) Gather all daily parquet files
     input_files = glob.glob(os.path.join(PREDICTIONS_INPUT_DATA_DIR, "*.parquet"))
     logger.info(f"Found {len(input_files)} daily input files in {PREDICTIONS_INPUT_DATA_DIR}.")
+    # Filter out files in the exclusion list
+    input_files = [f for f in input_files if os.path.basename(f) not in exclusion_list]
+    logger.info(f"After applying exclusion list, {len(input_files)} files remain to be processed.")
 
     # 5) Create output dir
     # Prepare a unique output folder with timestamp for storing predictions
