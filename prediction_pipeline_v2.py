@@ -25,7 +25,7 @@ from training import load_model
 from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 
-OUTPUT_FOLDER_SUFFIX = F"pcuf_branch__balanced__scale_pos_weight_1__real_vandal_ratio_0.2__threshold_{DEFAULT_THRESHOLD_FOR_EVALUATION}"
+OUTPUT_FOLDER_SUFFIX = F"pcuf__balanced__spw_4.5__real_vandal_0.2__threshold_{DEFAULT_THRESHOLD_FOR_EVALUATION}"
 
 
 def extract_year_month_from_filename(filename: str) -> str:
@@ -267,9 +267,10 @@ def main():
     # 4) Gather all daily parquet files
     input_files = glob.glob(os.path.join(PREDICTIONS_INPUT_DATA_DIR, "*.parquet"))
     logger.info(f"Found {len(input_files)} daily input files in {PREDICTIONS_INPUT_DATA_DIR}.")
-    # Filter out files in the exclusion list
-    input_files = [f for f in input_files if os.path.basename(f) not in exclusion_list]
-    logger.info(f"After applying exclusion list, {len(input_files)} files remain to be processed.")
+
+    # # Filter out files in the exclusion list
+    # input_files = [f for f in input_files if os.path.basename(f) not in exclusion_list]
+    # logger.info(f"After applying exclusion list, {len(input_files)} files remain to be processed.")
 
     # 5) Create output dir
     # Prepare a unique output folder with timestamp for storing predictions
