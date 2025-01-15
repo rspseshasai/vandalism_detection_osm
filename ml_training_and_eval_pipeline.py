@@ -21,7 +21,7 @@ from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 from src.data_splitting import split_train_test_val, calculate_statistics, log_dataset_shapes
 from src.clustering import perform_clustering
-from src.training import train_final_model, save_model, compute_optimal_threshold
+from src.training import train_final_model, save_model
 
 from geographical_evaluation import geographical_evaluation
 from hyper_parameter_search import randomized_search_cv
@@ -95,7 +95,7 @@ def preprocessing_helper(features_df):
 
 
 # Step 4: Data Splitting
-def data_splitting_helper(X_encoded, y, split_type):
+def data_splitting_helper(X_encoded, y, split_type, train_regions, val_regions, test_regions):
     logger.info(f"Starting data splitting with method: {split_type}")
 
     if split_type == 'random':
@@ -109,9 +109,9 @@ def data_splitting_helper(X_encoded, y, split_type):
             raise NotSupportedError(f"Split type '{split_type}' is only supported with contribution dataset")
         split_params = {
             'split_key': config.GEOGRAPHIC_SPLIT_KEY,
-            'train_regions': config.TRAIN_REGIONS,
-            'val_regions': config.VAL_REGIONS,
-            'test_regions': config.TEST_REGIONS
+            'train_regions': train_regions,
+            'val_regions': val_regions,
+            'test_regions': test_regions
         }
     elif split_type == 'temporal':
         split_params = {
@@ -308,7 +308,7 @@ def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyp
 
 
 # Main Pipeline
-def main():
+def pipeline(train_regions, val_regions, test_regions):
     logger.info("Starting the ML pipeline...")
 
     # Define the pipeline steps and their corresponding functions
@@ -320,10 +320,10 @@ def main():
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
-        ('geographical_evaluation', geographical_evaluation_helper),
-        ('hyper_classifier', hyper_classifier_helper),  # New step added
-        ('meta_classifier', meta_classifier_helper),
+        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        # ('geographical_evaluation', geographical_evaluation_helper),
+        # ('hyper_classifier', hyper_classifier_helper),
+        # ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
@@ -347,7 +347,7 @@ def main():
             X_encoded, y = step_function(features_df)
         elif step_name == 'data_splitting':
             X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids = step_function(
-                X_encoded, y, SPLIT_METHOD)
+                X_encoded, y, SPLIT_METHOD, train_regions, val_regions, test_regions)
         elif step_name == 'clustering':
             X_train, X_val, X_test, X_test_meta = step_function(X_train, X_val, X_test, X_test_meta)
         elif step_name == 'training':
@@ -372,7 +372,8 @@ def main():
             logger.warning(f"Unknown pipeline step: {step_name}")
 
     logger.info("ML pipeline completed successfully.")
+    return evaluation_results_main_model
 
 
 if __name__ == '__main__':
-    main()
+    pipeline(config.TRAIN_REGIONS, config.VAL_REGIONS, config.TEST_REGIONS)
