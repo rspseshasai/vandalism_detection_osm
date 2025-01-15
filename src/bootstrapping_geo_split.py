@@ -9,7 +9,7 @@ from ml_training_and_eval_pipeline import pipeline
 
 # Define regions
 regions = ['Asia', 'Africa', 'Europe', 'Oceania', 'North America', 'South America', 'Antarctica', 'Other']
-combination_start_count = 31
+combination_start_count = 761
 
 
 def generate_size_combinations(total_regions, min_size, max_size):
