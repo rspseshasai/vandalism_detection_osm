@@ -5,6 +5,11 @@ import joblib
 import pandas as pd
 from adodbapi import NotSupportedError
 
+# 1. Run prediction v1 code for 7 files from jan to july 2022 without user and osm element features
+# 2. Generate monthly graphs for them
+# 3. Run this pipeline with SPLIT_METHOD = geographic
+# 4. Run geo bootstrapping code for specific combinations listed in json.
+
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
@@ -97,7 +102,7 @@ def preprocessing_helper(features_df):
 
 
 # Step 4: Data Splitting
-def data_splitting_helper(X_encoded, y, split_type):
+def data_splitting_helper(X_encoded, y, split_type, train_regions, val_regions, test_regions):
     logger.info(f"Starting data splitting with method: {split_type}")
 
     if split_type == 'random':
@@ -301,7 +306,7 @@ def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyp
 
 
 # Main Pipeline
-def main():
+def pipeline(train_regions, val_regions, test_regions):
     logger.info("Starting the ML pipeline...")
 
     # Define the pipeline steps and their corresponding functions
@@ -340,7 +345,7 @@ def main():
             X_encoded, y = step_function(features_df)
         elif step_name == 'data_splitting':
             X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids = step_function(
-                X_encoded, y, SPLIT_METHOD)
+                X_encoded, y, SPLIT_METHOD, train_regions, val_regions, test_regions)
         elif step_name == 'clustering':
             X_train, X_val, X_test, X_test_meta = step_function(X_train, X_val, X_test, X_test_meta)
         elif step_name == 'training':
@@ -362,7 +367,8 @@ def main():
             logger.warning(f"Unknown pipeline step: {step_name}")
 
     logger.info("ML pipeline completed successfully.")
+    return evaluation_results_main_model
 
 
 if __name__ == '__main__':
-    main()
+    pipeline(config.TRAIN_REGIONS, config.VAL_REGIONS, config.TEST_REGIONS)
