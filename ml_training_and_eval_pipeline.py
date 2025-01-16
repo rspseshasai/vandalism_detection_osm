@@ -116,9 +116,9 @@ def data_splitting_helper(X_encoded, y, split_type, train_regions, val_regions, 
             raise NotSupportedError(f"Split type '{split_type}' is only supported with contribution dataset")
         split_params = {
             'split_key': config.GEOGRAPHIC_SPLIT_KEY,
-            'train_regions': config.TRAIN_REGIONS,
-            'val_regions': config.VAL_REGIONS,
-            'test_regions': config.TEST_REGIONS
+            'train_regions': train_regions,
+            'val_regions': val_regions,
+            'test_regions': test_regions
         }
     elif split_type == 'temporal':
         split_params = {

@@ -15,7 +15,7 @@ DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
-SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
+SPLIT_METHOD = 'geographic'  # 'random', 'temporal', or 'geographic'
 
 TEST_SIZE = 0.4  # Proportion for the temporary test set
 VAL_SIZE = 0.2  # Proportion of the temporary test set to use as the final test set
