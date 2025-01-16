@@ -8,7 +8,7 @@ import pandas as pd
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
-FORCE_COMPUTE_FEATURES = True
+FORCE_COMPUTE_FEATURES = False
 
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
@@ -25,6 +25,8 @@ if DATASET_TYPE == 'changeset':
     TEST_SIZE = 0.5  # Proportion for the temporary test set
     VAL_SIZE = 0.1  # Proportion of the temporary test set to use as the final test set
     META_TEST_SIZE = 0.45
+
+REAL_VANDAL_RATIO = 0.2
 
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -64,7 +66,7 @@ N_JOBS = 11  # -1 to use all available cores
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v4.parquet'
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v3.parquet'
 # UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
 UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 

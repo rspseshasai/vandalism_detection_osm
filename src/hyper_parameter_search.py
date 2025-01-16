@@ -66,6 +66,7 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
     #     'scale_pos_weight': [1, 10, 25, 50]  # Adjust based on class imbalance
     # }
 
+    logger.info("Starting randomized search for hyperparameter tuning.")
     param_grid = {
         'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
         'max_depth': [3, 5, 7, 9],
@@ -75,7 +76,8 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
         'alpha': [0, 1, 2, 3, 5],
         'min_child_weight': [1, 3, 5, 7, 10],
         'gamma': [0, 0.1, 0.3, 0.5, 1, 2, 3],
-        'n_estimators': [50, 60, 80, 100]
+        'n_estimators': [50, 60, 80, 100],
+        'scale_pos_weight': [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 10, 50, 100, 250]
     }
 
     # Check if the hyperparameters file exists

@@ -53,6 +53,9 @@ def data_loading_helper():
     logger.info(f"Number of vandalism contributions in the data set: {counts.get(True)}")
     logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(False)}")
 
+    logger.info(f"Number of vandalism contributions in the data set: {counts.get(1)}")
+    logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(0)}")
+
     logger.info("Data loading completed.")
     return data_df
 

@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 import src.config as config
-from config import DATASET_TYPE
+from config import DATASET_TYPE, REAL_VANDAL_RATIO
 from src.config import logger
 
 
@@ -24,7 +24,15 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
     - X_train, X_val, X_test, y_train, y_val, y_test
     """
     if split_type == 'random':
-        return random_split(X_encoded, y, **kwargs)
+        # return random_split(X_encoded, y, **kwargs)
+        return create_realistic_splits(
+            X=X_encoded,  # Features DataFrame
+            y=y,  # Labels Series
+            val_size=50000,  # Total validation set size
+            test_size=50000,  # Total test set size
+            vandal_ratio=REAL_VANDAL_RATIO,  # Real-world vandalism ratio
+            random_state=42  # Random seed for reproducibility
+        )
     elif split_type == 'geographic':
         return geographic_split(X_encoded, y, **kwargs)
     elif split_type == 'temporal':
@@ -33,9 +41,69 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
         raise ValueError(f"Unknown split_type: {split_type}")
 
 
+def create_realistic_splits(X, y,
+                            val_size=50000,
+                            test_size=50000,
+                            vandal_ratio=0.004,
+                            random_state=42):
+    """
+    Create a validation set and test set that mirrors the real-world vandalism ratio (0.4%).
+    The rest is returned as the training set.
+    """
+    # Combine X and y for easier slicing
+    data = X.copy()
+    data['label'] = y.values
+
+    # Separate vandalism vs non-vandalism indices
+    vandal_indices = data[data['label'] == 1].index
+    non_vandal_indices = data[data['label'] == 0].index
+
+    # Shuffle them
+    vandal_indices = vandal_indices.to_series().sample(frac=1.0, random_state=random_state)
+    non_vandal_indices = non_vandal_indices.to_series().sample(frac=1.0, random_state=random_state)
+
+    # Number of vandal vs non-vandal needed
+    vandal_val_needed = int(val_size * vandal_ratio)
+    vandal_test_needed = int(test_size * vandal_ratio)
+
+    non_vandal_val_needed = val_size - vandal_val_needed
+    non_vandal_test_needed = test_size - vandal_test_needed
+
+    # Construct validation set
+    val_vandal_idx = vandal_indices[:vandal_val_needed]
+    val_non_vandal_idx = non_vandal_indices[:non_vandal_val_needed]
+    val_indices = pd.concat([val_vandal_idx, val_non_vandal_idx])
+
+    # Construct test set
+    test_vandal_idx = vandal_indices[vandal_val_needed: vandal_val_needed + vandal_test_needed]
+    test_non_vandal_idx = non_vandal_indices[non_vandal_val_needed: non_vandal_val_needed + non_vandal_test_needed]
+    test_indices = pd.concat([test_vandal_idx, test_non_vandal_idx])
+
+    # The rest is training
+    used_indices = pd.concat([val_indices, test_indices])
+    train_indices = data.index.difference(used_indices)
+
+    # Build final data splits
+    X_val = data.loc[val_indices].drop(columns=['label'])
+    y_val = data.loc[val_indices, 'label']
+
+    X_test = data.loc[test_indices].drop(columns=['label'])
+    y_test = data.loc[test_indices, 'label']
+
+    X_train = data.loc[train_indices].drop(columns=['label'])
+    y_train = data.loc[train_indices, 'label']
+
+    print(f"Val set size: {len(X_val)} (vandal: {y_val.sum()})")
+    print(f"Test set size: {len(X_test)} (vandal: {y_test.sum()})")
+    print(f"Train set size: {len(X_train)} (vandal: {y_train.sum()})")
+
+    X_test_meta = y_test_meta = None
+    return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta
+
+
 def random_split(X_encoded, y, test_size=0.4, val_size=0.2, random_state=42):
     """
-    Performs a random split of the data.
+    Performs a random split of the data and saves the validation dataset for explainability.
 
     Returns:
     - X_train, X_val, X_test, y_train, y_val, y_test
@@ -65,6 +133,13 @@ def random_split(X_encoded, y, test_size=0.4, val_size=0.2, random_state=42):
             random_state=random_state,
             stratify=y_temp
         )
+
+    # Save validation dataset for explainability
+    logger.info(f"Saving validation dataset to {config.VALIDATION_DATASET_PATH}")
+    X_val.to_parquet(config.VALIDATION_DATASET_PATH)
+    y_val.to_frame(name='label').to_parquet(config.VALIDATION_LABELS_PATH)  # Save labels as a DataFrame
+
+    logger.info("Validation dataset saved successfully.")
 
     return X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta
 
