@@ -5,7 +5,8 @@ import numpy as np
 
 from config import OUTPUT_DIR, PREDICTIONS_INPUT_DATA_DIR, logger
 
-OUTPUT_FOLDER_NAME_SUFFIX = '2022_jan_to_july_2025-01-13_20-52-59_pcuf__balanced__spw_4.5__real_vandal_0.2__threshold_0.5'
+OUTPUT_FOLDER_NAME_SUFFIX = '2022_jan_to_july_2025-01-13_00-17-55_pcuf__balanced__spw_1__real_vandal_0.2__threshold_0.5'
+TITLE_SUFFIX = ' | With user and osm element features | SPW 1'
 
 import os
 import glob
@@ -155,6 +156,7 @@ def plot_world_heatmap_of_vandalism(vandalism_df):
     # plot_global_vandalism_heatmap(vandalism_df, center_map, method="scatter")
     logger.info("Heat map plotted")
 
+
 def parse_date_from_key(contribution_key: str):
     """Extract the date portion from the contribution_key."""
     parts = contribution_key.split('__')
@@ -215,11 +217,12 @@ def plot_vandalism_by_month(df: pd.DataFrame):
     df['year_month'] = df['contribution_datetime'].dt.to_period('M').astype(str)
     monthly_counts = df.groupby('year_month')['contribution_key'].count().reset_index()
     monthly_counts.rename(columns={'contribution_key': 'vandalism_count'}, inplace=True)
+
     # Bar plot
     plot_bar_with_labels(
         monthly_counts['year_month'],
         monthly_counts['vandalism_count'],
-        "Vandalism Contributions by Month (Bar)",
+        "Vandalism Contributions by Month (Bar)" + TITLE_SUFFIX,
         "Month (YYYY-MM)",
         "Number of Vandalism Contributions",
         rotation=45
@@ -228,7 +231,7 @@ def plot_vandalism_by_month(df: pd.DataFrame):
     plot_line_graph(
         monthly_counts['year_month'],
         monthly_counts['vandalism_count'],
-        "Vandalism Contributions by Month (Line)",
+        "Vandalism Contributions by Month (Line)" + TITLE_SUFFIX,
         "Month (YYYY-MM)",
         "Number of Vandalism Contributions",
         rotation=45
@@ -246,7 +249,7 @@ def plot_vandalism_by_week(df: pd.DataFrame):
     plot_bar_with_labels(
         weekly_counts['year_week_str'],
         weekly_counts['vandalism_count'],
-        "Vandalism Contributions by Week (Bar)",
+        "Vandalism Contributions by Week (Bar)" + TITLE_SUFFIX,
         "Week (Year-Week)",
         "Number of Vandalism Contributions",
         rotation=90
@@ -255,7 +258,7 @@ def plot_vandalism_by_week(df: pd.DataFrame):
     plot_line_graph(
         weekly_counts['year_week_str'],
         weekly_counts['vandalism_count'],
-        "Vandalism Contributions by Week (Line)",
+        "Vandalism Contributions by Week (Line)" + TITLE_SUFFIX,
         "Week (Year-Week)",
         "Number of Vandalism Contributions",
         rotation=90
@@ -273,9 +276,9 @@ def main():
         return
 
     logger.info(f"Loaded {len(df)} vandalism rows from {folder_path}.")
-    # plot_vandalism_by_month(df)
-    # plot_vandalism_by_week(df)
-    plot_world_heatmap_of_vandalism(df)
+    plot_vandalism_by_month(df)
+    plot_vandalism_by_week(df)
+    # plot_world_heatmap_of_vandalism(df)
 
 
 if __name__ == "__main__":
