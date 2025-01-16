@@ -320,10 +320,10 @@ def pipeline(train_regions, val_regions, test_regions):
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
-        # ('geographical_evaluation', geographical_evaluation_helper),
-        # ('hyper_classifier', hyper_classifier_helper),
-        # ('meta_classifier', meta_classifier_helper),
+        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        ('geographical_evaluation', geographical_evaluation_helper),
+        ('hyper_classifier', hyper_classifier_helper),
+        ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
