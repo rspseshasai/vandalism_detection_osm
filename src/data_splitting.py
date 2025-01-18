@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 import src.config as config
-from config import DATASET_TYPE, REAL_VANDAL_RATIO
+from config import DATASET_TYPE, REAL_VANDAL_RATIO, TEST_SIZE
 from src.config import logger
 
 
@@ -29,7 +29,7 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
             X=X_encoded,  # Features DataFrame
             y=y,  # Labels Series
             val_size=50000,  # Total validation set size
-            test_size=50000,  # Total test set size
+            test_size=TEST_SIZE,  # Total test set size
             vandal_ratio=REAL_VANDAL_RATIO,  # Real-world vandalism ratio
             random_state=42  # Random seed for reproducibility
         )
