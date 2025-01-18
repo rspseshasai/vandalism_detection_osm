@@ -11,7 +11,7 @@ sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
     PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, \
-    DEFAULT_THRESHOLD_FOR_EVALUATION
+    DEFAULT_THRESHOLD_FOR_EVALUATION, SHOULD_PERFORM_BOOTSTRAP_EVALUATION
 from src import config
 from src.data_loading import load_data
 
@@ -251,7 +251,7 @@ def evaluation_helper(model, X_train, y_train, X_test=None, y_test=None, X_test_
         save_evaluation_results(evaluation_results_main_model, cm, model_type)
 
     else:
-        logger.warn("No test set provided. Skipping test evaluation.")
+        logger.warning("No test set provided. Skipping test evaluation.")
 
     # Optional: Perform Cross-Validation on Training Data (if applicable)
     # evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
@@ -262,32 +262,35 @@ def evaluation_helper(model, X_train, y_train, X_test=None, y_test=None, X_test_
 
 # Step 8: Bootstrapping Evaluation
 def bootstrapping_evaluation_helper(model, X_test, y_test):
-    logger.info("Starting bootstrapping evaluation...")
+    if SHOULD_PERFORM_BOOTSTRAP_EVALUATION:
+        logger.info("Starting bootstrapping evaluation...")
 
-    # Perform bootstrapping
-    metrics_df = perform_bootstrap_evaluation(
-        model=model,
-        X_test=X_test,
-        y_test=y_test,
-        n_iterations=config.BOOTSTRAP_ITERATIONS,
-        random_state=config.RANDOM_STATE,
-        n_jobs=config.N_JOBS
-    )
+        # Perform bootstrapping
+        metrics_df = perform_bootstrap_evaluation(
+            model=model,
+            X_test=X_test,
+            y_test=y_test,
+            n_iterations=config.BOOTSTRAP_ITERATIONS,
+            random_state=config.RANDOM_STATE,
+            n_jobs=config.N_JOBS
+        )
 
-    # Calculate statistics
-    results_df = calculate_bootstrap_statistics(metrics_df)
-    stats_df = compute_additional_statistics(metrics_df)
+        # Calculate statistics
+        results_df = calculate_bootstrap_statistics(metrics_df)
+        stats_df = compute_additional_statistics(metrics_df)
 
-    # Save results
-    save_bootstrap_results(
-        metrics_df,
-        results_df,
-        stats_df,
-        folder_to_save_bootstrap_results=config.BOOTSTRAP_RESULTS_DIR,
-        prefix='bootstrap_test_set'
-    )
+        # Save results
+        save_bootstrap_results(
+            metrics_df,
+            results_df,
+            stats_df,
+            folder_to_save_bootstrap_results=config.BOOTSTRAP_RESULTS_DIR,
+            prefix='bootstrap_test_set'
+        )
 
-    logger.info("Bootstrapping evaluation completed.")
+        logger.info("Bootstrapping evaluation completed.")
+    else:
+        logger.info("Bootstrapping evaluation skipped.")
 
 
 # Step 9: Geographical Evaluation

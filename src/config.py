@@ -12,6 +12,7 @@ FORCE_COMPUTE_FEATURES = False
 SHOULD_BALANCE_DATASET = False
 SHOULD_INCLUDE_USERFEATURES = True
 SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
+SHOULD_PERFORM_BOOTSTRAP_EVALUATION = False
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
@@ -19,8 +20,8 @@ DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
 SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 
-TEST_SIZE = 0.4  # Proportion for the temporary test set
-VAL_SIZE = 0.2  # Proportion of the temporary test set to use as the final test set
+TEST_SIZE = 50000
+VAL_SIZE = 50000
 RANDOM_STATE = 42
 
 if DATASET_TYPE == 'changeset':
@@ -157,7 +158,7 @@ os.makedirs(GEOGRAPHICAL_RESULTS_DIR, exist_ok=True)
 
 # === Geographic Split Parameters ===
 GEOGRAPHIC_SPLIT_KEY = 'continent'  # 'continent' or 'country'
-TRAIN_REGIONS = ['Oceania', 'Europe','South America']
+TRAIN_REGIONS = ['Oceania', 'Europe', 'South America']
 VAL_REGIONS = ['Africa', 'Antarctica', 'Other']
 TEST_REGIONS = ['North America', 'Asia']
 

@@ -69,7 +69,7 @@ def perform_clustering(X_train, X_val, X_test=None, X_test_meta=None, n_clusters
             elif name == "Meta-Test":
                 X_test_meta = dataset
         else:
-            logger.warning(f"{name} dataset is empty or None. Skipping.")
+            logger.warning(f"{name} dataset is empty or None. Skipping clustering.")
 
     return X_train, X_val, X_test, X_test_meta, clustering_model
 

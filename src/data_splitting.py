@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 import src.config as config
-from config import DATASET_TYPE, REAL_VANDAL_RATIO, TEST_SIZE
+from config import DATASET_TYPE, REAL_VANDAL_RATIO
 from src.config import logger
 
 
@@ -24,14 +24,13 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
     - X_train, X_val, X_test, y_train, y_val, y_test
     """
     if split_type == 'random':
-        # return random_split(X_encoded, y, **kwargs)
+        if DATASET_TYPE == 'changeset':
+            return random_split(X_encoded, y, **kwargs)
         return create_realistic_splits(
             X=X_encoded,  # Features DataFrame
             y=y,  # Labels Series
-            val_size=50000,  # Total validation set size
-            test_size=TEST_SIZE,  # Total test set size
             vandal_ratio=REAL_VANDAL_RATIO,  # Real-world vandalism ratio
-            random_state=42  # Random seed for reproducibility
+            **kwargs
         )
     elif split_type == 'geographic':
         return geographic_split(X_encoded, y, **kwargs)
@@ -42,9 +41,9 @@ def split_train_test_val(X_encoded, y, split_type='random', **kwargs):
 
 
 def create_realistic_splits(X, y,
-                            val_size=50000,
-                            test_size=50000,
                             vandal_ratio=0.004,
+                            test_size=50000,
+                            val_size=50000,
                             random_state=42):
     """
     Create a validation set and test set that mirrors the real-world vandalism ratio (0.4%).
