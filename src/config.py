@@ -146,8 +146,8 @@ os.makedirs(GEOGRAPHICAL_RESULTS_DIR, exist_ok=True)
 
 # === Geographic Split Parameters ===
 GEOGRAPHIC_SPLIT_KEY = 'continent'  # 'continent' or 'country'
-TRAIN_REGIONS = ['Oceania', 'Europe']
-VAL_REGIONS = ['Africa']
+TRAIN_REGIONS = ['Oceania', 'Europe','South America']
+VAL_REGIONS = ['Africa', 'Antarctica', 'Other']
 TEST_REGIONS = ['North America', 'Asia']
 
 # === Temporal Split Parameters ===

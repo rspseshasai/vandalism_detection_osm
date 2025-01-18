@@ -33,7 +33,7 @@ def calculate_metrics(y_true, y_pred):
 
 # Initialize results storage
 results = []
-output_path = rf"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\geo_bootstrap_results\bootstrap_geo_split_results_nuof_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.parquet"
+output_path = rf"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\geo_bootstrap_results\bootstrap_geo_split_results_nuof_high_recall_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.parquet"
 
 # Iterate over specified combinations
 combination_count = 0
