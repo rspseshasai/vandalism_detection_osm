@@ -280,7 +280,7 @@ def extract_features_contributions(contribution_df, is_training):
 
     num_partitions = cpu_count()
     if not is_training:
-        num_partitions = max(1, os.cpu_count() // 2)
+        num_partitions = min(4, os.cpu_count() // 2)
     record_count = len(records)
     if record_count == 0:
         return pd.DataFrame()
@@ -292,7 +292,7 @@ def extract_features_contributions(contribution_df, is_training):
     index_chunks = [records[i:i + chunk_size] for i in range(0, record_count, chunk_size)]
 
     logger.info(
-        "Starting parallel feature extraction without complicated user/historical/time_since_last_edit features...")
+        "Starting parallel feature extraction...")
     with Pool(processes=num_partitions,
               initializer=_init_worker,
               initargs=(is_training,)) as pool:
@@ -327,7 +327,7 @@ def get_or_generate_features(data_df, is_training, processed_features_file_path,
         logger.info(f"Loading features from {processed_features_file_path}...")
         features_df = pd.read_parquet(processed_features_file_path)
     else:
-        logger.info("Extracting features without complicated user/historical/time_since_last_edit features...")
+        logger.info("Extracting features...")
         if DATASET_TYPE == 'changeset':
             features_df = extract_features_changeset(data_df)
         else:

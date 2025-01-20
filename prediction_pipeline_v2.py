@@ -25,7 +25,7 @@ from training import load_model
 from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 
-OUTPUT_FOLDER_SUFFIX = F"pcuf__balanced__spw_4.5__real_vandal_0.2__threshold_{DEFAULT_THRESHOLD_FOR_EVALUATION}"
+OUTPUT_FOLDER_SUFFIX = F"pcuf__balanced__spw_4.5__real_vandal_0.2__threshold_{DEFAULT_THRESHOLD_FOR_EVALUATION}__full_dataset"
 
 
 def extract_year_month_from_filename(filename: str) -> str:
@@ -199,19 +199,16 @@ def process_file(input_file: str, model, clustering_model, trained_feature_names
         f"For file {base_name}: total {total_entries}, predicted vandalism {vandal_count}."
     )
 
-    # Create the contribution_key column using element-wise concatenation
-    features_df['contribution_key'] = (
-            features_df['date_created'].astype(str) + "__" +
-            features_df['osm_id'].astype(str) + "__" +
-            features_df['osm_version'].astype(str)
-    )
-
     # Create DataFrame of only vandalism
     vandalism_df = pd.DataFrame({
-        "contribution_key": features_df.loc[vandal_mask, "contribution_key"],
-        "changeset_id": features_df.loc[vandal_mask, "changeset_id"],
-        "y_pred": y_pred[vandal_mask],
-        "y_prob": y_prob[vandal_mask],
+        'changeset_id': features_df.loc[vandal_mask, "changeset_id"],
+        'date_created': features_df.loc[vandal_mask, "date_created"],
+        'osm_id': features_df.loc[vandal_mask, "osm_id"],
+        'osm_version': features_df.loc[vandal_mask, "osm_version"],
+        'centroid_x': features_df.loc[vandal_mask, "centroid_x"],
+        'centroid_y': features_df.loc[vandal_mask, "centroid_y"],
+        'y_pred': y_pred[vandal_mask],
+        'y_prob': y_prob[vandal_mask]
     })
 
     # 8) Append vandalism predictions to a single monthly CSV

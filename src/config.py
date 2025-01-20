@@ -20,7 +20,7 @@ DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
 SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 
-TEST_SIZE = 50000
+TEST_SIZE = 0
 VAL_SIZE = 50000
 RANDOM_STATE = 42
 
@@ -98,7 +98,7 @@ UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
 
-PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted', '2022_jan_to_july')
+PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted', '2022_to_2024_pcuof_monthly')
 HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 
 # Paths for models and hyperparameters

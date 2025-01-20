@@ -12,7 +12,7 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 TEST_PREDICTION_RUN = False
-OUTPUT_FOLDER_SUFFIX = "pre_computed_user_features_branch_all"
+OUTPUT_FOLDER_SUFFIX = "pcuf_full_dataset_detailed"
 
 from config import (
     logger,
@@ -107,7 +107,7 @@ def append_or_update_overall_summary(
     logger.info(f"Overall summary CSV updated for {month_year}.")
 
 
-def process_file(input_file, model, clustering_model, trained_feature_names, predict_output_folder, batch_size=1000000):
+def process_file(input_file, model, clustering_model, trained_feature_names, predict_output_folder, batch_size=500000):
     """
     Process a single Parquet file in chunks and predict vandalism entries.
     Also updates the overall_summary.csv after completing all chunks for this file.
@@ -171,7 +171,12 @@ def process_file(input_file, model, clustering_model, trained_feature_names, pre
 
         # Save only vandalism entries
         vandalism_df = pd.DataFrame({
-            'changeset_id': features_df['changeset_id'][vandal_mask],
+            'changeset_id': features_df.loc[vandal_mask, "changeset_id"],
+            'date_created': features_df.loc[vandal_mask, "date_created"],
+            'osm_id': features_df.loc[vandal_mask, "osm_id"],
+            'osm_version': features_df.loc[vandal_mask, "osm_version"],
+            'centroid_x': features_df.loc[vandal_mask, "centroid_x"],
+            'centroid_y': features_df.loc[vandal_mask, "centroid_y"],
             'y_pred': y_pred[vandal_mask],
             'y_prob': y_prob[vandal_mask]
         })
