@@ -123,7 +123,7 @@ def process_file(input_file, model, clustering_model, trained_feature_names, pre
 
     # Write the header only once for vandalism output
     with open(output_file, 'w') as f:
-        f.write("changeset_id,y_pred,y_prob\n")
+        f.write("changeset_id,date_created,osm_id,osm_version,centroid_x,centroid_y,y_pred,y_prob\n")
 
     # Track entries and vandalism count
     total_entries = 0
@@ -171,7 +171,12 @@ def process_file(input_file, model, clustering_model, trained_feature_names, pre
 
         # Save only vandalism entries
         vandalism_df = pd.DataFrame({
-            'changeset_id': features_df['changeset_id'][vandal_mask],
+            'changeset_id': features_df.loc[vandal_mask, "changeset_id"],
+            'date_created': features_df.loc[vandal_mask, "date_created"],
+            'osm_id': features_df.loc[vandal_mask, "osm_id"],
+            'osm_version': features_df.loc[vandal_mask, "osm_version"],
+            'centroid_x': features_df.loc[vandal_mask, "centroid_x"],
+            'centroid_y': features_df.loc[vandal_mask, "centroid_y"],
             'y_pred': y_pred[vandal_mask],
             'y_prob': y_prob[vandal_mask]
         })
