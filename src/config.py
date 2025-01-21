@@ -14,7 +14,7 @@ SHOULD_INCLUDE_USERFEATURES = True
 SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
 SHOULD_PERFORM_BOOTSTRAP_EVALUATION = False
 # === Dataset Type ===
-DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
+DATASET_TYPE = 'changeset'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
