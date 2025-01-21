@@ -16,10 +16,10 @@ from sklearn.cluster import KMeans
 import joblib
 from config import logger
 
-def perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=100):
+def perform_clustering(X_train, X_val, X_test=None, X_test_meta=None, n_clusters=100):
     """
     Fits KMeans clustering on training data and assigns cluster labels to training, validation, test,
-    and meta-test data.
+    and meta-test data, if available.
     Returns the clustering model for future use.
     """
     os.environ["LOKY_MAX_CPU_COUNT"] = "4"
@@ -45,19 +45,22 @@ def perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=100):
     X_train['cluster_label'] = clustering_model.labels_
     logger.info("Cluster labels assigned to training data.")
 
-    # Assign cluster labels to validation, test, and meta-test data
+    # Assign cluster labels to validation, test, and meta-test data, if not empty
     for dataset, name in zip([X_val, X_test, X_test_meta], ["Validation", "Test", "Meta-Test"]):
-        if dataset is not None:
+        if dataset is not None and not dataset.empty:
             for col in required_columns:
                 if col not in dataset.columns:
                     logger.error(f"Column '{col}' not found in {name} data.")
                     raise KeyError(f"Column '{col}' not found in {name} data.")
 
             centroids = dataset[required_columns].values
-            cluster_labels = clustering_model.predict(centroids)
-            dataset = dataset.copy()
-            dataset['cluster_label'] = cluster_labels
-            logger.info(f"Cluster labels assigned to {name} data.")
+            if centroids.shape[0] > 0:
+                cluster_labels = clustering_model.predict(centroids)
+                dataset = dataset.copy()
+                dataset['cluster_label'] = cluster_labels
+                logger.info(f"Cluster labels assigned to {name} data.")
+            else:
+                logger.warning(f"No samples found in {name} data. Skipping cluster label assignment.")
 
             if name == "Validation":
                 X_val = dataset
@@ -65,10 +68,10 @@ def perform_clustering(X_train, X_val, X_test, X_test_meta, n_clusters=100):
                 X_test = dataset
             elif name == "Meta-Test":
                 X_test_meta = dataset
+        else:
+            logger.warning(f"{name} dataset is empty or None. Skipping clustering.")
 
     return X_train, X_val, X_test, X_test_meta, clustering_model
-
-
 
 
 def load_clustered_data():

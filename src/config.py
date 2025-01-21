@@ -8,8 +8,11 @@ import pandas as pd
 # === Additional Configurations ===
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
-FORCE_COMPUTE_FEATURES = True
-
+FORCE_COMPUTE_FEATURES = False
+SHOULD_BALANCE_DATASET = False
+SHOULD_INCLUDE_USERFEATURES = True
+SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
+SHOULD_PERFORM_BOOTSTRAP_EVALUATION = False
 # === Dataset Type ===
 DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
@@ -17,14 +20,16 @@ DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
 SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 
-TEST_SIZE = 0.4  # Proportion for the temporary test set
-VAL_SIZE = 0.2  # Proportion of the temporary test set to use as the final test set
+TEST_SIZE = 0
+VAL_SIZE = 50000
 RANDOM_STATE = 42
 
 if DATASET_TYPE == 'changeset':
     TEST_SIZE = 0.5  # Proportion for the temporary test set
     VAL_SIZE = 0.1  # Proportion of the temporary test set to use as the final test set
     META_TEST_SIZE = 0.45
+
+REAL_VANDAL_RATIO = 0.2
 
 # === Base Directories ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,11 +65,13 @@ N_CLUSTERS = 100  # Default number of clusters for KMeans
 # Number of jobs for parallel processing
 N_JOBS = 11  # -1 to use all available cores
 
+DEFAULT_THRESHOLD_FOR_EVALUATION = 0.5
+
 # === File Paths ===
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
-CONTRIBUTION_DATA_RAW_FILE_NAME = 'osm_labelled_contributions_v4.parquet'
+CONTRIBUTION_DATA_RAW_FILE_NAME = 'training_contributions_with_complex_features_balanced.parquet'
 # UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2024-02-01.parquet'
 UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 
@@ -80,18 +87,26 @@ PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_
 UNLABELLED_PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_features.parquet')
 
 PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
+
+# Validation dataset paths
+VALIDATION_DATASET_PATH = os.path.join(PROCESSED_DATA_DIR, 'validation_dataset.parquet')
+VALIDATION_LABELS_PATH = os.path.join(PROCESSED_DATA_DIR, 'validation_labels.parquet')
+
 UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
                                                           f'{prefix}_unlabelled_processed_encoded_features.parquet')
 
 CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
                                      'changeset_labels.tsv')
 
-PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted')
+PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted', '2022_to_2024_pcuof_monthly')
+HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 
 # Paths for models and hyperparameters
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
 FINAL_TRAINED_FEATURES_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_trained_features.pkl')
+OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD,
+                                                    f'{prefix}_optimal_threshold_for_inference.pkl')
 
 CLUSTER_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_kmeans_clustering_model.pkl')
 
@@ -143,15 +158,15 @@ os.makedirs(GEOGRAPHICAL_RESULTS_DIR, exist_ok=True)
 
 # === Geographic Split Parameters ===
 GEOGRAPHIC_SPLIT_KEY = 'continent'  # 'continent' or 'country'
-TRAIN_REGIONS = ['Oceania', 'Europe']
-VAL_REGIONS = ['Africa']
+TRAIN_REGIONS = ['Oceania', 'Europe', 'South America']
+VAL_REGIONS = ['Africa', 'Antarctica', 'Other']
 TEST_REGIONS = ['North America', 'Asia']
 
 # === Temporal Split Parameters ===
 DATE_COLUMN = 'date_created'  # Column name in the DataFrame
-TRAIN_YEARS = [2018, 2017]
+TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
-TEST_YEARS = [2019]
+TEST_YEARS = [2017]
 
 # Test changeset ids
 # Take the first 1000 changeset IDs for testing

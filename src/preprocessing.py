@@ -1,9 +1,8 @@
 # src/preprocessing.py
 
-import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from config import logger, DATASET_TYPE
+from config import logger, DATASET_TYPE, SHOULD_INCLUDE_USERFEATURES, SHOULD_INCLUDE_OSM_ELEMENT_FEATURES, SPLIT_METHOD
 from src import config
 
 
@@ -70,8 +69,84 @@ def preprocess_changeset_features(features_df):
     return X_encoded, y
 
 
+import struct
+import pandas as pd
+
+
+def preprocess_user_features(df):
+    """
+    Preprocess user-related features in the DataFrame.
+
+    Parameters:
+    - df: The input DataFrame.
+
+    Returns:
+    - df: The DataFrame with preprocessed user-related features.
+    """
+    # Convert timestamps to datetime, handling NULL values
+    for column in ['user_previous_edit_timestamp']:
+        df[column] = pd.to_datetime(df[column], format='%d/%m/%Y %H:%M', errors='coerce')
+
+    # Convert datetime to numerical values (e.g., Unix timestamp)
+    df['user_previous_edit_timestamp'] = df['user_previous_edit_timestamp'].apply(
+        lambda x: x.timestamp() if not pd.isnull(x) else -1
+    )
+
+    return df
+
+
+def preprocess_osm_element_features(df):
+    """
+    Preprocess OSM element-related features in the DataFrame.
+
+    Parameters:
+    - df: The input DataFrame.
+
+    Returns:
+    - df: The DataFrame with preprocessed OSM element-related features.
+    """
+    # Convert timestamps to datetime, handling NULL values
+    df['element_previous_edit_timestamp'] = pd.to_datetime(
+        df['element_previous_edit_timestamp'], format='%d/%m/%Y %H:%M', errors='coerce'
+    )
+
+    # Convert datetime to numerical values (e.g., Unix timestamp)
+    df['element_previous_edit_timestamp'] = df['element_previous_edit_timestamp'].apply(
+        lambda x: x.timestamp() if not pd.isnull(x) else -1
+    )
+
+    # Function to decode binary time format into total seconds
+    def decode_binary_time(binary_data):
+        if binary_data is None:  # Handle missing data
+            return -1
+        try:
+            # Unpack the binary data
+            months = struct.unpack('<I', binary_data[0:4])[0]
+            days = struct.unpack('<I', binary_data[4:8])[0]
+            milliseconds = struct.unpack('<I', binary_data[8:12])[0]
+
+            # Convert to total seconds
+            total_seconds = (months * 30 * 24 * 3600) + (days * 24 * 3600) + (milliseconds / 1000)
+            return total_seconds
+        except Exception as e:
+            print(f"Error decoding value {binary_data}: {e}")
+            return -1
+
+    # Apply the decoding function to both columns
+    df['element_time_since_previous_edit'] = df['element_time_since_previous_edit'].apply(decode_binary_time)
+    df['user_time_since_previous_edit'] = df['user_time_since_previous_edit'].apply(decode_binary_time)
+
+    return df
+
+
 def preprocess_contribution_features(features_df, is_training):
     logger.info("Starting preprocessing of contribution features...")
+
+    if SHOULD_INCLUDE_OSM_ELEMENT_FEATURES:
+        features_df = preprocess_osm_element_features(features_df)
+
+    if SHOULD_INCLUDE_USERFEATURES:
+        features_df = preprocess_user_features(features_df)
 
     # Shuffle the data entries
     features_df = features_df.sample(frac=1, random_state=config.RANDOM_STATE).reset_index(drop=True)
@@ -83,9 +158,16 @@ def preprocess_contribution_features(features_df, is_training):
         features_df[['code', 'level']] = xzcode_df[['code', 'level']]
         features_df.drop('xzcode', axis=1, inplace=True)
 
-    # Drop unnecessary columns
-    columns_to_drop = ['geometry', 'osm_id', 'members', 'status', 'editor_used',
-                       'source_used', 'grid_cell_id']
+    # Remove 'changeset_id' column for contribution model
+    if 'changeset_id' in features_df.columns and DATASET_TYPE == 'contribution':
+        features_df.drop('changeset_id', axis=1, inplace=True)
+        logger.info(f"Dropped column: changeset_id")
+
+    # Drop other unnecessary columns
+    columns_to_drop = ['geometry', 'code', 'osm_id', 'members', 'status', 'editor_used',
+                       'source_used', 'grid_cell_id', 'contribution_key']
+    if SPLIT_METHOD != 'temporal':
+        columns_to_drop.append("date_created")
     existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]
     features_df.drop(existing_columns_to_drop, axis=1, inplace=True)
     logger.info(f"Dropped columns: {existing_columns_to_drop}")
@@ -111,7 +193,7 @@ def preprocess_contribution_features(features_df, is_training):
 
     # List of categorical columns to one-hot encode
     categorical_columns = ['osm_type', 'contribution_type', 'geometry_type',
-                           'edit_frequency_of_osm_element', 'time_of_day']
+                           'time_of_day']
 
     # Perform one-hot encoding
     X_encoded = pd.get_dummies(X, columns=categorical_columns)

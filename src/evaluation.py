@@ -42,22 +42,54 @@ def print_metrics(true, pred, prob):
     print("\nClassification Report:\n", classification_report(true, pred, target_names=class_names))
 
 
-def evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test):
-    """Evaluate models performance on both training and test datasets."""
-    # Predictions and probabilities for both sets
-    y_train_pred = model.predict(X_train)
-    y_test_pred = model.predict(X_test)
+def evaluate_train_test_metrics(model, X_train, y_train, X_test=None, y_test=None, threshold=None):
+    """
+    Evaluate model performance on both training and test datasets, optionally using a custom threshold.
 
+    Parameters:
+    - model: The trained XGBoost model.
+    - X_train, y_train: Training features and labels.
+    - X_test, y_test: Test features and labels (optional).
+    - threshold (float): If provided, we'll classify probabilities >= threshold as 1 (vandalism).
+
+    Returns:
+    - y_test_pred: Predicted classes for the test set (if available).
+    - y_test_prob: Predicted probabilities for the test set (if available).
+    """
+
+    # ---------------------
+    # 1) Training Metrics
+    # ---------------------
+    # Predict probabilities on train set
     y_train_prob = model.predict_proba(X_train)[:, 1]
-    y_test_prob = model.predict_proba(X_test)[:, 1]
+    y_train_pred = (y_train_prob >= threshold).astype(int)
 
+    # Print train set evaluation
     print("\nTrain Set Evaluation\n--------------------\n")
     print_metrics(y_train, y_train_pred, y_train_prob)
 
-    print("\nTest Set Evaluation\n--------------------\n")
-    print_metrics(y_test, y_test_pred, y_test_prob)
+    # ---------------------
+    # 2) Test Metrics (if test set exists)
+    # ---------------------
+    if X_test is not None and y_test is not None and not X_test.empty and not y_test.empty:
+        # Predict probabilities on test set
+        y_test_prob = model.predict_proba(X_test)[:, 1]
 
-    return y_test_pred, y_test_prob
+        if threshold is None:
+            # Use model's default .predict() with 0.5 cutoff
+            y_test_pred = model.predict(X_test)
+        else:
+            # Apply custom threshold to probabilities
+            y_test_pred = (y_test_prob >= threshold).astype(int)
+
+        # Print test set evaluation
+        print("\nTest Set Evaluation\n--------------------\n")
+        print_metrics(y_test, y_test_pred, y_test_prob)
+
+        return y_test_pred, y_test_prob
+    else:
+        print("\nNo test set provided. Skipping test evaluation.\n")
+        return None, None
 
 
 def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
@@ -88,15 +120,16 @@ def calculate_auc_scores(y_test, y_test_pred, y_test_prob):
     f1 = f1_score(y_test, y_test_pred)
 
     # Print statistics
-    print(f"\nStatistics:\n-----------")
-    print(f"True Negatives (TN): {TN}")
-    print(f"False Positives (FP): {FP}")
-    print(f"False Negatives (FN): {FN}")
-    print(f"True Positives (TP): {TP}")
-    print(f"\nAccuracy: {accuracy:.4f}")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"F1 Score: {f1:.4f}")
+    print("\nStatistics:\n-----------")
+    print(f"True Negatives (TN, correctly identified non-vandalism): {TN}")
+    print(f"False Positives (FP, non-vandalism incorrectly classified as vandalism): {FP}")
+    print(f"False Negatives (FN, vandalism incorrectly classified as non-vandalism): {FN}")
+    print(f"True Positives (TP, correctly identified vandalism): {TP}")
+    print("\nPerformance Metrics:")
+    print(f"Accuracy (overall correctness of the model): {accuracy:.4f}")
+    print(f"Precision (proportion of predicted vandalism that is actually vandalism): {precision:.4f}")
+    print(f"Recall (sensitivity, proportion of actual vandalism correctly identified): {recall:.4f}")
+    print(f"F1 Score (harmonic mean of precision and recall): {f1:.4f}")
 
     return cm
 

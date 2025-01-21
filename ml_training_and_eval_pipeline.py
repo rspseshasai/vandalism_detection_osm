@@ -5,17 +5,13 @@ from sqlite3 import NotSupportedError
 import joblib
 import pandas as pd
 
-# TODO: Classification report for GEo eval with and without user features
-# TODO: Boostrap geo split
 # Adjust the path to import modules from src
-# 16th JAn 3.30pm
-# TODO: Changeset ids of labelled set send to benni.
-
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
-    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH
+    PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, \
+    DEFAULT_THRESHOLD_FOR_EVALUATION, SHOULD_PERFORM_BOOTSTRAP_EVALUATION
 from src import config
 from src.data_loading import load_data
 
@@ -102,7 +98,7 @@ def preprocessing_helper(features_df):
 
 
 # Step 4: Data Splitting
-def data_splitting_helper(X_encoded, y, split_type):
+def data_splitting_helper(X_encoded, y, split_type, train_regions, val_regions, test_regions):
     logger.info(f"Starting data splitting with method: {split_type}")
 
     if split_type == 'random':
@@ -116,9 +112,9 @@ def data_splitting_helper(X_encoded, y, split_type):
             raise NotSupportedError(f"Split type '{split_type}' is only supported with contribution dataset")
         split_params = {
             'split_key': config.GEOGRAPHIC_SPLIT_KEY,
-            'train_regions': config.TRAIN_REGIONS,
-            'val_regions': config.VAL_REGIONS,
-            'test_regions': config.TEST_REGIONS
+            'train_regions': train_regions,
+            'val_regions': val_regions,
+            'test_regions': test_regions
         }
     elif split_type == 'temporal':
         split_params = {
@@ -128,7 +124,7 @@ def data_splitting_helper(X_encoded, y, split_type):
         raise ValueError(f"Unknown split_type: {split_type}")
 
     # Ensure 'changeset_id' is retained
-    if 'changeset_id' not in X_encoded.columns:
+    if 'changeset_id' not in X_encoded.columns and DATASET_TYPE == 'changeset':
         raise ValueError("Column 'changeset_id' is missing in X_encoded.")
 
     # Split the data
@@ -137,18 +133,12 @@ def data_splitting_helper(X_encoded, y, split_type):
     )
 
     # Extract the split IDs
-    split_ids = {
-        'train': X_train['changeset_id'].copy(),
-        'val': X_val['changeset_id'].copy(),
-        'test': X_test['changeset_id'].copy(),
-    }
+    split_ids = {}
     if DATASET_TYPE == 'changeset':
+        split_ids['train'] = X_train['changeset_id'].copy()
+        split_ids['val'] = X_val['changeset_id'].copy()
+        split_ids['test'] = X_test['changeset_id'].copy()
         split_ids['meta_test'] = X_test_meta['changeset_id'].copy()
-
-    # # Remove 'changeset_id' from X datasets to avoid data leakage
-    # X_train = X_train.drop(columns=['changeset_id'])
-    # X_val = X_val.drop(columns=['changeset_id'])
-    # X_test = X_test.drop(columns=['changeset_id'])
 
     log_dataset_shapes(X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta)
     calculate_statistics(y_train, "Train Set")
@@ -204,33 +194,69 @@ def training_helper(X_train, y_train, X_val, y_val):
 
     logger.info("Starting model training...")
     final_model = train_final_model(X_train, y_train, X_val, y_val, best_params)
+    # compute_optimal_threshold(final_model, X_val, y_val, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
     save_model(final_model, config.FINAL_MODEL_PATH)
     logger.info("Model training completed.")
     return final_model
 
 
 # Step 7: Model Evaluation
-def evaluation_helper(model, X_train, y_train, X_test, y_test, X_test_ids, model_type):
+def evaluation_helper(model, X_train, y_train, X_test=None, y_test=None, X_test_ids=None, model_type="model"):
+    """
+    Evaluate the model on both training and test datasets and save the results.
+
+    Parameters:
+    - model: The trained machine learning model.
+    - X_train, y_train: Training features and labels.
+    - X_test, y_test: Test features and labels (optional).
+    - X_test_ids: IDs for test set (optional, used in 'changeset' dataset type).
+    - model_type: String identifier for the model being evaluated.
+
+    Returns:
+    - evaluation_results_main_model: DataFrame containing evaluation results.
+    """
     logger.info(f"Starting evaluation for {model_type} model...")
 
+    # Load or use default threshold
+    if os.path.exists(OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH):
+        threshold = joblib.load(OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH)
+        logger.info(f"Loaded custom threshold: {threshold:.4f}")
+    else:
+        threshold = DEFAULT_THRESHOLD_FOR_EVALUATION  # fallback
+        logger.warning(f"No custom threshold found. Using default {threshold}")
+
     # Evaluate train and test metrics
-    y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test)
+    y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test, threshold)
 
-    # Calculate additional metrics and confusion matrix
-    cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
+    # Initialize evaluation results
+    evaluation_results_main_model = None
 
-    # Create DataFrame with predictions and changeset_id
-    evaluation_results_main_model = pd.DataFrame({
-        'changeset_id': X_test_ids.reset_index(drop=True),
-        'y_true': y_test.reset_index(drop=True),
-        f'y_pred_{model_type}': y_test_pred,
-        f'y_prob_{model_type}': y_test_prob
-    })
+    # If test set exists, calculate metrics and save results
+    if X_test is not None and y_test is not None and not X_test.empty and not y_test.empty:
+        logger.info("Calculating additional metrics for test set...")
+        cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
 
-    # Save evaluation data for visualization
-    save_evaluation_results(evaluation_results_main_model, cm, model_type)
+        if DATASET_TYPE == 'contribution':
+            evaluation_results_main_model = pd.DataFrame({
+                'y_true': y_test.reset_index(drop=True),
+                f'y_pred_{model_type}': y_test_pred,
+                f'y_prob_{model_type}': y_test_prob
+            })
+        else:  # Changeset-specific case
+            evaluation_results_main_model = pd.DataFrame({
+                'changeset_id': X_test_ids.reset_index(drop=True),
+                'y_true': y_test.reset_index(drop=True),
+                f'y_pred_{model_type}': y_test_pred,
+                f'y_prob_{model_type}': y_test_prob
+            })
 
-    # # (OPTIONAL): Perform Cross-Validation on Training Data
+        # Save evaluation data for visualization
+        save_evaluation_results(evaluation_results_main_model, cm, model_type)
+
+    else:
+        logger.warning("No test set provided. Skipping test evaluation.")
+
+    # Optional: Perform Cross-Validation on Training Data (if applicable)
     # evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
 
     logger.info(f"Evaluation completed for {model_type} model.")
@@ -239,32 +265,35 @@ def evaluation_helper(model, X_train, y_train, X_test, y_test, X_test_ids, model
 
 # Step 8: Bootstrapping Evaluation
 def bootstrapping_evaluation_helper(model, X_test, y_test):
-    logger.info("Starting bootstrapping evaluation...")
+    if SHOULD_PERFORM_BOOTSTRAP_EVALUATION:
+        logger.info("Starting bootstrapping evaluation...")
 
-    # Perform bootstrapping
-    metrics_df = perform_bootstrap_evaluation(
-        model=model,
-        X_test=X_test,
-        y_test=y_test,
-        n_iterations=config.BOOTSTRAP_ITERATIONS,
-        random_state=config.RANDOM_STATE,
-        n_jobs=config.N_JOBS
-    )
+        # Perform bootstrapping
+        metrics_df = perform_bootstrap_evaluation(
+            model=model,
+            X_test=X_test,
+            y_test=y_test,
+            n_iterations=config.BOOTSTRAP_ITERATIONS,
+            random_state=config.RANDOM_STATE,
+            n_jobs=config.N_JOBS
+        )
 
-    # Calculate statistics
-    results_df = calculate_bootstrap_statistics(metrics_df)
-    stats_df = compute_additional_statistics(metrics_df)
+        # Calculate statistics
+        results_df = calculate_bootstrap_statistics(metrics_df)
+        stats_df = compute_additional_statistics(metrics_df)
 
-    # Save results
-    save_bootstrap_results(
-        metrics_df,
-        results_df,
-        stats_df,
-        folder_to_save_bootstrap_results=config.BOOTSTRAP_RESULTS_DIR,
-        prefix='bootstrap_test_set'
-    )
+        # Save results
+        save_bootstrap_results(
+            metrics_df,
+            results_df,
+            stats_df,
+            folder_to_save_bootstrap_results=config.BOOTSTRAP_RESULTS_DIR,
+            prefix='bootstrap_test_set'
+        )
 
-    logger.info("Bootstrapping evaluation completed.")
+        logger.info("Bootstrapping evaluation completed.")
+    else:
+        logger.info("Bootstrapping evaluation skipped.")
 
 
 # Step 9: Geographical Evaluation
@@ -306,7 +335,7 @@ def meta_classifier_helper(evaluation_results_main_model, evaluation_results_hyp
 
 
 # Main Pipeline
-def main():
+def pipeline(train_regions, val_regions, test_regions):
     logger.info("Starting the ML pipeline...")
 
     # Define the pipeline steps and their corresponding functions
@@ -318,10 +347,10 @@ def main():
         ('clustering', clustering_helper),
         ('training', training_helper),
         ('evaluation', evaluation_helper),
-        # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
-        # ('geographical_evaluation', geographical_evaluation_helper),
-        # ('hyper_classifier', hyper_classifier_helper),  # New step added
-        # ('meta_classifier', meta_classifier_helper),
+        ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
+        ('geographical_evaluation', geographical_evaluation_helper),
+        ('hyper_classifier', hyper_classifier_helper),
+        ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
@@ -345,19 +374,28 @@ def main():
             X_encoded, y = step_function(features_df)
         elif step_name == 'data_splitting':
             X_train, X_val, X_test, X_test_meta, y_train, y_val, y_test, y_test_meta, split_ids = step_function(
-                X_encoded, y, SPLIT_METHOD)
+                X_encoded, y, SPLIT_METHOD, train_regions, val_regions, test_regions)
         elif step_name == 'clustering':
             X_train, X_val, X_test, X_test_meta = step_function(X_train, X_val, X_test, X_test_meta)
         elif step_name == 'training':
             main_model = step_function(X_train, y_train, X_val, y_val)
         elif step_name == 'evaluation':
+            split_ids_temp = {}
+            if DATASET_TYPE == 'changeset':
+                split_ids_temp = split_ids['test']
             evaluation_results_main_model = step_function(main_model, X_train, y_train, X_test, y_test,
-                                                          split_ids['test'],
+                                                          split_ids_temp,
                                                           'main')
         elif step_name == 'bootstrapping_evaluation':
-            step_function(main_model, X_test, y_test)
+            if X_test is not None and y_test is not None and not X_test.empty and not y_test.empty:
+                step_function(main_model, X_test, y_test)
+            else:
+                logger.warning("No test set provided. Skipping bootstrap evaluation.")
         elif step_name == 'geographical_evaluation':
-            step_function(main_model, X_test, y_test)
+            if X_test is not None and y_test is not None and not X_test.empty and not y_test.empty:
+                step_function(main_model, X_test, y_test)
+            else:
+                logger.warning("No test set provided. Skipping geographic evaluation.")
         elif step_name == 'hyper_classifier':
             hyper_model, evaluation_results_hyper_classifier_model, X_test_meta_hyper = step_function(split_ids)
         elif step_name == 'meta_classifier':
@@ -367,7 +405,8 @@ def main():
             logger.warning(f"Unknown pipeline step: {step_name}")
 
     logger.info("ML pipeline completed successfully.")
+    return evaluation_results_main_model
 
 
 if __name__ == '__main__':
-    main()
+    pipeline(config.TRAIN_REGIONS, config.VAL_REGIONS, config.TEST_REGIONS)
