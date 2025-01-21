@@ -1,9 +1,9 @@
 import os
 import sys
+from sqlite3 import NotSupportedError
 
 import joblib
 import pandas as pd
-from adodbapi import NotSupportedError
 
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
