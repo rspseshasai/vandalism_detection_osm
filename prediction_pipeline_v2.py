@@ -22,7 +22,7 @@ from config import (
     UNLABELLED_PROCESSED_FEATURES_FILE, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, DEFAULT_THRESHOLD_FOR_EVALUATION
 )
 from training import load_model
-from src.feature_engineering_parallel import get_or_generate_features
+from src.feature_engineering import get_or_generate_features
 from src.preprocessing import preprocess_features
 
 OUTPUT_FOLDER_SUFFIX = F"pcuf__balanced__spw_4.5__real_vandal_0.2__threshold_{DEFAULT_THRESHOLD_FOR_EVALUATION}__full_dataset"
