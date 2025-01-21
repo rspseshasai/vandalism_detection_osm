@@ -1,12 +1,12 @@
 import os
 import sys
+from sqlite3 import NotSupportedError
 
 import joblib
 import pandas as pd
-from adodbapi import NotSupportedError
 
 # TODO: Classification report for GEo eval with and without user features
-#TODO: Boostrap geo split
+# TODO: Boostrap geo split
 # Adjust the path to import modules from src
 # 16th JAn 3.30pm
 # TODO: Changeset ids of labelled set send to benni.
