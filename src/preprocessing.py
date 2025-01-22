@@ -3,7 +3,7 @@
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from config import logger, DATASET_TYPE
+from config import logger, DATASET_TYPE, SPLIT_METHOD
 from src import config
 
 
@@ -86,6 +86,10 @@ def preprocess_contribution_features(features_df, is_training):
     # Drop unnecessary columns
     columns_to_drop = ['geometry', 'osm_id', 'members', 'status', 'editor_used',
                        'source_used', 'grid_cell_id']
+
+    if SPLIT_METHOD != 'temporal':
+        columns_to_drop.append("date_created")
+
     existing_columns_to_drop = [col for col in columns_to_drop if col in features_df.columns]
     features_df.drop(existing_columns_to_drop, axis=1, inplace=True)
     logger.info(f"Dropped columns: {existing_columns_to_drop}")

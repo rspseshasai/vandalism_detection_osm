@@ -74,8 +74,8 @@ def extract_temporal_features(contribution):
     # Previously we used precomputed time_since_last_edit, but now removed
     # so we won't set 'time_since_last_edit' here anymore.
 
-    if SPLIT_METHOD == 'temporal':
-        features['date_created'] = contribution['valid_from']
+    features['date_created'] = contribution['valid_from']
+
     return features
 
 
