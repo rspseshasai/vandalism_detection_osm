@@ -28,7 +28,7 @@ from src.feature_engineering_parallel import get_or_generate_features
 from src.preprocessing import preprocess_features
 
 
-def load_parquet_in_chunks(data_path, batch_size=1000000):
+def load_parquet_in_chunks(data_path, batch_size=500000):
     """
     Loads a Parquet file in chunks using pyarrow.dataset, returning a Pandas DataFrame per chunk.
     """
@@ -245,7 +245,7 @@ def main():
             clustering_model,
             trained_feature_names,
             predict_output_folder,
-            batch_size=100000
+            batch_size=500000
         )
 
     logger.info("All files processed successfully.")
