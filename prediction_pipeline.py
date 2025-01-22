@@ -12,7 +12,7 @@ project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
 
 TEST_PREDICTION_RUN = False
-OUTPUT_FOLDER_SUFFIX = "nuof__balanced__spw_4.5__real_vandal_0.2__threshold_0.5"
+OUTPUT_FOLDER_SUFFIX = "nuof_full_dataset_detailed"
 
 from config import (
     logger,
@@ -107,7 +107,7 @@ def append_or_update_overall_summary(
     logger.info(f"Overall summary CSV updated for {month_year}.")
 
 
-def process_file(input_file, model, clustering_model, trained_feature_names, predict_output_folder, batch_size=1000000):
+def process_file(input_file, model, clustering_model, trained_feature_names, predict_output_folder, batch_size=500000):
     """
     Process a single Parquet file in chunks and predict vandalism entries.
     Also updates the overall_summary.csv after completing all chunks for this file.

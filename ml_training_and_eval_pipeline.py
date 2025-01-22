@@ -210,27 +210,54 @@ def training_helper(X_train, y_train, X_val, y_val):
 
 
 # Step 7: Model Evaluation
-def evaluation_helper(model, X_train, y_train, X_test, y_test, X_test_ids, model_type):
+def evaluation_helper(model, X_train, y_train, X_test=None, y_test=None, X_test_ids=None, model_type="model"):
+    """
+    Evaluate the model on both training and test datasets and save the results.
+
+    Parameters:
+    - model: The trained machine learning model.
+    - X_train, y_train: Training features and labels.
+    - X_test, y_test: Test features and labels (optional).
+    - X_test_ids: IDs for test set (optional, used in 'changeset' dataset type).
+    - model_type: String identifier for the model being evaluated.
+
+    Returns:
+    - evaluation_results_main_model: DataFrame containing evaluation results.
+    """
     logger.info(f"Starting evaluation for {model_type} model...")
 
     # Evaluate train and test metrics
     y_test_pred, y_test_prob = evaluate_train_test_metrics(model, X_train, y_train, X_test, y_test)
 
-    # Calculate additional metrics and confusion matrix
-    cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
+    # Initialize evaluation results
+    evaluation_results_main_model = None
 
-    # Create DataFrame with predictions and changeset_id
-    evaluation_results_main_model = pd.DataFrame({
-        'changeset_id': X_test_ids.reset_index(drop=True),
-        'y_true': y_test.reset_index(drop=True),
-        f'y_pred_{model_type}': y_test_pred,
-        f'y_prob_{model_type}': y_test_prob
-    })
+    # If test set exists, calculate metrics and save results
+    if X_test is not None and y_test is not None and not X_test.empty and not y_test.empty:
+        logger.info("Calculating additional metrics for test set...")
+        cm = calculate_auc_scores(y_test, y_test_pred, y_test_prob)
 
-    # Save evaluation data for visualization
-    save_evaluation_results(evaluation_results_main_model, cm, model_type)
+        if DATASET_TYPE == 'contribution':
+            evaluation_results_main_model = pd.DataFrame({
+                'y_true': y_test.reset_index(drop=True),
+                f'y_pred_{model_type}': y_test_pred,
+                f'y_prob_{model_type}': y_test_prob
+            })
+        else:  # Changeset-specific case
+            evaluation_results_main_model = pd.DataFrame({
+                'changeset_id': X_test_ids.reset_index(drop=True),
+                'y_true': y_test.reset_index(drop=True),
+                f'y_pred_{model_type}': y_test_pred,
+                f'y_prob_{model_type}': y_test_prob
+            })
 
-    # # (OPTIONAL): Perform Cross-Validation on Training Data
+        # Save evaluation data for visualization
+        save_evaluation_results(evaluation_results_main_model, cm, model_type)
+
+    else:
+        logger.warning("No test set provided. Skipping test evaluation.")
+
+    # Optional: Perform Cross-Validation on Training Data (if applicable)
     # evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
 
     logger.info(f"Evaluation completed for {model_type} model.")
@@ -319,9 +346,9 @@ def pipeline(train_regions, val_regions, test_regions):
         ('training', training_helper),
         ('evaluation', evaluation_helper),
         # ('bootstrapping_evaluation', bootstrapping_evaluation_helper),
-        ('geographical_evaluation', geographical_evaluation_helper),
-        ('hyper_classifier', hyper_classifier_helper),  # New step added
-        ('meta_classifier', meta_classifier_helper),
+        # ('geographical_evaluation', geographical_evaluation_helper),
+        # ('hyper_classifier', hyper_classifier_helper),  # New step added
+        # ('meta_classifier', meta_classifier_helper),
     ]
 
     data_df = features_df = None
