@@ -1,284 +1,256 @@
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import matplotlib.pyplot as plt
-import numpy as np
-
-from config import OUTPUT_DIR, PREDICTIONS_INPUT_DATA_DIR, logger
-
-OUTPUT_FOLDER_NAME_SUFFIX = '2022_jan_to_july_2025-01-13_00-17-55_pcuf__balanced__spw_1__real_vandal_0.2__threshold_0.5'
-TITLE_SUFFIX = ' | With user and osm element features | SPW 1'
-
-import os
 import glob
-import gc
+import os
+
+import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.express as px
 
 
-def build_contribution_center_map(raw_input_dir):
+def load_vandalism_files(folder_path: str):
     """
-    Build a map from contribution_key -> (lon, lat) based on bounding box columns.
-    Memory-Efficient Version:
-      - Reads only required columns from each file.
-      - Drops columns as soon as they're no longer needed.
-      - Calls garbage collection after processing each file.
-
-    Required columns in each file:
-        valid_from, osm_id, osm_version,
-        xmin, ymin, xmax, ymax
+    Loads all CSV files ending with '_prediction_output.csv', each containing vandalism entries.
+    Extracts a 'month_year' string (e.g., '2022-02') from the filename.
+    Returns a single DataFrame with columns:
+      [changeset_id, date_created, osm_id, osm_version, centroid_x, centroid_y, y_pred, y_prob, month_year]
     """
-    # Columns we must read
-    required_cols = ["valid_from", "osm_id", "osm_version", "xmin", "ymin", "xmax", "ymax"]
-    center_map = {}
-
-    # Match all CSV/Parquet files in the directory
-    pattern = os.path.join(raw_input_dir, "*.*")
-    all_files = glob.glob(pattern)
-
-    for fpath in all_files:
-        # Determine file extension
-        if fpath.endswith(".parquet"):
-            # Read only the needed columns
-            if not os.path.exists(fpath):
-                continue
-            df_raw = pd.read_parquet(fpath, columns=required_cols)
-
-        elif fpath.endswith(".csv"):
-            # Use usecols to limit columns read
-            if not os.path.exists(fpath):
-                continue
-            df_raw = pd.read_csv(fpath, usecols=required_cols)
-
-        else:
-            # Skip unsupported file formats
-            continue
-
-        # In case the file doesn't contain all required columns, skip it
-        if not set(required_cols).issubset(df_raw.columns):
-            del df_raw
-            gc.collect()
-            continue
-
-        # Create 'contribution_key' on the fly
-        # Then drop columns used for creating it
-        df_raw["contribution_key"] = (
-                df_raw["valid_from"].astype(str) + "__" +
-                df_raw["osm_id"].astype(str) + "__" +
-                df_raw["osm_version"].astype(str)
-        )
-        df_raw.drop(["valid_from", "osm_id", "osm_version"], axis=1, inplace=True)
-
-        # Compute centroid from bounding box, then drop bounding box columns
-        df_raw["center_lon"] = (df_raw["xmin"] + df_raw["xmax"]) / 2
-        df_raw["center_lat"] = (df_raw["ymin"] + df_raw["ymax"]) / 2
-        df_raw.drop(["xmin", "xmax", "ymin", "ymax"], axis=1, inplace=True)
-
-        # Add to our dictionary: {contribution_key: (center_lon, center_lat)}
-        # Use itertuples (memory-friendly) to iterate
-        for row in df_raw[["contribution_key", "center_lon", "center_lat"]].itertuples(index=False):
-            # row is a namedtuple => (contribution_key, center_lon, center_lat)
-            center_map[row.contribution_key] = (row.center_lon, row.center_lat)
-
-        # Remove intermediate DataFrame and force garbage collection
-        del df_raw
-        gc.collect()
-
-    return center_map
-
-
-def plot_global_vandalism_heatmap(vandalism_df, center_map, method="hexbin"):
-    """
-    Plot a global heatmap of vandalism. We have a DataFrame vandalism_df with 'contribution_key'
-    that indicates vandal entries, and a dictionary center_map {contribution_key -> (lon, lat)}.
-
-    method: "hexbin" or "scatter"
-    """
-    # Extract (lon, lat) for each vandalism entry
-    lons = []
-    lats = []
-
-    for ckey in vandalism_df['contribution_key']:
-        if ckey in center_map:
-            lon, lat = center_map[ckey]
-            lons.append(lon)
-            lats.append(lat)
-    if not lons:
-        logger.warn("No matching contribution keys for vandalism. Cannot plot heatmap.")
-        return
-
-    # Convert to numpy arrays
-    lons = np.array(lons)
-    lats = np.array(lats)
-
-    # Setup Cartopy figure
-    plt.figure(figsize=(12, 6))
-    ax = plt.axes(projection=ccrs.PlateCarree())  # PlateCarree = lat/lon map
-    ax.set_global()  # Show entire world
-    ax.add_feature(cfeature.LAND, edgecolor='black')
-    ax.add_feature(cfeature.OCEAN)
-    ax.add_feature(cfeature.COASTLINE)
-    ax.add_feature(cfeature.BORDERS, linestyle=':')
-
-    # Depending on method, choose hexbin or scatter
-    if method == "hexbin":
-        # Create hexbin
-        plt.hexbin(lons, lats, gridsize=100, transform=ccrs.PlateCarree(),
-                   cmap='Reds', mincnt=1)
-        plt.colorbar(label='Number of Vandalism Points')
-    else:
-        # Simple scatter plot with alpha for density
-        plt.scatter(lons, lats, s=4, c='red', alpha=0.3, transform=ccrs.PlateCarree())
-
-    plt.title("Global Vandalism Heatmap")
-    plt.show()
-
-
-def plot_world_heatmap_of_vandalism(vandalism_df):
-    """
-    Demonstrates how to:
-    1) Build a center_map from raw bounding box data.
-    2) Load vandalism predictions (across months).
-    3) Plot a global heatmap (hexbin) of vandalism.
-    """
-    # 1) Build center_map from raw bounding box input files
-    raw_input_dir = PREDICTIONS_INPUT_DATA_DIR  # adapt
-    center_map = build_contribution_center_map(raw_input_dir)
-
-    if vandalism_df.empty:
-        logger.warn("No vandalism data found.")
-        return
-
-    logger.info(f"Loaded {len(vandalism_df)} vandalism rows for heatmap plotting...")
-
-    # 3) Plot with hexbin
-    plot_global_vandalism_heatmap(vandalism_df, center_map, method="hexbin")
-
-    # 4) If you want a scatter plot instead:
-    # plot_global_vandalism_heatmap(vandalism_df, center_map, method="scatter")
-    logger.info("Heat map plotted")
-
-
-def parse_date_from_key(contribution_key: str):
-    """Extract the date portion from the contribution_key."""
-    parts = contribution_key.split('__')
-    if not parts:
-        return None
-    date_str = parts[0]
-    try:
-        date_val = pd.to_datetime(date_str, format='%Y-%m-%d %H:%M:%S')
-        return date_val
-    except ValueError:
-        return None
-
-
-def load_all_vandalism_files(folder_path: str):
-    """Load all CSV files ending with '_vandalism_predictions.csv' and parse the contribution dates."""
-    pattern = os.path.join(folder_path, '*_vandalism_predictions.csv')
-    all_files = glob.glob(pattern)
+    all_files = glob.glob(os.path.join(folder_path, "*_prediction_output.csv"))
     dfs = []
+
     for file_path in all_files:
+        base_name = os.path.basename(file_path)
+        # Example: '2022-02_contributions_prediction_output.csv' -> '2022-02'
+        month_year = base_name.split('_')[0]  # 'YYYY-MM'
+
         df = pd.read_csv(file_path)
-        df['contribution_datetime'] = df['contribution_key'].apply(parse_date_from_key)
-        df = df.dropna(subset=['contribution_datetime'])
+        # If your CSV has non-vandal entries, filter them out: df = df[df['y_pred'] == 1]
+
+        df['month_year'] = month_year
+        if 'date_created' in df.columns:
+            df['date_created'] = pd.to_datetime(df['date_created'], errors='coerce')
         dfs.append(df)
+
     if not dfs:
         return pd.DataFrame()
+
     return pd.concat(dfs, ignore_index=True)
 
 
-def plot_bar_with_labels(x, y, title, xlabel, ylabel, rotation=0):
-    """Helper function to plot bar graphs with labels on top."""
-    plt.figure(figsize=(10, 6))
-    bars = plt.bar(x, y, color='skyblue')
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.xticks(rotation=rotation)
-    for bar in bars:
-        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height(),
-                 str(int(bar.get_height())), ha='center', va='bottom', fontsize=9)
+def prepare_monthly_counts(df):
+    """
+    Groups by 'month_year' and counts vandalism entries,
+    then parses year/month as integers for sorting.
+    Returns a DataFrame with columns:
+        ['month_year', 'vandalism_count', 'year', 'month', 'month_year_label']
+    """
+    monthly_counts = df.groupby('month_year')['changeset_id'].count().reset_index()
+    monthly_counts.rename(columns={'changeset_id': 'vandalism_count'}, inplace=True)
+
+    # Extract numeric year/month for sorting
+    monthly_counts['year'] = monthly_counts['month_year'].apply(lambda x: int(x.split('-')[0]))
+    monthly_counts['month'] = monthly_counts['month_year'].apply(lambda x: int(x.split('-')[1]))
+    monthly_counts = monthly_counts.sort_values(by=['year', 'month'])
+
+    # We can create a label for plotting
+    monthly_counts['month_year_label'] = monthly_counts['month_year']
+    return monthly_counts
+
+
+def plot_bar_line_overall(df, output_dir):
+    """
+    Plots an overall bar and line chart for all data across multiple years.
+    Less cluttered bar labels: we reduce font size or skip labeling if it's too many bars.
+    """
+    monthly_counts = prepare_monthly_counts(df)
+
+    # Overall Bar Plot
+    plt.figure(figsize=(10, 5))
+    bars = plt.bar(monthly_counts['month_year_label'],
+                   monthly_counts['vandalism_count'], color='skyblue')
+    plt.xlabel('Month (YYYY-MM)')
+    plt.ylabel('Number of Vandalism Contributions')
+    plt.title('Vandalism Contributions by Month (Bar) - Overall')
+
+    # Conditionally place labels if # of bars < threshold
+    if len(bars) < 40:
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2,
+                     height,
+                     str(height),
+                     ha='center', va='bottom', fontsize=8, rotation=45)
+
+    plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    bar_output = os.path.join(output_dir, "vandalism_bar_by_month_overall.png")
+    plt.savefig(bar_output, dpi=150)
+    plt.close()
 
-
-def plot_line_graph(x, y, title, xlabel, ylabel, rotation=0):
-    """Helper function to plot line graphs."""
-    plt.figure(figsize=(10, 6))
-    plt.plot(x, y, marker='o', color='salmon', linestyle='-')
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.xticks(rotation=rotation)
+    # Overall Line Plot
+    plt.figure(figsize=(10, 5))
+    plt.plot(monthly_counts['month_year_label'],
+             monthly_counts['vandalism_count'],
+             marker='o', linestyle='-', color='salmon')
+    plt.xlabel('Month (YYYY-MM)')
+    plt.ylabel('Number of Vandalism Contributions')
+    plt.title('Vandalism Contributions by Month (Line) - Overall')
+    plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    line_output = os.path.join(output_dir, "vandalism_line_by_month_overall.png")
+    plt.savefig(line_output, dpi=150)
+    plt.close()
 
 
-def plot_vandalism_by_month(df: pd.DataFrame):
-    """Plot vandalism contributions by month (bar and line)."""
-    df['year_month'] = df['contribution_datetime'].dt.to_period('M').astype(str)
-    monthly_counts = df.groupby('year_month')['contribution_key'].count().reset_index()
-    monthly_counts.rename(columns={'contribution_key': 'vandalism_count'}, inplace=True)
+def plot_bar_line_by_year(df, output_dir):
+    """
+    For each unique year, create separate bar and line plots of monthly vandalism counts.
+    """
+    monthly_counts = prepare_monthly_counts(df)
 
-    # Bar plot
-    plot_bar_with_labels(
-        monthly_counts['year_month'],
-        monthly_counts['vandalism_count'],
-        "Vandalism Contributions by Month (Bar)" + TITLE_SUFFIX,
-        "Month (YYYY-MM)",
-        "Number of Vandalism Contributions",
-        rotation=45
+    unique_years = monthly_counts['year'].unique()
+
+    for yr in unique_years:
+        yr_df = monthly_counts[monthly_counts['year'] == yr].copy()
+
+        # Bar Plot for this year
+        plt.figure(figsize=(8, 4))
+        bars = plt.bar(yr_df['month_year_label'], yr_df['vandalism_count'], color='skyblue')
+        plt.xlabel(f'Month of {yr}')
+        plt.ylabel('Vandalism Count')
+        plt.title(f'Vandalism by Month (Bar) - {yr}')
+
+        # Label bars if not too many
+        if len(bars) < 20:
+            for bar in bars:
+                height = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width() / 2,
+                         height,
+                         str(height),
+                         ha='center', va='bottom', fontsize=8, rotation=45)
+
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        bar_file = os.path.join(output_dir, f"vandalism_bar_{yr}.png")
+        plt.savefig(bar_file, dpi=150)
+        plt.close()
+
+        # Line Plot for this year
+        plt.figure(figsize=(8, 4))
+        plt.plot(yr_df['month_year_label'],
+                 yr_df['vandalism_count'],
+                 marker='o', linestyle='-', color='salmon')
+        plt.xlabel(f'Month of {yr}')
+        plt.ylabel('Vandalism Count')
+        plt.title(f'Vandalism by Month (Line) - {yr}')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        line_file = os.path.join(output_dir, f"vandalism_line_{yr}.png")
+        plt.savefig(line_file, dpi=150)
+        plt.close()
+
+
+def plot_interactive_heatmap(df, output_dir):
+    """
+    Creates an interactive Plotly scattergeo with a time slider (manual only).
+    - Smaller dot sizes
+    - Purple color
+    - Manual slider (no autoplay)
+    - Smoother transitions
+
+    Each frame = one 'month_year'.
+    """
+    # Filter valid lat/lon
+    df = df.dropna(subset=['centroid_x', 'centroid_y'])
+
+    # Prepare sorting
+    df['year'] = df['month_year'].apply(lambda x: int(x.split('-')[0]))
+    df['month'] = df['month_year'].apply(lambda x: int(x.split('-')[1]))
+    df = df.sort_values(by=['year', 'month'])
+
+    # Create figure using scatter_geo with animation_frame
+    fig = px.scatter_geo(
+        df,
+        lon='centroid_x',
+        lat='centroid_y',
+        hover_name='changeset_id',
+        color_discrete_sequence=['purple'],  # all points in purple
+        animation_frame='month_year',
+        projection='natural earth'
     )
-    # Line plot
-    plot_line_graph(
-        monthly_counts['year_month'],
-        monthly_counts['vandalism_count'],
-        "Vandalism Contributions by Month (Line)" + TITLE_SUFFIX,
-        "Month (YYYY-MM)",
-        "Number of Vandalism Contributions",
-        rotation=45
+
+    fig.update_traces(
+        marker=dict(size=3)  # Smaller dot size
     )
 
+    # Manual slider config:
+    # - Remove autoplay buttons by clearing updatemenus
+    # - Make transitions smoother
+    fig.layout.updatemenus = []  # no play/pause buttons
+    fig.update_layout(
+        title='Vandalism Heatmap Over Time (Manual Slider)',
+        geo=dict(
+            showland=True,
+            landcolor='rgb(217, 217, 217)',
+            showcountries=True,
+            countrycolor='rgb(204, 204, 204)'
+        ),
+        # Smoother transitions
+        transition={'duration': 600, 'easing': 'cubic-in-out'},
+        sliders=[{
+            'currentvalue': {'prefix': 'Month-Year: '},
+            'transition': {'duration': 600, 'easing': 'cubic-in-out'},
+            'pad': {'b': 10, 't': 10},
+            'len': 0.9,
+            'x': 0.1,
+            'steps': []
+        }]
+    )
 
-def plot_vandalism_by_week(df: pd.DataFrame):
-    """Plot vandalism contributions by week (bar and line)."""
-    df['year_week'] = df['contribution_datetime'].dt.isocalendar().week
-    df['year'] = df['contribution_datetime'].dt.year
-    df['year_week_str'] = df.apply(lambda row: f"{row['year']}-W{int(row['year_week']):02d}", axis=1)
-    weekly_counts = df.groupby('year_week_str')['contribution_key'].count().reset_index()
-    weekly_counts.rename(columns={'contribution_key': 'vandalism_count'}, inplace=True)
-    # Bar plot
-    plot_bar_with_labels(
-        weekly_counts['year_week_str'],
-        weekly_counts['vandalism_count'],
-        "Vandalism Contributions by Week (Bar)" + TITLE_SUFFIX,
-        "Week (Year-Week)",
-        "Number of Vandalism Contributions",
-        rotation=90
-    )
-    # Line plot
-    plot_line_graph(
-        weekly_counts['year_week_str'],
-        weekly_counts['vandalism_count'],
-        "Vandalism Contributions by Week (Line)" + TITLE_SUFFIX,
-        "Week (Year-Week)",
-        "Number of Vandalism Contributions",
-        rotation=90
-    )
+    # Manually rebuild slider steps from the frames
+    # Plotly auto-creates frames from animation_frame; we can override the slider "steps"
+    # for a smoother manual experience:
+    steps = []
+    all_frames = fig.frames
+    for fr in all_frames:
+        steps.append({
+            "args": [[fr.name],
+                     {"frame": {"duration": 600, "redraw": False},
+                      "mode": "immediate",
+                      "transition": {"duration": 600, "easing": "cubic-in-out"}}],
+            "label": fr.name,
+            "method": "animate"
+        })
+
+    # Update the single slider's steps
+    if len(fig.layout.sliders) > 0:
+        fig.layout.sliders[0].steps = steps
+
+    # Save to HTML
+    html_file = os.path.join(output_dir, "vandalism_heatmap_timeline.html")
+    fig.write_html(html_file)
+    print(f"Saved interactive heatmap with time slider to {html_file}")
 
 
 def main():
-    folder_path = os.path.join(
-        OUTPUT_DIR,
-        "predictions_output", OUTPUT_FOLDER_NAME_SUFFIX
-    )
-    df = load_all_vandalism_files(folder_path)
+    folder_path = r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\predictions_output\pcuf_full_dataset_detailed_2022_to_2024_monthly"
+    output_dir = r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\plots"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Load data
+    df = load_vandalism_files(folder_path)
     if df.empty:
-        logger.warn("No vandalism files found or no data after parsing. Exiting.")
+        print("No data found or no CSV files ending with '_prediction_output.csv' in the folder.")
         return
 
-    logger.info(f"Loaded {len(df)} vandalism rows from {folder_path}.")
-    plot_vandalism_by_month(df)
-    plot_vandalism_by_week(df)
-    # plot_world_heatmap_of_vandalism(df)
+    print(f"Loaded {len(df)} vandalism entries in total.")
+
+    # 1) Plot overall bar & line
+    plot_bar_line_overall(df, output_dir)
+
+    # 2) Plot bar & line per year
+    plot_bar_line_by_year(df, output_dir)
+
+    # 3) Plot interactive heatmap with manual slider
+    plot_interactive_heatmap(df, output_dir)
 
 
 if __name__ == "__main__":
