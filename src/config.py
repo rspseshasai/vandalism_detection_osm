@@ -18,7 +18,7 @@ DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
-SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
+SPLIT_METHOD = 'temporal'  # 'random', 'temporal', or 'geographic'
 
 TEST_SIZE = 150000
 VAL_SIZE = 50000
