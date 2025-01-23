@@ -12,15 +12,15 @@ FORCE_COMPUTE_FEATURES = False
 SHOULD_BALANCE_DATASET = False
 SHOULD_INCLUDE_USERFEATURES = True
 SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
-SHOULD_PERFORM_BOOTSTRAP_EVALUATION = False
+SHOULD_PERFORM_BOOTSTRAP_EVALUATION = True
 # === Dataset Type ===
-DATASET_TYPE = 'changeset'  # Options: 'contribution', 'changeset'
+DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
 SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 
-TEST_SIZE = 0
+TEST_SIZE = 150000
 VAL_SIZE = 50000
 RANDOM_STATE = 42
 
