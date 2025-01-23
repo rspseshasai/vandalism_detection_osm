@@ -9,7 +9,7 @@ import pandas as pd
 from folium.plugins import HeatMapWithTime
 
 from config import logger
-OUTPUT_DIR_NAME= 'nuof'
+OUTPUT_DIR_NAME= 'pcuof'
 
 # Paths
 folder_path = r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\predictions_output\pcuf_full_dataset_detailed_2022_to_2024_monthly"
