@@ -12,7 +12,7 @@ from config import logger
 OUTPUT_DIR_NAME= 'nuof'
 
 # Paths
-folder_path = r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\predictions_output\pcuf_full_dataset_detailed_2022_to_2024_monthly"
+folder_path = r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\predictions_output\nuof_full_dataset_detailed_2022_to_2024_monthly"
 plots_dir = os.path.join(
     r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\plots",
     f"{OUTPUT_DIR_NAME}__{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
@@ -58,10 +58,10 @@ def plot_bar_graph(months, values, adjusted_colors, threshold):
 
     # Left subplot: Normal range
     ax1.barh(months, [val / 1000 for val in values], color=adjusted_colors, height=0.6)
-    ax1.set_xlim(40, 230)  # Scale in thousands
+    ax1.set_xlim(30, 230)  # Scale in thousands
     ax1.set_ylim(-0.5, len(months) - 0.5)
-    ax1.set_xticks(range(40, 231, 25))
-    ax1.set_xticklabels([f"{x}" for x in range(40, 231, 25)])
+    ax1.set_xticks(range(30, 231, 25))
+    ax1.set_xticklabels([f"{x}" for x in range(30, 231, 25)])
 
     # Right subplot: Outlier range
     ax2.barh(months, [val / 1000 for val in values], color=adjusted_colors, height=0.6)
@@ -102,7 +102,7 @@ def plot_bar_graph(months, values, adjusted_colors, threshold):
     plt.subplots_adjust(left=0.25, right=0.85)
 
     # Title
-    plt.suptitle('Monthly Vandalism Predictions in OSM (2022-2024)', fontsize=16)
+    plt.suptitle('Monthly Vandalism Predictions in OSM (2022-2024) | Without User and OSM element features', fontsize=16)
     plt.tight_layout(rect=[0.05, 0.05, 0.95, 0.95])
 
     # Save and show plot
@@ -137,11 +137,11 @@ def plot_line_graph(months, values, output_path):
     # Bottom subplot: normal range
     ax2.plot(range(len(values_in_thousands)), values_in_thousands, marker='o',
              linestyle='-', color='blue', label='Vandalism Predictions')
-    ax2.set_ylim(40, 230)
+    ax2.set_ylim(30, 230)
     ax2.axhline(y=100, color='red', linestyle='--', linewidth=0.5, label='100k Threshold')
     ax2.set_xticks(range(0, len(months), 2))
     ax2.set_xticklabels(months[::2], rotation=45, fontsize=10)
-    ax2.set_yticks(range(40, 231, 10))
+    ax2.set_yticks(range(30, 231, 10))
     ax2.grid(True, linestyle='--', alpha=0.6)
     ax2.set_xlabel("Months", fontsize=12)
 
