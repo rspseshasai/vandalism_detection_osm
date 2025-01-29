@@ -7,7 +7,10 @@ def engineer_features(contributions_df):
     """
     Aggregate contribution-level predictions into changeset-level features.
     """
-    logger.info("Hyper classifier contribution-level predictions into changeset-level features...")
+    logger.info(
+        "Aggregating contribution-level predictions into changeset-level features for the hyper-classifier. "
+        "Computing statistical summaries such as mean, median, standard deviation, and proportion-based indicators."
+    )
 
     # Compute aggregated features
     hyper_classifier_features = contributions_df.groupby('changeset_id').agg(

@@ -120,6 +120,8 @@ def data_splitting_helper(X_encoded, y, split_type, train_regions, val_regions, 
             'test_regions': test_regions
         }
     elif split_type == 'temporal':
+        if DATASET_TYPE != 'contribution':
+            raise NotSupportedError(f"Split type '{split_type}' is only supported with contribution dataset")
         split_params = {
             'date_column': config.DATE_COLUMN
         }
