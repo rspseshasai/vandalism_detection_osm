@@ -11,7 +11,7 @@ sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
     PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, \
-    DEFAULT_THRESHOLD_FOR_EVALUATION, SHOULD_PERFORM_BOOTSTRAP_EVALUATION
+    DEFAULT_THRESHOLD_FOR_EVALUATION, SHOULD_PERFORM_BOOTSTRAP_EVALUATION, COMMON_CHANGESET_IDS
 from src import config
 from src.data_loading import load_data
 
@@ -58,6 +58,9 @@ def data_loading_helper():
     logger.info(f"Number of non-vandalism contributions in the data set: {counts.get(0)}")
 
     logger.info("Data loading completed.")
+    if DATASET_TYPE == 'changeset':
+        logger.info("Limiting to the changeset entries matching common changeset IDs - to maintain consistent dataset for hyper classifier that matches with contribution data set.")
+        data_df = data_df[data_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
     return data_df
 
 

@@ -6,7 +6,7 @@ import pandas as pd
 from joblib import load
 
 from config import CONTRIBUTION_FINAL_MODEL_PATH, RAW_DATA_DIR, CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE, \
-    CHANGESET_LABELS_FILE
+    CHANGESET_LABELS_FILE, COMMON_CHANGESET_IDS
 from config import logger
 
 
@@ -49,7 +49,12 @@ def get_contribution_predictions():
     contributions_df = X_encoded.copy()
     contributions_df['predicted_prob'] = contribution_model.predict_proba(X_encoded)[:, 1]
 
-    return contributions_df[['changeset_id', 'predicted_prob']]
+    predictions_for_all_contributions_df = contributions_df[['changeset_id', 'predicted_prob']]
+
+    logger.info("Limiting to contribution entries matching common changeset IDs - to maintain consistent dataset for hyper classifier that matches with changeset data set.")
+    predictions_for_all_contributions_df = predictions_for_all_contributions_df[predictions_for_all_contributions_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
+
+    return predictions_for_all_contributions_df
 
 
 def data_loading():

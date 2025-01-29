@@ -338,7 +338,7 @@ def get_or_generate_features(data_df, is_training, processed_features_file_path,
 
     if is_training:
         if test_mode:
-            logger.info("Test mode enabled: Limiting to entries matching Test changeset IDs.")
+            logger.info("Test mode enabled: Limiting to entries matching test changeset IDs.")
             features_df = features_df[features_df['changeset_id'].isin(TEST_CHANGESET_IDS)]
 
     logger.info(f"Features DataFrame Shape: {features_df.shape}")
