@@ -18,7 +18,7 @@ DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 
 # === Split Configurations ===
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
-SPLIT_METHOD = 'temporal'  # 'random', 'temporal', or 'geographic'
+SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 
 TEST_SIZE = 150000
 VAL_SIZE = 50000
@@ -146,6 +146,9 @@ VISUALIZATION_DATA_PATH = {
     'hyper_classifier_features_sample_path': os.path.join(VISUALIZATION_DIR,
                                                           'hyper_classifier_features_sample.parquet'),
 }
+
+PLOTS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "plots")
+os.makedirs(PLOTS_OUTPUT_DIR, exist_ok=True)
 
 # === Bootstrapping Configurations ===
 BOOTSTRAP_ITERATIONS = 1000

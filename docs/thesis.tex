@@ -1,16 +1,13 @@
-%! Author = Pavan
-%! Date = 21/01/2025
-
 \documentclass[
     13pt, % Font size
     a4paper, % Paper format
-    twoside, 
     DIV14, % Margin calculation
     listof=totoc, % Include lists in TOC
     bibliography=totoc, % Include bibliography in TOC
     index=totoc, % Include index in TOC
     headsepline
 ]{scrreprt}
+
 
 % Packages
 \usepackage[english]{babel} % Language setting
@@ -28,11 +25,17 @@
 \usepackage{fancyhdr} % Custom headers and footers
 \usepackage{booktabs} % Enhanced table aesthetics
 \usepackage{multirow} % Multi-row tables
+\usepackage{arydshln} % Dashed lines for tables
 \usepackage{array} % Table customization
-\usepackage{todonotes}
+\usepackage{tabularx} % For automatic table column width
+\usepackage{adjustbox} % For resizing tables
+\usepackage{caption} % Custom table captions
+\usepackage{xcolor} % Colors for table highlights
+\usepackage{fontawesome} % Extra symbols (optional)
+\usepackage[inline]{enumitem} % Provides inline enumerations
 
 % Line spacing
-\setstretch{1.3} 
+\setstretch{1.3}
 
 % Hyperref settings
 \hypersetup{
@@ -44,7 +47,7 @@
 }
 
 % Page geometry customization
-\geometry{headheight=15pt, headsep=20pt, footskip=50pt}
+\geometry{left=0.8in, right=0.8in, headheight=10pt, headsep=20pt, footskip=50pt}
 
 % Header and footer settings
 \pagestyle{fancy}
@@ -59,17 +62,22 @@
 % Language selection command
 \newcommand{\setlang}[1]{\selectlanguage{#1}\nonfrenchspacing}
 
+% Add note about fallback font
+% Fallback font information for environments without Calibri.
+\newcommand{\fallbacknote}{\textit{Note: If Calibri is unavailable, the document defaults to Palatino font via mathpazo package.}}
+
 \begin{document}
 
+
 % TITLE PAGE:
-\pagenumbering{roman} 
+\pagenumbering{roman}
 \begin{titlepage}
 
 \begin{center}
 
 % University Title Section
 \vspace*{2cm} % Adjust spacing at the top
-\textbf{ 
+\textbf{
 \LARGE Ruprecht-Karls-Universität Heidelberg\\
 \vspace*{0.5cm}
 \smallskip
@@ -204,7 +212,7 @@ This work advances the state of the art in vandalism detection by combining robu
 \newpage
 
 % Start Arabic numbering
-\pagenumbering{arabic} 
+\pagenumbering{arabic}
 \setcounter{page}{1}
 
 %-------------------------------------------------
@@ -317,13 +325,13 @@ To overcome the static nature of heuristics, researchers introduced supervised M
 
 These embedding-based and attention-driven methods represent advanced machine learning approaches for vandalism detection, each addressing unique aspects of OpenStreetMap (OSM) data analysis while sharing common limitations.
 
-\textbf{Embedding-Based Methods:}  
+\textbf{Embedding-Based Methods:}
 Embedding-based methods, as demonstrated by Li et al. (2021), focus on representing user behaviors through dense vector embeddings. By analyzing historical data such as contribution frequency, geographic focus, and tagging patterns, embeddings capture nuanced behavioral traits indicative of malicious edits. These representations are then incorporated into Gradient Boosted Decision Trees (GBDT) to enhance detection performance. While this approach significantly boosts recall and precision compared to traditional methods, it comes with notable challenges. Embedding-based systems require extensive historical data, excluding new or low-activity users, and their computational demands for embedding generation and maintenance can complicate real-time or large-scale deployment.
 
-\textbf{Attention-Based Methods:}  
+\textbf{Attention-Based Methods:}
 Attention-based methods take a different approach by leveraging deep learning architectures to dynamically focus on the most relevant aspects of changeset data. Yuan et al. (2022) proposed a multi-head attention mechanism that prioritizes important features within changeset metadata, textual attributes, and geometric deltas. This allows the model to effectively process intricate relationships in the data, achieving high accuracy in detecting complex vandalism patterns. However, this method’s reliance on large labeled datasets and considerable GPU resources presents practical limitations, particularly in settings with limited computational capacity or scarce labeled data.
 
-\textbf{Comparative Analysis:}  
+\textbf{Comparative Analysis:}
 Despite their methodological differences, both embedding-based and attention-driven approaches share common strengths and challenges. They emphasize the importance of user-centric signals, geometry modifications, and textual cues in vandalism detection. However, obstacles such as limited labeled data, high computational costs, and the dynamic nature of vandalism patterns persist. These challenges underline the need for scalable and efficient solutions that balance performance with operational feasibility.
 
 \section{Comparison of ML Models for Tabular OSM Data}
@@ -369,270 +377,318 @@ This thesis builds on the strengths of these approaches by adopting a balanced s
 
 The next chapters detail how this thesis builds upon these findings to propose an XGBoost-driven pipeline, balancing performance and scalability in detecting malicious edits across OSM contributions and changesets.
 
+
 %---------------------------------------------
-% (Further chapters would follow)
+% Chapter 3: Methods
 %---------------------------------------------
-\chapter{Methods} \label{methods}
+\chapter{Methods}
+\label{chap:methods}
 
 \noindent
-This chapter provides a comprehensive overview of our methodological approach to detecting vandalism in OpenStreetMap (OSM). It outlines the multiple data perspectives that underpin the modeling framework, the motivation behind our chosen techniques, and the principal objectives driving the design of the proposed system. In particular, the sections that follow will clarify the conceptual underpinnings of both \emph{contribution-level} and \emph{changeset-level} analyses, highlighting why these perspectives are complementary in the context of large-scale, community-driven mapping. While the focus is on the detection and classification of vandalism, the methodological foundations are generally applicable to other domains where data is generated in both granular and aggregate forms. Ultimately, the chapter aims to demonstrate how these concepts unify into a coherent workflow that addresses diverse vandalism patterns, from isolated malicious edits to broad, high-impact changesets.
+This chapter presents the methodological framework designed to detect vandalism across OpenStreetMap (OSM) contributions. Building on the insights from the background chapter (Chapter~\ref{background}), the methodology addresses two core demands of OSM data: handling its substantial volume and diversity, and capturing the multitude of vandalism patterns that may arise in small, individual edits or large, session-wide changes. The approach hinges on a configurable pipeline that can be executed independently on \textbf{contribution-level} data (fine-grained edits) or \textbf{changeset-level} data (aggregated sessions). By retaining a similar structure but separate executions for each perspective, the pipeline captures unique signals essential for robust vandalism detection without conflating their distinct data structures.
 
-\section{Methodological Overview}
-\label{sec:methodological_overview}
+\section{Introduction to the Methodology}
+\label{sec:introduction_methods}
 
-\noindent
-The methodology introduced here responds to two central challenges: first, the sheer volume and variety of OSM contributions, and second, the complexity of vandalism activities that may manifest differently at fine and coarse levels of resolution. We therefore adopt a multi-layered strategy, capable of scaling to large datasets while preserving nuanced insights into editing behaviors. The essential impetus for our work is that OSM vandalism is not only frequent enough to warrant automated defenses, but also diverse enough to demand methods that can capture subtle anomalies in small edits and more overt disruptions spread across entire batches of changes.
+The central challenge in OSM vandalism detection is twofold:
+\begin{enumerate}[label=(\arabic*)]
+    \item effectively managing a high-throughput data stream (often tens of millions of edits each month), and
+    \item accurately detecting a broad spectrum of malicious behaviors, ranging from subtle, localized edits to extensive, orchestrated attacks within a single changeset session.
+\end{enumerate}
 
-\vspace{1em}
+In response, the proposed pipeline unites parallel processes for contribution-level data and changeset-level data, powered by a core machine learning workflow centered on \textbf{XGBoost}. Drawing on chunk-based feature extraction, hyperparameter optimization, and rigorous evaluation strategies, this chapter demonstrates how the pipeline copes with OSM’s dynamic nature while retaining interpretability and efficiency. Furthermore, it covers strategies to enhance changeset-level detection using insights from contribution-level predictions, ensuring minimal gaps in coverage.
+
 \subsection{Purpose and Goals}
 \label{sec:purpose_and_goals}
 
-\noindent
-The primary purpose of this methodological exposition is to elucidate how we tackle the detection of a broad range of vandalism patterns. This includes clarifying the reasoning behind core components such as feature engineering, model architecture, and evaluation strategies. A key motivation stems from the observation that minor edits—perhaps modifying a single tag—can be just as damaging in certain contexts as large-scale deletions, especially if they occur in sensitive map areas. Consequently, the goals of this chapter can be summarized as follows: to describe how the approach accommodates both high-volume data and highly varied editing behaviors; to detail the rationale for adopting particular machine learning techniques; and to lay out a scalable pipeline that integrates seamlessly with the constantly evolving nature of OSM data.
+The overarching purpose of this methods chapter is to detail how the framework confronts OSM’s colossal data scale and diverse vandalism patterns. Specifically, the key objectives include:
 
-In addressing these goals, we emphasize the need for parallelizable feature extraction, careful attention to data splits (so that evaluations capture real-world scenarios), and flexible classifiers that can incorporate both the micro-level (individual edits) and macro-level (changesets). By meeting these objectives, the subsequent system can detect vandalism early and reliably, minimizing the adverse impact of malicious or careless editing on the broader OSM community.
+\begin{itemize}
+    \item \textbf{High-Volume Data Throughput}:
+    Designing a chunk-based pipeline to process millions of monthly edits within hours, keeping computational and memory overhead in check.
+    \item \textbf{Dual Data Perspectives}:
+    Facilitating separate pipeline executions for \emph{contribution-level} (isolated edits) and \emph{changeset-level} (session-wide batches), allowing each vantage to expose particular vandalism indicators.
+    \item \textbf{Core Classification Model (XGBoost)}:
+    Exploiting XGBoost’s capability to handle structured tabular data with high accuracy and interpretability. Hyperparameter tuning is incorporated to optimize predictive performance.
+    \item \textbf{Ensuring Strong Predictive Metrics}:
+    Maintaining precision, recall, F1-score, AUC-PR, and ROC-AUC at levels sufficient to minimize both missed vandalism and false alarms.
+    \item \textbf{Real-Time or Near Real-Time Feasibility}:
+    Achieving inference speeds that suit short-window detection (e.g., every 5 minutes) and large-file batch processing (monthly updates in 1--2 hours). This aligns with OSM’s evolving data streams and the operational needs of platforms like HeiGIT.
+    \item \textbf{Feature Diversity and Scalability}:
+    Unifying user behaviors, OSM element metadata, temporal and geometric signals, and textual attributes, all in a scalable manner to detect subtle or overt malicious edits.
+    \item \textbf{Enhancing Changeset-Level Detection with Per-Edit Insights}:
+    Integrating aggregated per-contribution predictions (hyper-classifier) and fusing them with a normal changeset model (meta-classifier) when needed, improving session-wide detection of mass or systematic vandalism.
+\end{itemize}
 
-\vspace{1em}
+In meeting these goals, the pipeline provides a holistic solution that pinpoints vandalism early—protecting OSM’s data integrity and mitigating the broader risks of malicious edits in downstream applications such as navigation or disaster response.
+
 \subsection{Data Perspectives}
 \label{sec:data_perspectives}
 
 \noindent
-One of the most distinctive aspects of our methodology is the deliberate treatment of OSM data at two complementary levels: \emph{contribution-level} and \emph{changeset-level}. In many crowdsourced environments, including OSM, the simplest unit of data is often an individual edit or contribution—such as adding a building tag or updating a highway’s geometry. However, edits in OSM are commonly submitted in groups known as \emph{changesets}, each of which may contain numerous contributions made during a single upload session. Vandalism can thus occur in subtle, isolated edits or in large clusters of malicious activity spanning many map elements.
+One of the most distinctive aspects of our methodology is the deliberate treatment of OSM data
+at two complementary levels: contribution-level and changeset-level. In many crowdsourced
+environments, including OSM, the simplest unit of data is often an individual edit or contribution—such as adding a building tag or updating a highway’s geometry. However, edits in OSM
+are commonly submitted in groups known as changesets, each of which may contain numerous
+contributions made during a single upload session. Vandalism can thus occur in subtle, isolated
+edits or in large clusters of malicious activity spanning many map elements. Although the pipeline remains consistent in structure, it can be run independently on two data perspectives, each addressing different vandalism scenarios:
 
-\paragraph{Contribution-Level Perspective.}
-Within this perspective, each record corresponds to a single updated feature, such as a node or way. By analyzing contributions at this level, the system can detect localized anomalies—an abrupt coordinate shift, the removal of a crucial tag, or the introduction of nonsensical text. This fine-grained view is essential because vandalism often arises in small but impactful edits. A single outlier edit could relocate a landmark inappropriately, or rename a well-known city with offensive text, and it is the \emph{contribution-level} analysis that is best poised to flag such granular behavior.
+\paragraph{Contribution-Level Data.}
+Within this perspective, each record corresponds to a single updated feature, such as a node or way. By analyzing contributions at this level, the system can detect localized anomalies—an abrupt coordinate shift, the removal of a crucial tag, or the introduction of nonsensical text. This fine-grained view is essential because vandalism often arises in small but impactful edits. A single outlier edit could relocate a landmark inappropriately, or rename a  well-known city with offensive text, and it is the contribution-level analysis that is best poised to flag such granular behavior.
 
-\paragraph{Changeset-Level Perspective.}
-While the contribution-level approach captures fine detail, a supplementary view emerges when edits are grouped by the changeset in which they were committed. In this \emph{changeset-level} perspective, the entire batch of edits made by a user during one editing session is evaluated collectively. This viewpoint is valuable because it can detect broad or systematic attacks—for example, a user who deletes hundreds of roads across disparate locations in one changeset. Even if individual edits look innocuous by themselves, the aggregate pattern might reveal extensive vandalism. By examining changeset-wide metrics like the ratio of deleted features, the number of continents affected, or the time-of-day distribution of edits, one can capture higher-level signals that may go undetected in an exclusively contribution-oriented approach.
+\paragraph{Changeset-Level Data.}
+While the contribution-level approach captures fine detail,
+a supplementary view emerges when edits are grouped by the changeset in which they were
+committed. In this changeset-level perspective, the entire batch of edits made by a user during
+one editing session is evaluated collectively. This viewpoint is valuable because it can detect
+broad or systematic attacks—for example, a user who deletes hundreds of roads across disparate
+locations in one changeset. Even if individual edits look innocuous by themselves, the aggregate
+pattern might reveal extensive vandalism. By examining changeset-wide metrics like the ratio
+of deleted features, the number of continents affected, or the time-of-day distribution of edits,
+one can capture higher-level signals that may go undetected in an exclusively contribution oriented approach.
 
-\vspace{1em}
-\begin{figure}[htbp]
-    \centering
-    % Example stand-in graphic; replace with an actual diagram
-    \fbox{\includegraphics[width=0.85\textwidth]{diagram_contrib_vs_changeset.png}}
-    \caption{Conceptual illustration of the difference between the contribution-level and changeset-level perspectives in OpenStreetMap. Contributions focus on individual edits to specific map elements, while changesets represent aggregated groups of those edits.}
-    \label{fig:contrib_vs_changeset}
-\end{figure}
+\paragraph{Separate Execution, Shared Architecture.}
+Although both data perspectives exploit similar methodologies—feature extraction, classification, bootstrapping, etc.—they remain logically distinct in execution. This separation ensures:
+\begin{itemize}
+    \item \textit{Data Integrity}: Each pipeline inherits data fields and labels relevant to its granularity (per-edit vs.\ per-session).
+    \item \textit{Tailored Feature Engineering}: Contribution pipelines focus on geometry deltas, tag changes, or user edit frequencies for each individual record; changeset pipelines emphasize session-level aggregates like total deletions or bounding box expansions.
+    \item \textit{Focused Evaluation}: Metrics are computed independently, reflecting the different nature of vandalism detection at each scale.
+\end{itemize}
 
-\vspace{1em}
 \noindent
-Figure~\ref{fig:contrib_vs_changeset} schematically contrasts these two data perspectives. The remainder of this chapter delves into how these views are integrated through a multi-step pipeline, spanning initial data processing, feature extraction, and the employment of machine learning algorithms specifically tailored to handle massive, heterogeneous geospatial data. It is within this framework that we combine local signals (small edits, subtle tag changes) with global patterns (batch-level anomalies, suspicious user activity), forging a comprehensive approach that better captures the full spectrum of vandalistic behavior in OSM.
+In essence, the pipeline’s flexibility accommodates the distinct vantage points OSM data offers—either isolating suspicious single edits or unmasking broad patterns in changesets. The subsequent sections further illustrate how the pipeline ingests, cleans, and labels these datasets (\S\ref{sec:data_sources_preprocessing}), how features are built out (\S\ref{sec:feature_construction}), and how the XGBoost-based classifier is optimized and validated.
 
+
+\vspace{1em}
+
+%---------------------------------------------
+% 3.2 Data Preparation and Feature Engineering
+%---------------------------------------------
 \section{Data Preparation and Feature Engineering}
 \label{sec:data_preparation}
 
-Data preparation and feature engineering represent critical stages in any data science workflow, particularly when addressing the high-volume, heterogeneous nature of OpenStreetMap (OSM) vandalism detection. This section describes how raw OSM data are initially cleansed and transformed into rich sets of attributes that capture the multi-faceted aspects of user behavior, geographic context, temporal patterns, and editing activities. By systematically converting raw edits or changesets into meaningful representations, we establish the foundation on which later machine learning models can reliably distinguish between benign and malicious edits. Throughout this stage, special attention is given to scaling methods for large datasets, ensuring that the approach is both thorough in capturing domain nuances and pragmatic for real-world deployments.
+This section describes how raw OpenStreetMap (OSM) data—spanning both \textbf{contribution-level} and \textbf{changeset-level} perspectives—is transformed into a comprehensive set of features suitable for vandalism detection. By systematically integrating labeled edits, refining their schemas, and engineering domain-relevant attributes, we lay the groundwork for robust machine learning models capable of discerning malicious behavior across different scales of editing activity.
 
 \subsection{Data Sources and Preprocessing}
 \label{sec:data_sources_preprocessing}
 
-This section details the processes by which two distinct datasets—\textbf{Contributions} and \textbf{Changesets}—were collected, labeled, and prepared for training a machine learning model. The goal was to construct a robust data resource that unifies individual edit information with session-level metadata, thereby capturing both fine-grained and aggregate indicators of vandalism.
+The data collection process targets two principal datasets: \textbf{Contributions} (individual edits) and \textbf{Changesets} (session-wide edits). Though they differ in granularity, each dataset captures unique signals pertinent to vandalism detection. The following subsections detail how these data are gathered, labeled, and prepared for downstream tasks.
 
-\subsubsection{Data Gathering for Machine Learning Model}
-\noindent
-The project centered on creating two primary datasets:
-\begin{itemize}
-    \item \textbf{Contributions}: Individual edits to OpenStreetMap (OSM) features (e.g., creating, modifying, or deleting roads, buildings, or landmarks).
-    \item \textbf{Changesets}: Groupings of multiple edits conducted in a single editing session by a user.
-\end{itemize}
-While these datasets differ in their granularity, they are fundamentally connected: changeset-level labels inform which contributions are considered malicious or benign. This dual-layered architecture ensures that local anomalies and broader, session-wide patterns can be detected.
+\subsubsection{Contribution Data}
+\label{sec:contributions_data}
 
-\vspace{0.5em}
-\paragraph{1. Contributions Data Gathering}
-\vspace{0.25em}
+To build the \emph{contribution-level} dataset, we first identified all vandalism-labeled changesets from an external reference corpus \footnote{\emph{Vandalism labels for OSM are derived from the corpus referenced in \cite{Yuan2022}}, \url{https://github.com/NicolasTe/Ovid}}. Each edit within these flagged changesets was marked as vandalism at the contribution level. For each contribution record, essential attributes include user-related information (e.g., \texttt{user\_id}, editing frequency), OSM element metadata (e.g., bounding box, tags, geometry type), and time-based indicators (e.g., timestamps of creation or modification). These fields are parsed from monthly OSM files provided by the Heidelberg Institute for Geoinformation Technology (HeiGIT) and enriched with any relevant user metrics.
 
-\noindent
-\textbf{Definition}: Contributions are discrete actions within the OSM ecosystem, capturing any addition, deletion, or modification of map entities such as nodes or ways.
+Next, to ensure class balance, random non-vandalism edits were sampled from the same monthly OSM files provided by the HeiGIT. These monthly snapshots record every contribution made during the respective month, capturing diverse editing behaviors from routine user updates. By merging the vandalism-labeled edits with an appropriate sample of non-vandalism edits, the resulting contribution dataset reflects both malicious and benign editing patterns.
 
-\noindent
-\textbf{Data Labeling Process}:
-\begin{itemize}
-    \item \textit{Ground Truth Derived from Changesets}: The primary reference for vandalism labels came from an external dataset of labeled changesets.\footnote{See \textit{Characterizing and Detecting Vandalism in OpenStreetMap} \url{https://arxiv.org/pdf/2201.10406}.} All individual edits contained in a changeset marked as vandalism were themselves labeled “vandalism.”
-    \item \textit{Adding Non-Vandalism Contributions}: To avoid skewing the dataset toward malicious edits, random samples of non-vandalism edits were pulled from monthly OSM data files stored on S3-compatible cloud storage. This balanced approach helps the model learn to distinguish typical, innocuous editing from destructive behavior.
-\end{itemize}
+\subsubsection{Changeset Data}
+\label{sec:changesets_data}
 
-\noindent
-\textbf{Data Retrieval}:  
-Monthly files, each representing a snapshot of user contributions, were automatically fetched and parsed for relevant attributes (e.g., bounding boxes, tags, and timestamps). Contributions whose associated changeset had been flagged as malicious were assigned a vandalism label; the rest formed a reservoir of benign edits from which random subsets were drawn.
+To assemble the \emph{changeset-level} based dataset, we again drew on the same external reference corpus of vandalism-labeled changesets, identifying which sessions were deemed malicious or legitimate. Subsequently, we retrieved the pertinent metadata for each changeset ID by parsing the OSM changeset history files \footnote{\emph{Changeset history files} \url{https://planet.openstreetmap.org/planet/full-history/}}. This history encompasses broad information about each session, including timestamps of creation and closure, user details, bounding box coordinates, and total edits made (\texttt{num\_changes}).
 
-\subsubsection{2. Changesets Data Gathering}
-\noindent
-\textbf{Definition}: A changeset provides a session-level perspective, uniting all edits uploaded by a user in a single operation. Each changeset may include a handful or hundreds of individual contributions.
-
-\noindent
-\textbf{Data Labeling and Filtering}:
-\begin{itemize}
-    \item \textit{Label Sources}: Labeled changesets came from the same external vandalism study. Additionally, some were flagged through metadata keywords (e.g., “vandalism,” “revert”) in user comments.  
-    \item \textit{Augmenting Metadata}: Queries to the OSM API fetched details like the number of objects created, modified, or deleted per changeset. User attributes (account age, prior edits) were similarly integrated.
-\end{itemize}
-
-\noindent
-\textbf{Data Retrieval}:  
-Archived changeset files, each spanning a specified ID range or time window, were processed via custom scripts. The integrated data included session bounding boxes, edit counts, and user-based metrics. 
-
-\subsubsection{Comparison of Contributions and Changesets}
-\noindent
-Although contributions zoom in on each individual edit, and changesets capture a broader session view, the two are complementary. Contributions illuminate fine-grained changes (e.g., a suspicious tag update), while changesets reveal bulk patterns (e.g., mass deletions in one session). By linking changeset-level labels to individual contributions, the pipeline accounts for both subtle anomalies and large-scale vandalism.
-
-\subsubsection{Significance for Machine Learning}
-\noindent
-Bringing together granular and session-based data allows for a robust modeling approach where each contribution inherits a vandalism label according to its parent changeset. This design affords:
-\begin{itemize}
-    \item \textbf{Unified Labeling}: Fine-grained actions become instantly classifiable once a changeset is deemed malicious or benign.
-    \item \textbf{Complementary Views}: Local anomalies (within a single edit) and global patterns (across an entire session) both inform the final classification.
-    \item \textbf{Balanced Representation}: Integrating random benign contributions prevents the dataset from disproportionately focusing on negative events, thus enhancing generalizability.
-\end{itemize}
-
-\subsubsection{Schema for Contributions and Changesets}
-
-The final step in data gathering involved defining a coherent schema so that subsequent stages—feature engineering, model training—could proceed smoothly. Below is a concise, paragraph-oriented overview of key schema elements for each dataset.
-
-\paragraph{Contributions Data Schema}
-Each contribution record describes a single edit along with various attributes. Core fields include:
-\begin{itemize}
-    \item **\textbf{user\_id}**: A numerical identifier for the user making the edit.  
-    \item **\textbf{valid\_from}** and **\textbf{valid\_to}**: Timestamps delineating when this particular edit took effect and, if applicable, when it was superseded.  
-    \item **\textbf{osm\_type}** and **\textbf{osm\_id}**: Indicate the type of OSM object (node, way, or relation) and its unique ID.  
-    \item **\textbf{contrib\_type}**: Specifies whether the action was a \texttt{create}, \texttt{modify}, or \texttt{delete}.  
-    \item **\textbf{tags}** and **\textbf{tags\_before}**: Capture key-value pairs that were added, updated, or removed during the edit, providing insight into textual changes.  
-    \item **\textbf{geometry}** and **\textbf{geometry\_type}**: Represent the shape of the edited object—be it a point, line, or polygon—along with bounding box coordinates to define its spatial extent.  
-    \item **\textbf{vandalism}**: A binary flag (e.g., 1 for vandalism, 0 for non-vandalism) derived from the labeled changeset. 
-\end{itemize}
-
-\noindent
-In addition to these, each record may include the \textbf{status} of the contribution (active or invalid), and detailed \textbf{map\_features} describing which prominent tags (e.g., building, road) were affected.
-
-\paragraph{Changesets Data Schema}
-While each contribution details a single edit, the changeset dataset aggregates session-level properties. Key attributes include:
-\begin{itemize}
-    \item **\textbf{changeset\_id}**: A global identifier for the session.  
-    \item **\textbf{user\_id}** and **\textbf{created\_by}**: Tie each changeset to the user’s account and the editing software used, if available.  
-    \item **\textbf{created\_at}** and **\textbf{closed\_at}**: Timestamps marking when the session started and ended, allowing analysis of edit duration.  
-    \item **\textbf{min\_lat, min\_lon, max\_lat, max\_lon}**: Bounding box coordinates reflecting the spatial extent of all edits in that changeset.  
-    \item **\textbf{num\_changes}**: The total number of edits in the session, broken down further into metrics like \textbf{no\_creates}, \textbf{no\_modifications}, and \textbf{no\_deletions}.  
-    \item **\textbf{vandalism\_label}**: Indicates whether the entire session was flagged for malicious content based on external references or comments indicating suspicious activity.
-\end{itemize}
-
-\noindent
-Such session-level attributes reveal how many objects a user altered, how large the edited region was, and how quickly the user completed their changes. By appending user metadata—like \textbf{account\_created} or total changeset counts—one can also track whether an account exhibits erratic or systematically malicious behavior.
-
-\paragraph{Practical Implications of the Schema}
-Organizing the data in this standardized way simplifies the feature engineering phase. It becomes straightforward to filter records by geometry type, or to compute aggregated statistics (e.g., total tags added) because each attribute—whether geometric or user-related—resides in a known field. The \textbf{vandalism} (for contributions) and \textbf{vandalism\_label} (for changesets) fields, in particular, ensure clarity in labeling, which is essential for supervised learning tasks.  
-
-In summary, this unified labeling and schema design ensures that raw OSM data—initially scattered across multiple files and formats—can be methodically combined, cleaned, and prepared for downstream analytics. The next section delves into how these schema fields are transformed into quantitative features that capture spatial, temporal, user-based, and content-driven dimensions of editing behavior.
 
 \subsection{Feature Construction}
 \label{sec:feature_construction}
 
-Feature engineering is critical for converting raw data—whether from individual \textbf{contributions} or aggregated \textbf{changesets}—into structured attributes suitable for machine learning. This section consolidates all relevant feature categories, emphasizing both newly introduced attributes (e.g., user-oriented statistics, OSM element history) and classical signals (e.g., geometric, temporal, and content-based indicators). Taken together, these features capture the diverse nature of OpenStreetMap (OSM) editing, enabling the model to detect a wide range of vandalism patterns.
+Having prepared and labeled the datasets (\S\ref{sec:data_sources_preprocessing}), the next step is to derive a comprehensive set of features that capture spatial, temporal, user-based, and content-related signals indicative of malicious edits. This section distinguishes between \emph{contribution-level} and \emph{changeset-level} feature engineering, reflecting the distinct nature of individual edits versus aggregated sessions. While many of the conceptual categories (e.g., user features, geometric features) overlap across data types, each dataset emphasizes different aspects depending on granularity and available metadata.
 
-\paragraph{Overview of the Parallel Extraction Workflow.}
+\paragraph{Overview of the Feature Extraction Workflow.}
 Given that OSM data often comprises millions of rows, we employ a parallel, chunk-based mechanism to compute features. Records are split into manageable batches, processed concurrently on multiple CPU cores, and recombined into a unified feature matrix. This approach both decreases processing time and ensures the pipeline can handle large-scale datasets without exhausting memory resources. Depending on pipeline configurations, user-related attributes and OSM element statistics may be selectively included or excluded to test various model assumptions.
 
-\subsubsection*{1. User Features}
-User features provide insight into the editing activity and historical behavior of OSM contributors. They serve to differentiate between occasional users, established mappers, and potentially malicious actors with erratic patterns of editing.
 
+\subsubsection{3.2.2.1 Feature Engineering for Contribution Data}
+\label{sec:feature_contribution}
+
+Contribution-level features revolve around individual edits—such as modifying a building tag or shifting a highway node. These signals target fine-grained anomalies, where even small changes can disrupt map accuracy or introduce offensive content.
+
+\vspace{1em}
+\noindent
+\textbf{1. User Features.}
 \begin{itemize}
-  \item \textbf{Total number of edits (\texttt{n\_edits})}: Captures how actively a user participates overall. High edit volume can indicate either experienced mappers or, in rarer cases, prolific vandals.
-  \item \textbf{Cumulative statistics (\texttt{user\_n\_changesets\_cum}, \texttt{user\_n\_edits\_cum}, \texttt{user\_n\_edit\_days\_cum})}: Track how many changesets, edits, and active editing days the user has accrued. These metrics help determine whether a user is steadily building credibility or exhibits unusual bursts of activity.
-  \item \textbf{Timestamps and time since previous edits (\texttt{user\_previous\_edit\_timestamp}, \texttt{user\_time\_since\_previous\_edit})}: By storing both the actual time of the user’s last edit and the gap to the current edit, the pipeline can flag large temporal jumps in editing activity. For instance, a user who has been inactive for months and suddenly uploads thousands of changes might be suspect.
+  \item \textbf{Total number of edits (\texttt{n\_edits})}: Indicates how active a user is overall. Though many edits suggest experience, they may also indicate prolific vandalism in rare cases.
+  \item \textbf{Cumulative statistics (\texttt{user\_n\_changesets\_cum}, \texttt{user\_n\_edits\_cum}, \newline \texttt{user\_n\_edit\_days\_cum})}: Track a contributor’s broader history, including how many changesets and edit days they have logged. These metrics differentiate stable, consistent mappers from users with bursts of erratic activity.
+  \item \textbf{Timestamps and time since previous edits (\texttt{user\_previous\_edit\_timestamp}, \texttt{user\_time\_since\_previous\_edit})}: Reveal large temporal gaps or sudden surges. For instance, if a user reappears after months of inactivity and makes thousands of edits in a short window, the pipeline may boost the vandalism likelihood.
+\end{itemize}
+These user-based indicators inform the model whether an edit aligns with typical contributor behavior or exhibits sudden irregularities, thus helping flag potential vandalism.
+
+\vspace{1em}
+\noindent
+\textbf{2. OSM Element Features.}
+\begin{itemize}
+  \item \textbf{Cumulative edits on an element (\texttt{element\_n\_users\_cum}, \texttt{element\_n\_versions})}: Record how many distinct users or total versions a feature has accumulated. High version counts can mean repeated controversies or “edit wars.”
+  \item \textbf{Time and interval since last edit (\texttt{element\_previous\_edit\_timestamp}, \newline \texttt{element\_time\_since\_previous\_edit})}: Frequent, repeated edits on the same entity in short succession can signal suspicious conflict or revert battles.
+\end{itemize}
+By highlighting contentious objects or frequently altered elements, these attributes complement user features in revealing unusual edit behaviors.
+
+\vspace{1em}
+\noindent
+\textbf{3. Geometric Features.}
+\begin{itemize}
+  \item \textbf{Geometry size and deltas (\texttt{area}, \texttt{length}, \texttt{area\_delta}, \texttt{length\_delta})}: Quantify the magnitude of an edit. For instance, an edit that suddenly enlarges a polygon’s area by 500\% is suspicious.
+  \item \textbf{Geometry type (\texttt{geometry\_type})}: Distinguishes between point, line, or polygon. Small coordinate nudges on a node may differ in impact from major polygon reshaping.
+  \item \textbf{Bounding box (\texttt{xmin}, \texttt{xmax}, \texttt{ymin}, \texttt{ymax}, \texttt{bounding\_box\_size})}: Summarize the edited feature’s footprint. Comparing bounding box size before and after an edit can flag abrupt geometry shifts.
+\end{itemize}
+Large or unnatural geometry changes often indicate malicious manipulations, making geometric features a cornerstone of vandalism detection.
+
+\vspace{1em}
+\noindent
+\textbf{4. Temporal Features.}
+\begin{itemize}
+  \item \textbf{Time of day (\texttt{time\_of\_day})}: Broad intervals (morning, afternoon, evening, night) derived from timestamps. While not universally suspicious, off-peak editing hours can correlate with reduced community scrutiny.
+  \item \textbf{Day of week (\texttt{day\_of\_week}), weekend flag (\texttt{is\_weekend})}: Differentiate between weekday and weekend editing patterns. Some studies note increased vandalism when fewer moderators are active.
+  \item \textbf{Creation date (\texttt{date\_created})}: Used for temporal splits or trend analysis, enabling chronological evaluations of the model’s performance over time.
+\end{itemize}
+Capturing when a contribution occurs helps the model identify outlier behaviors against typical daily or weekly rhythms.
+
+\vspace{1em}
+\noindent
+\textbf{5. Content Features.}
+\begin{itemize}
+  \item \textbf{Tag modifications (\texttt{tags\_added}, \texttt{tags\_removed}, \texttt{tags\_modified}, \texttt{tags\_changed}, \texttt{total\_tags})}: Reflect key-value changes in the OSM database. Large-scale tag deletions or nonsensical additions can signal vandalism.
+  \item \textbf{Key tags (e.g., \texttt{building}, \texttt{highway}, \texttt{landuse})}: Boolean flags that determine whether a crucial attribute was introduced, removed, or updated. Systematic removal of \texttt{building} tags might indicate sabotage.
+\end{itemize}
+Because OSM tags are central to map semantics, analyzing them reveals malicious attempts to alter fundamental attributes or introduce inflammatory text.
+
+\vspace{1em}
+\noindent
+\textbf{6. Spatial Features.}
+\begin{itemize}
+  \item \textbf{Centroid and bounding box range (\texttt{centroid\_x}, \texttt{centroid\_y}, \texttt{bbox\_x\_range}, \texttt{bbox\_y\_range})}: Simplify geometric footprints into coordinate-based summaries.
+  \item \textbf{Grid cell ID (\texttt{grid\_cell\_id})}: Assigns each edit to a spatial index for clustering. Concentrated vandalism can emerge in certain hotspots.
+  \item \textbf{Countries and continents (\texttt{countries}, \texttt{continents})}: Identifies administrative boundaries relevant to the edit’s location, enabling region-specific analysis.
 \end{itemize}
 
-These user-level statistics offer a lens into the contributor’s reliability, frequency of participation, and editing consistency. Whether the pipeline relies more heavily on these indicators or not can be toggled via configuration flags (e.g., \texttt{SHOULD\_INCLUDE\_USERFEATURES}).
-
-\subsubsection*{2. OSM Element Features}
-While user metrics highlight who is editing, \emph{OSM element features} reveal the broader history of the specific objects being changed. This historical dimension can expose contentious map entities or frequently modified objects.
-
+\vspace{1em}
+\noindent
+\textbf{7. Derived Features.}
 \begin{itemize}
-  \item \textbf{Cumulative edits on an element (\texttt{element\_n\_users\_cum}, \texttt{element\_n\_versions})}: Record how many distinct users have edited a particular node, way, or relation, and how many total versions of that object exist. Objects with high version counts may suggest repeated controversies or “edit wars.”
-  \item \textbf{Time of previous edit (\texttt{element\_previous\_edit\_timestamp}) and interval since last edit (\texttt{element\_time\_since\_previous\_edit})}: Map features that are altered frequently in short succession may attract suspicious edits, especially if the changes occur in rapid, potentially destructive bursts.
+  \item \textbf{Tag density (\texttt{tag\_density})}: Ratio of total tags to area (often log-scaled to mitigate skew). Outliers might denote over- or under-documented objects.
+  \item \textbf{Relative area change (\texttt{relative\_area\_change})}: Compares a new area to the previous one, surfacing extreme expansions or contractions.
+\end{itemize}
+These aggregated indicators compress raw signals into more discriminative forms, enhancing the model’s predictive power.
+
+\vspace{1em}
+\noindent
+\textbf{8. Changeset Features.}
+Though primarily relevant to session-level analysis, certain changeset-level attributes (e.g., \texttt{changeset\_comment\_length}) can appear in contributions data if the pipeline is configured to attach session metadata to individual edits. This approach helps unify certain session-wide signals with the single-edit viewpoint.
+
+\vspace{1em}
+\noindent
+\textbf{9. Clustering Feature.}
+Clustering is introduced to capture spatial editing patterns, leveraging the \texttt{centroid\_x} and \texttt{centroid\_y} coordinates to assign a \texttt{cluster\_label} to each edit. This transformation simplifies geographic data into discrete clusters, enabling the model to identify localized editing behaviors and detect region-specific vandalism.
+
+KMeans clustering is employed for this purpose, dynamically adjusting the number of clusters (\texttt{n\_clusters}) based on the dataset size. The algorithm is trained on the spatial centroids of the training data, and the resulting cluster labels are propagated to the validation and test datasets, ensuring spatial consistency across all splits. By grouping geographically adjacent edits, the clustering feature encapsulates spatial context, making it easier for the model to discern regional patterns and anomalies.
+
+\vspace{1.5em}
+
+\subsubsection{3.2.2.2 Feature Engineering for Changeset Data}
+\label{sec:features_changeset}
+
+When the pipeline operates on \emph{changeset-level} data, each record corresponds to an entire user session. Here, the feature extraction process aggregates information that characterizes the session’s scope, content, and timing, rather than focusing on individual edits.
+
+\vspace{1em}
+\noindent
+\textbf{1. Spatial Bounding Box.}
+\begin{itemize}
+  \item \textbf{min\_lon, max\_lon, min\_lat, max\_lat}: Summarize the session’s geographical footprint. Missing values default to 0, ensuring consistent computations and preventing dropped rows.
+  \item \textbf{Centroid computation} (\texttt{centroid\_x}, \texttt{centroid\_y}): Calculated as the average of bounding box corners, approximating where the user predominantly edited in that changeset.
+\end{itemize}
+A large bounding box could indicate extensive map edits within one session—potentially suspicious if the user historically focuses on a single locality.
+
+\vspace{1em}
+\noindent
+\textbf{2. Clustering Features.}
+\begin{itemize}
+  \item \textbf{cluster\_label}: As discussed earlier in Section, clustering is performed using KMeans on spatial centroids (\texttt{centroid\_x}, \texttt{centroid\_y}), and the resulting cluster labels are assigned to each changeset.
 \end{itemize}
 
-By combining these attributes with user-based and geometric attributes, the model gains a rich contextual backdrop, illuminating whether an element has undergone recurrent, possibly contested, modifications over time.
-
-\subsubsection*{3. Geometric Features}
-Geometric attributes remain a cornerstone of vandalism detection because large spatial disruptions or impractical geometry shifts often signal malicious edits.
-
+\vspace{1em}
+\noindent
+\textbf{3. Comment-Based Attributes.}
 \begin{itemize}
-  \item \textbf{Geometry size and deltas (\texttt{area}, \texttt{length}, \texttt{area\_delta}, \texttt{length\_delta})}: Reflect how big an object is (e.g., the area of a polygon, the length of a way) and how dramatically it changes between edits. Abrupt expansions or contractions can be highly suspicious.
-  \item \textbf{Geometry type (\texttt{geometry\_type})}: Indicates whether the object is a point, line, or polygon. Vandalizing a single node might be easier, whereas reshaping polygonal areas could cause more disruption.
-  \item \textbf{Bounding box and associated size (\texttt{xmin}, \texttt{xmax}, \texttt{ymin}, \texttt{ymax}, \texttt{bounding\_box\_size})}: Summarize the spatial footprint of a feature. Calculating the difference in bounding box size before and after an edit can spotlight suspicious geometric manipulations.
+  \item \textbf{changeset\_comment\_length}: The length of the user’s description. Detailed comments may correlate with more legitimate sessions, whereas minimal or nonsensical remarks can raise suspicion.
+  \item \textbf{source\_used}, \textbf{source\_reliability}: Capture whether the user relied on known high-quality imagery (e.g., Bing, Maxar). Sessions lacking recognized sources may be prone to errors or intentional distortions.
 \end{itemize}
 
-In certain deployments, these features may be log-scaled (e.g., log of \texttt{area\_delta}) to reduce skew from extreme outliers (very large or very small edits).
-
-\subsubsection*{4. Temporal Features}
-Temporal properties help capture daily or weekly rhythms of community editing, distinguishing normal volunteer patterns from atypical outlier behavior.
-
+\vspace{1em}
+\noindent
+\textbf{4. Temporal Metrics.}
 \begin{itemize}
-  \item \textbf{Time of day (\texttt{time\_of\_day})}: Categorizes each edit into broad intervals (morning, afternoon, evening, night) derived from edit timestamps. Unusual times (e.g., middle of the night in certain geographies) may or may not be suspicious depending on context.
-  \item \textbf{Day of week (\texttt{day\_of\_week}), weekend flag (\texttt{is\_weekend})}: Identifies whether an edit occurs on a weekday or weekend. This differentiation can reveal patterns—for instance, malicious edits might spike when fewer community members are online to spot-check changes.
-  \item \textbf{Creation date (\texttt{date\_created})}: In temporal splitting scenarios, storing the exact date of contribution or changeset creation allows chronological or real-time performance evaluations.
+  \item \textbf{date\_created}: Records when the changeset began, facilitating chronological splits or drift analyses over time.
 \end{itemize}
 
-These temporal features frequently interact with user-based attributes, revealing if a typically dormant user emerges at odd hours to commit a flurry of edits—often a red flag.
+\vspace{1em}
+\noindent This combination of features allows the pipeline to analyze changeset-level data comprehensively, incorporating spatial, textual, and temporal dimensions. The addition of clustering features further enhances the model’s ability to identify patterns that may signify anomalous or malicious activity within specific geographic regions.
 
-\subsubsection*{5. Content Features}
-Alongside geometry, content-based signals (i.e., tags and textual properties) are pivotal in understanding the substance of an edit.
-
-\begin{itemize}
-  \item \textbf{Tag modifications (\texttt{tags\_added}, \texttt{tags\_removed}, \texttt{tags\_modified}, \texttt{tags\_changed}, \texttt{total\_tags})}: Enumerate how many key-value tags have been added, deleted, or altered during a single contribution. Sudden, high-volume tag deletions may be malicious, while small corrections (e.g., grammar fixes) could be benign.
-  \item \textbf{Key tags (e.g., \texttt{building}, \texttt{road}, \texttt{landuse})}: Boolean flags indicating whether each core tag was introduced, removed, or edited. This level of detail can show if a user is systematically removing important attributes from roads or buildings.
-\end{itemize}
-
-Because tags convey semantic information (e.g., the name or purpose of a feature), changes to them can have outsized impacts on map utility. Monitoring these edits is thus fundamental for vandalism detection.
-
-\subsubsection*{6. Spatial Features}
-Beyond raw geometry, additional spatial attributes position each contribution in a broader geographic framework.
-
-\begin{itemize}
-  \item \textbf{Centroid and bounding box range (\texttt{centroid\_x}, \texttt{centroid\_y}, \texttt{bbox\_x\_range}, \texttt{bbox\_y\_range})}: Measure the location and span of an edit in simpler terms than raw polygons.
-  \item \textbf{Grid cell identifier (\texttt{grid\_cell\_id})}: Uses a spatial index to cluster contributions (e.g., dividing the globe into 0.1\degree\ cells). This can highlight localized hotspots of vandalism.
-  \item \textbf{Countries and continents (\texttt{countries}, \texttt{continents})}: Match bounding box coordinates to known administrative boundaries. Certain regions may experience more vandalism or require specialized oversight, so labeling an edit’s continent or country yields region-specific insights.
-\end{itemize}
-
-These spatial features complement geometry-based metrics by situating edits in the global map context, crucial in a crowdsourced platform with worldwide coverage.
-
-\subsubsection*{7. Derived Features}
-Derived features compress raw indicators into more interpretable or discriminative forms.
-
-\begin{itemize}
-  \item \textbf{Tag density (\texttt{tag\_density})}: Ratios of total tags to area, often log-scaled, highlight whether a feature is over- or under-tagged relative to its size.
-  \item \textbf{Relative area change (\texttt{relative\_area\_change})}: Compares the edit’s new area to the previous one, flagging disproportionately large expansions or contractions.
-\end{itemize}
-
-By summarizing complex interactions (e.g., area vs.\ tag changes), derived features can amplify meaningful signals that might otherwise remain hidden among raw values.
-
-\subsubsection*{8. Changeset Features}
-When analyzing edits at the session level, changeset features encapsulate the broader context of multiple contributions.
-
-\begin{itemize}
-  \item \textbf{Changeset comment length (\texttt{changeset\_comment\_length})}: The length of a user’s comment can reflect the detail they provide about their edits; minimal or missing comments may correlate with lower-quality sessions.
-  \item \textbf{Source reliability (\texttt{source\_reliability}), source used (\texttt{source\_used}), and changeset ID (\texttt{changeset\_id})}: By noting whether the user relied on known imagery providers (e.g., Bing, Maxar) and which changeset ID was used, the pipeline obtains further session-level clues. Edits lacking a reliable source might warrant additional scrutiny.
-\end{itemize}
-
-In some cases, \texttt{changeset\_features} also track the number of creates, modifies, or deletes performed collectively. A high volume of destructive edits in one session can be indicative of orchestrated vandalism.
-
-\subsubsection*{9. Map Features}
-Finally, certain map features—like \texttt{building}, \texttt{road}, or \texttt{landuse}—help classify the domain or function of the edited element. Boolean flags denoting whether these categories were affected can highlight whether a user is systematically targeting particular object types.
-
-\paragraph{High-Level Categorization and Parallel Construction.}
-In practice, these feature categories often overlap or inform each other. For instance, a single edit will yield \emph{geometric deltas}, \emph{content-based changes}, and a \emph{user-level} record. All such indicators are computed in parallel, chunk by chunk, and fused into a consistent DataFrame or table that the classifier can interpret. Moreover, configuration flags (e.g., whether to include \emph{user features} or \emph{OSM element features}) add flexibility, allowing the pipeline to be tested under different assumptions about data availability or computational cost.
-
-\subsubsection*{Explanation of Features for Changeset Data}
-While many of the attributes above overlap between contributions and changesets, certain features are specific to changeset-level contexts—providing a session-wide lens on editing behavior.
-
-\begin{itemize}
-    \item \textbf{Spatial bounding box} (\texttt{min\_lon}, \texttt{max\_lon}, \texttt{min\_lat}, \texttt{max\_lat}): Summarize the geographic spread of the entire editing session; missing values are defaulted to zero for uniformity.
-    \item \textbf{Centroid computation} (\texttt{centroid\_x}, \texttt{centroid\_y}): A simple average of bounding box corners, allowing a quick approximation of where the bulk of a user’s edits occurred.
-    \item \textbf{Comment length} (\texttt{changeset\_comment\_length}): Provides a straightforward textual measure, as changeset comments can clarify the purpose of a user’s edits—or reveal suspicious, ambiguous behavior if absent.
-    \item \textbf{Temporal attribute} (\texttt{date\_created}): Signals when the changeset was initiated, enabling chronological splits or trend analysis.
-\end{itemize}
-
-By combining these \emph{changeset features} with the contribution-level details, the pipeline can evaluate suspicious sessions at scale. In effect, if multiple suspicious contribution-level attributes cluster within one changeset, that entire session might be flagged for potential vandalism.
+\vspace{1em}
 
 \paragraph{Summary of the Feature Space.}
-Bringing together user histories, geometry transformations, content modifications, and session-level indicators, this feature construction stage builds a holistic representation of OSM edits. Such richness is essential for detecting the varied forms of vandalism, from small tag-based pranks to large-scale geographical upheavals. Subsequent sections (\S\ref{sec:core_ml_model}, \S\ref{sec:data_splitting_eval}) will show how these features integrate with a machine learning pipeline—particularly XGBoost—to effectively distinguish legitimate mapping efforts from malicious or erroneous updates.
+Bringing together user histories, geometry transformations, content modifications, and changeset-level indicators, this feature construction stage builds a holistic representation of OSM edits. Such richness is essential for detecting the varied forms of vandalism, from small tag-based pranks to large-scale geographical upheavals.
+
+
+\section{Data Splitting Strategies}
+\label{sec:data_splitting}
+
+To ensure robust evaluation of the vandalism detection model, data is partitioned into training, validation, and test subsets using three primary splitting strategies: \textit{random}, \textit{geographic}, and \textit{temporal}. Each strategy addresses distinct real-world scenarios, ranging from general model performance to geographic and temporal adaptability.
+
+\subsection{Random Splits.}
+The random split strategy is the foundation for most evaluations, designed to mimic the diverse yet unstructured nature of OpenStreetMap (OSM) edits. Separate configurations are applied for \textit{contribution-level} and \textit{changeset-level} datasets to reflect their unique characteristics:
+
+\paragraph{Contribution-Level Data Splits.}
+The contribution dataset is divided as follows:
+\begin{itemize}
+    \item \textbf{Training set:} 400,000 samples, accounting for 72.73\% of the total data.
+    \item \textbf{Validation set:} 50,000 samples, or 9.09\% of the total data.
+    \item \textbf{Test set:} 150,000 samples, comprising 27.27\% of the total data.
+\end{itemize}
+
+\noindent To emulate real-world conditions, the validation and test sets are created with an adjusted vandalism ratio that facilitates effective model evaluation. This proportion, while higher than the actual occurrence of vandalism in OSM, ensures sufficient representation of the minority class for robust performance assessment.
+\begin{itemize}
+    \item Validation set: 10,000 vandalism examples and 40,000 non-vandalism examples.
+    \item Test set: 30,000 vandalism examples and 120,000 non-vandalism examples.
+\end{itemize}
+
+The training set is generated through random sampling, resulting in an imbalanced dataset where the vandalism ratio deviates from real-world distributions. To address this, \texttt{scale\_pos\_weight} is applied during model training. This parameter adjusts the weight of the vandalism class in the loss function, compensating for the imbalance and preventing the model from disproportionately favoring the majority class (non-vandalism).
+
+Extensive experiments were conducted with various split ratios, including balanced vandalism:non-vandalism distributions. However, preserving the real-world imbalance in the validation and test sets consistently produced superior results, as detailed in Chapter~\ref{chapter:model_performance}. Metrics from the random split, including precision, recall, and AUC-PR, are summarized in Table~\ref{tab:vandalism_detection_final_clean}, and the corresponding precision-recall curve is presented in Figure~\ref{fig:precision_recall}.
+
+\paragraph{Changeset-Level Data Splits.}
+For changeset-level data, a distinct partitioning strategy is adopted to facilitate the evaluation of multiple classifiers: the normal changeset model, the hyper-classifier, and the meta-classifier. The data is split as follows:
+
+\begin{itemize}
+    \item \textbf{Training set:} 60\%.
+    \item \textbf{Validation set:} 5\%.
+    \item \textbf{Test set:} 15\%.
+    \item \textbf{Meta-test set:} 20\%.
+\end{itemize}
+
+These splits ensure that training, validation, and testing processes are conducted independently and provide robust evaluations of all classifiers. The training set is used for both the normal changeset model and the hyper-classifier, while the meta-test set is exclusively utilized to assess the performance of the meta-classifier.
+
+Further details about the hyper-classifier and meta-classifier, including their roles and integration into the pipeline, are discussed in Section~\ref{sec:enhancing_changeset_detection}.
+
+\subsection{Geographic Splits.}
+Geographic splits evaluate the model's ability to generalize across different regions, reflecting the global scope of OSM contributions. Data is partitioned based on the \texttt{GEOGRAPHIC\_SPLIT\_KEY}, which may correspond to continents or countries. For example:
+\begin{itemize}
+    \item Training data: Edits from Europe and South America.
+    \item Validation data: Edits from Africa.
+    \item Test data: Edits from Asia and North America.
+\end{itemize}
+
+This strategy ensures that a model trained in one region can accurately detect vandalism in unfamiliar geographic contexts. Results, including performance metrics by region, are presented in Table~\ref{tab:vandalism_detection_final_clean}.
+
+\subsection{Temporal Splits.}
+Temporal splits simulate real-world scenarios where newer vandalism patterns emerge over time. Data is partitioned chronologically based on the \texttt{date\_created} field:
+\begin{itemize}
+    \item Training data: Edits from 2018--2019.
+    \item Validation data: Edits from earlier years, such as 2015.
+    \item Test data: Edits from an intervening year, such as 2017.
+\end{itemize}
+
+This approach evaluates the model’s ability to generalize to edits occurring outside its training window, a crucial capability for deployment in a constantly evolving platform like OSM. Temporal robustness metrics, such as AUC-PR and F1-score, are discussed in Chapter~\ref{chapter:model_performance}.
+
+\paragraph{Conclusion.}
+These splitting strategies provide a comprehensive evaluation framework, reflecting the diverse and dynamic challenges of OSM vandalism detection. By leveraging random, geographic, and temporal splits, the thesis ensures a realistic assessment of the model's generalization capabilities under varied conditions. By thoroughly examining each scenario, we ensure that the classifier performs robustly in real-world conditions, as illustrated in later results (chapter ~\ref{chapter:model_performance}).
+
 
 \section{Core Classification Model}
 \label{sec:core_classification_model}
@@ -642,21 +698,87 @@ The detection of vandalism in OpenStreetMap (OSM) relies on the capacity of a le
 \subsection{XGBoost: Rationale and Architecture}
 \label{sec:xgboost_rationale_architecture}
 
-XGBoost builds upon the principle of gradient boosting, where multiple shallow trees are trained sequentially to correct the residual errors of the previously fitted models. Unlike bagging methods such as random forests, which train trees in parallel and aggregate their outputs, gradient boosting leverages iterative refinement of a chosen loss function’s gradient. This sequential learning paradigm helps the model discover subtle interactions among features, an especially critical advantage for vandalism detection, where correlations might span user histories, geometric alterations, and textual content.
+\noindent
+\textbf{XGBoost} (\emph{eXtreme Gradient Boosting}) underpins the core classification mechanism in our vandalism detection pipeline, chosen for its high efficiency, scalability, and strong performance on structured data \cite{chen2016xgboost}. This section begins with an overview of gradient boosting and decision tree ensembles, then highlights the design elements that make XGBoost particularly well-suited for large-scale OSM data. We conclude by illustrating how XGBoost is integrated into our final model training and inference workflow.
 
-A practical strength of XGBoost lies in its well-optimized implementation. It employs strategies such as approximate tree splitting, hardware-aware vectorization, and out-of-core computation, making it particularly adept at scaling to datasets containing millions of rows and numerous columns. Moreover, its sparsity-aware splitting logic allows the model to effectively handle missing or rarely used features—an important property for OSM data, where certain tags or user metrics may be absent from the majority of records. The net result is a fast, memory-efficient training process that still captures the complex dynamics underlying vandalism.
+\subsubsection{Gradient Boosting and Decision Tree Ensembles}
+\label{sec:xgboost_background}
 
 \noindent
-\textbf{(Potential Visualization):}  
-\begin{figure}[htbp]
+\textbf{Gradient boosting} is an ensemble technique that iteratively refines its predictions by adding “weak learners,” typically decision trees, in a sequential manner \cite{friedman2001greedy}. Each new tree focuses on the residual errors from the previous ensemble model, collectively minimizing a specified loss function. Conceptually, the process proceeds as follows:
+
+\begin{enumerate}
+    \item \emph{Initialize}: Start with a simple model (often a constant prediction).
+    \item \emph{Compute Residuals}: Calculate the difference between current predictions and the true labels.
+    \item \emph{Train Next Tree}: Fit a small decision tree to these residuals, thereby learning how to correct the existing model’s errors.
+    \item \emph{Update Ensemble}: Add the new tree to the model, typically scaled by a learning rate to prevent over-correction.
+    \item \emph{Repeat}: Continue until convergence or until a maximum number of iterations is reached.
+\end{enumerate}
+
+\noindent
+Because each tree attempts to fix the shortcomings of its predecessor, this ensemble gradually hones in on accurate predictions. Employing decision trees—well-suited to non-linear relationships and mixed feature types—further enhances this flexibility, making gradient boosting (and, by extension, XGBoost) highly effective for OSM’s complex tabular data.
+
+\subsubsection{Enhancements in XGBoost}
+\label{sec:xgboost_enhancements}
+
+\noindent
+While classical gradient boosting offers a robust foundation, \textbf{XGBoost} refines it via multiple architectural innovations \cite{chen2016xgboost}:
+
+\begin{itemize}
+    \item \textbf{Regularization}:
+    Introduces $L1$ and $L2$ penalties to curb overfitting by limiting tree complexity, thus promoting better generalization.
+
+    \item \textbf{Efficient Split Finding}:
+    Uses histogram-based methods to swiftly detect optimal split thresholds, reducing computational overhead and memory usage—vital for large-scale OSM data.
+
+    \item \textbf{Tree Pruning}:
+    Adopts a depth-first tree-building approach with post-hoc pruning. Nodes yielding minimal gain can be pruned to focus on meaningful splits.
+
+    \item \textbf{Handling Missing Data and Sparsity}:
+    Automatically routes missing values in a way that maximizes training gain, while sparsity-aware algorithms accommodate real-world data with zeros or nulls.
+
+    \item \textbf{Parallelization and Scalability}:
+    Parallelizes gradient computations and tree construction, enabling substantial speed-ups during training. This is particularly advantageous when processing monthly OSM files containing millions of edits.
+
+    \item \textbf{Out-of-Core Computation}:
+    Facilitates disk-based training for datasets exceeding main memory, an important feature when dealing with large geospatial data.
+\end{itemize}
+
+\noindent
+These mechanisms differentiate XGBoost from earlier gradient boosting implementations, making it particularly apt for tasks requiring high accuracy and interpretability on large tabular datasets.
+
+\subsubsection{System Architecture and Design}
+\label{sec:xgboost_architecture}
+
+\noindent
+XGBoost’s internal architecture centers on efficiency and parallel operations:
+
+\begin{itemize}
+    \item \textbf{Block Structure Storage}:
+    Optimizes memory usage and cache performance by storing features in column blocks, enabling faster access during gradient computations.
+
+    \item \textbf{Column Block Design for Parallel Learning}:
+    Allows simultaneous processing of multiple features, significantly accelerating split finding.
+
+\end{itemize}
+
+\noindent
+Figure~\ref{fig:xgboost_architecture} illustrates these architectural concepts. By leveraging columnar storage and parallel computations, XGBoost can effectively scale to the data demands typical of OSM vandalism detection.
+
+
+\begin{figure}[H]
     \centering
-    % Example placeholder image; replace with an actual XGBoost schematic if available
-    \fbox{\includegraphics[width=0.6\textwidth]{xgboost_schematic.png}}
-    \caption{Illustrative schematic of the XGBoost’s iterative tree-building process, wherein each new tree aims to reduce the residual error left by the previously fitted ensemble.}
-    \label{fig:xgboost_schematic}
+    \includegraphics[width=0.7\textwidth]{xgboost-architecture.jpg}
+    \caption{High-level schematic of the XGBoost architecture, highlighting parallelization and columnar data blocks. \cite{tutorialspoint2025}}
+    \label{fig:xgboost_architecture}
 \end{figure}
 
-Figure~\ref{fig:xgboost_schematic}, for instance, might illustrate how each tree in the sequence is trained on the residual of the prior ensemble's predictions, gradually zeroing in on the hardest-to-classify edits. The final model emerges as an additive ensemble of all trees, each specializing in correcting a specific subset of prediction errors.
+\noindent
+\textbf{In our pipeline}, XGBoost not only handles the individual feature vectors derived from user,
+geometric, temporal, and textual signals, but also robustly manages partial sparsity
+and imbalances in the class labels—key aspects in vandalism detection.
+
+By blending gradient boosting fundamentals with XGBoost’s engineering optimizations, the resulting classifier consistently yields high precision and recall in vandalism detection, whether at the \emph{contribution} or \emph{changeset} scale.
 
 \subsection{Hyperparameter Tuning}
 \label{sec:hyperparameter_tuning}
@@ -666,197 +788,667 @@ Although XGBoost provides strong baseline performance, careful tuning of its hyp
 The tuning process often relies on cross-validation. For instance, a five-fold setup divides the training set into five parts, cycling through each portion as a validation fold while the remaining four folds serve as the training data. Performance metrics—commonly the area under the ROC curve (AUC-ROC) or the area under the precision-recall curve (AUC-PR)—are tracked across all folds. Because vandalism in OSM tends to be rarer than benign edits, AUC-PR can be more informative, capturing how well the model preserves recall without sacrificing precision. Once the model achieves strong cross-validation scores, it is retrained on the entire training set using the best hyperparameters found.
 
 \noindent
-\textbf{(Potential Visualization):}  
 \begin{figure}[htbp]
     \centering
-    % Placeholder for a plot or table showing hyperparameter performance
-    \fbox{\includegraphics[width=0.7\textwidth]{hyperparameter_tuning_plot.png}}
-    \caption{Example plot depicting how validation metrics (e.g., AUC-PR, AUC-ROC) vary under different hyperparameter settings. Regions of strong performance can guide parameter selection.}
+    \includegraphics[width=1.0\textwidth]{hyperparameter_tuning_plot.png}
+    \caption{Comparison of AUC-ROC and AUC-PR curves for the model with and without hyperparameter tuning. The green dashed line represents the model with hyperparameter tuning, achieving superior performance with an AUC-ROC of 0.9999 and an AUC-PR of 0.9997. In contrast, the red dashed line shows the model without tuning, which achieves lower AUC-ROC (0.9893) and AUC-PR (0.9654) scores. The results highlight the effectiveness of tuning in improving the model's ability to distinguish between classes and handle imbalanced datasets.}
     \label{fig:hyperparam_tuning_plot}
 \end{figure}
 
-Figure~\ref{fig:hyperparam_tuning_plot} might depict an example of how AUC-PR fluctuates as one modifies parameters like \emph{max depth} or \emph{learning rate}. Observing inflection points in these plots can guide the selection of more efficient tree structures or lower learning rates that yield higher fidelity predictions while avoiding overfitting. In the final configuration, XGBoost typically balances a moderate tree depth with a suitable degree of regularization and a learning rate that does not overshoot the loss gradient. This tuned ensemble then forms the backbone of vandalism classification, effectively harnessing the feature-rich representation built in earlier stages of the pipeline.
+\noindent
+Figure~\ref{fig:hyperparam_tuning_plot} illustrates the significant impact of hyperparameter tuning on model performance. The green curves, representing the tuned model, demonstrate higher area under both the ROC and PR curves, indicating better discrimination between vandalism and non-vandalism edits. Hyperparameter tuning allows for optimization of key parameters such as \textit{max depth}, \textit{learning rate}, and \textit{tree estimators}, enhancing the model's robustness and precision. This improvement is particularly crucial for handling imbalanced datasets where subtle patterns in the minority class (vandalism) need to be effectively captured without overfitting or sacrificing generalization.
 
-\section{Data Splitting and Evaluation}
-\label{sec:data_splitting_evaluation}
+In the final configuration, XGBoost typically balances a moderate tree depth with a suitable degree of regularization and a learning rate that does not overshoot the loss gradient. This tuned ensemble then forms the backbone of vandalism classification, effectively harnessing the feature-rich representation built in earlier stages of the pipeline.
 
-An essential component of this research is ensuring that the machine learning models generalize effectively to unseen data. Given the varied nature of OpenStreetMap (OSM) vandalism—ranging from small-scale, sporadic pranks to large-scale, region-specific attacks—it is crucial to select splitting strategies and evaluation metrics that capture realistic usage scenarios. This section provides an overview of the splitting procedures (random, geographic, and temporal) and details the metrics and statistical techniques used to gauge model performance.
+\newpage
+\subsection{Training Progress and Insights}
+\label{subsec:training_progress}
 
-\subsection{Split Strategies}
-\label{sec:split_strategies}
+The training process of the XGBoost model was monitored through multiple metrics to evaluate convergence and generalization. This section provides insights into the model's performance over iterations, as depicted in Figures~\ref{fig:training_progress_accuracy}, \ref{fig:training_progress_error}, and \ref{fig:training_progress_logloss}.
 
-Three primary strategies guide how data is partitioned into training, validation, and test subsets: \emph{random}, \emph{geographic}, and \emph{temporal}. Each approach addresses a distinct real-world requirement, ranging from general performance in typical data (random) to robustness across different regions (geographic) and changing time periods (temporal).
+\subsubsection{Accuracy Progress}
+\noindent
+Figure~\ref{fig:training_progress_accuracy} illustrates the progression of training and validation accuracy across 100 iterations. The training accuracy improves rapidly in the initial iterations, stabilizing close to 99.9\%. The validation accuracy closely follows, stabilizing near 99.6\%. The minimal gap between training and validation accuracy indicates excellent generalization and minimal overfitting.
 
-\paragraph{Random Splits.}
-For a large portion of the experiments—particularly those centered on \textit{contribution} data—this thesis adopts a two-stage random splitting scheme. First, 40\% of the dataset is designated as a “temporary test set,” and the remaining 60\% is used for training. Within that 40\%, 20\% is then taken as the final test portion, while 80\% of it becomes a validation set. Consequently, the final data breakdown for contributions is determined by:
-\begin{itemize}
-    \item \textbf{Training set:} 60\% of the total data
-    \item \textbf{Validation set:} 32\% of the total data (i.e., 80\% of the 40\%)
-    \item \textbf{Test set:} 8\% of the total data (i.e., 20\% of the 40\%)
-\end{itemize}
-A consistent \texttt{RANDOM\_STATE} is applied (set to 42) to ensure reproducible splits.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{training_progress_accuracy.png}
+    \caption{Training Progress: Accuracy (Train vs Validation).}
+    \label{fig:training_progress_accuracy}
+\end{figure}
 
-In contrast, when dealing with \textit{changeset} data, 50\% of the dataset is initially set aside. Of that subset, 10\% becomes the final test portion, leaving the remaining 90\% for validation. An additional nuance for changeset experiments is the creation of a \emph{meta-test} set (45\% of the original dataset) for specialized ensemble methods. This configuration allows separate evaluations of the main classifier, a hyper-classifier, and any meta-classifiers, preventing leakage between training and final testing.
 
-\paragraph{Geographic Splits.}
-To understand how well a model generalizes across different continents or countries, certain experiments employ a partition keyed on the \texttt{GEOGRAPHIC\_SPLIT\_KEY}, which may be set to “continent” or “country.” For example, training might use edits or changesets from Oceania and Europe, validation data from Africa, and testing from North America and Asia. By restricting each subset to distinct regions, the evaluation reflects whether a classifier trained on one part of the globe remains effective in others—an important consideration for a global, crowdsourced system like OSM.
+\subsubsection{Error Reduction}
+\noindent
+Figure~\ref{fig:training_progress_error} shows the error rate progression for both training and validation sets. The training error quickly reduces to near zero, while the validation error also decreases significantly, stabilizing at very low levels. This trend confirms the model's robustness and capacity for generalization.
 
-\paragraph{Temporal Splits.}
-In real-world deployment, new vandalism patterns could emerge long after the model is trained. To mimic this scenario, temporal splits divide data chronologically based on columns like \texttt{date\_created}. For instance, data from 2018 and 2019 might serve as training, earlier years such as 2015 might form a validation set, and an intermediate year like 2017 might be reserved for the test set. This approach clarifies if a model can maintain strong performance on edits occurring outside its training window and helps gauge whether additional retraining or continual learning strategies might be necessary.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{training_progress_error.png}
+    \caption{Training Progress: Error Rate (Train vs Validation).}
+    \label{fig:training_progress_error}
+\end{figure}
+
+\subsubsection{Log-Loss Convergence}
+\noindent
+Log-loss, a measure of prediction confidence, steadily decreases for both training and validation datasets, as depicted in Figure~\ref{fig:training_progress_logloss}. Validation log-loss stabilizes around 0.023, signifying high confidence in predictions and consistent model performance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{training_progress_logloss.png}
+    \caption{Training Progress: Log-Loss (Train vs Validation).}
+    \label{fig:training_progress_logloss}
+\end{figure}
+
+Across these figures, the minimal gap between training and validation metrics reflects strong
+generalization—critical for real-world OSM data that can vary significantly by region or time.
+These insights confirm that the final XGBoost model converges effectively, balancing low false
+positives with a high capture rate for vandalism edits. When combined with the chunk-based data ingestion pipeline and carefully engineered features (\S\ref{sec:feature_construction}), this trained classifier forms
+the linchpin of our vandalism detection system, ready to perform inference on live or monthly
+OSM updates.
+
+
+\newpage
+\section{Enhancing Changeset-Level Detection}
+\label{sec:changeset_level_detection}
+
+In OpenStreetMap (OSM), a \emph{changeset} encapsulates a group of edits uploaded in one session, potentially spanning extensive geographic areas or multiple features. The same XGBoost pipeline discussed in previous sections can be trained on changeset-level data to detect vandalism for each session. However, additional techniques—the \emph{hyper-classifier} and \emph{meta-classifier}—provide further refinement by leveraging per-contribution predictions and fusing them with session-level insights.
+
+\subsection{Baseline Changeset Pipeline}
+\label{subsec:baseline_changeset_pipeline}
+
+When operating on changeset data, the pipeline treats each \emph{changeset} as a single data instance, extracting session-level attributes (e.g., bounding-box extents, user metadata, and edit counts) as features. Although these features—discussed in Section~\ref{sec:feature_construction}—can capture large-scale vandalism (e.g., mass deletions), they may overlook subtle patterns of dispersed suspicious edits. An XGBoost classifier trained on these session-level attributes forms the baseline changeset approach.
+
+\paragraph{High-Level Approach.}
+\begin{enumerate}
+    \item \textbf{Data Ingestion}: Load changeset-level records, each labeled as vandalism or non-vandalism.
+    \item \textbf{Feature Extraction}: Incorporate bounding-box coordinates, timestamps, user statistics, and edit counts as input to the pipeline.
+    \item \textbf{Training}: Fit an XGBoost model to classify each changeset, producing a vandalism probability per session.
+\end{enumerate}
+
+This baseline method effectively detects obvious session-wide disruptions (e.g., hundreds of deleted roads) but may miss more nuanced, distributed forms of vandalism if they lack a clear bounding-box or user-based signature.
+
+\subsection{Hyper-Classifier: Aggregating Per-Contribution Predictions}
+\label{subsec:hyper_classifier}
+
+To overcome the limitations of purely changeset-level attributes, the pipeline incorporates the \emph{hyper-classifier}, which aggregates the output of the contribution-level XGBoost model. Rather than solely relying on bounding-box or changeset metadata, the hyper-classifier builds new features summarizing how suspicious each edit is within a session.
+
+\paragraph{Aggregated Signals.}
+\begin{enumerate}
+    \item \textbf{Per-Contribution Probabilities}: For each edit, the contribution-level model outputs a vandalism probability (\texttt{pred\_prob}).
+    \item \textbf{Group by Changeset}: All edits sharing a \texttt{changeset\_id} are collected, and their probabilities undergo statistical summarization (e.g., mean, median, quantiles, standard deviation, proportion of edits above a threshold).
+    \item \textbf{Feature Matrix}: A new dataset emerges, where each row is a changeset, augmented with these aggregated per-edit probabilities.
+    \item \textbf{Hyper-Classifier Training}: An additional XGBoost model is trained on this feature matrix to classify entire sessions, potentially capturing session-wide malicious intent that the baseline changeset pipeline might miss.
+\end{enumerate}
 
 \noindent
-\textbf{(Potential Visualization):}  
-\begin{figure}[htbp]
-    \centering
-    % Example placeholder image; replace with an actual flowchart if available
-    \fbox{\includegraphics[width=0.75\textwidth]{data_splitting_flowchart.png}}
-    \caption{Illustration of how data is divided into training, validation, and test sets under random, geographic, and temporal strategies, each addressing distinct real-world needs.}
-    \label{fig:data_splitting_flowchart}
-\end{figure}
+By consolidating the edit-level suspicion scores, the hyper-classifier aims to exceed the performance of the baseline session-level approach. The underlying assumption is that if many edits within a single changeset are moderately suspicious, the collective signal is significantly stronger than each edit’s individual suspicion.
+
+\subsection{Meta-Classifier: Fusing Changeset-Level Base pipeline and Hyperclassifier Outputs}
+\label{subsec:meta_classifier}
+
+While the baseline changeset pipeline capitalizes on changeset metadata (bounding-box size, user stats, etc.), and the hyper-classifier exploits aggregated per-edit probabilities, each perspective covers different facets of vandalism. The \emph{meta-classifier} merges these two probability streams into a single final prediction. The motivation is to see if fusing these distinct probability streams yields better results than using either model alone.
+
+\begin{enumerate}
+    \item \textbf{Obtain Baseline Changeset Probability}: Run the session-level XGBoost model on changeset data, generating a vandalism probability.
+    \item \textbf{Obtain Hyper-Classifier Probability}: Compute the probability that the same changeset is vandalism based on aggregated per-edit signals.
+    \item \textbf{Construct a New Dataset}: Each changeset now has two predicted probabilities (\(\hat{p}_{\textnormal{session}}\) and \(\hat{p}_{\textnormal{hyper}}\)), along with a true label indicating whether it is vandalism.
+    \item \textbf{Train Meta-Classifier}: A separate XGBoost or logistic regression model maps these two probabilities (and optionally a few additional features) to a final vandalism classification.
+\end{enumerate}
+
+\noindent
+During inference, the pipeline once again obtains predictions from both the normal model and the hyper-classifier, feeding them into the meta-classifier to arrive at a single decision.
+
+To facilitate the hyper-classifier and meta-classifier, changeset IDs must be consistent between datasets. If a changeset or its constituent edits are missing in the contribution-level data, they cannot be aggregated. Hence, both the hyper-classifier and meta-classifier pipelines require a matched set of edits and changesets.
+
+\paragraph{Conclusion.}
+
+The multi-stage approach to changeset-level detection (baseline pipeline, hyper-classifier, and meta-classifier) highlights the system’s flexibility. The baseline pipeline uses a straightforward session-level model, the hyper-classifier exploits fine-grained edit suspicions, and the meta-classifier fuses both perspectives. Although additional complexity is introduced, each stage addresses a different source of vandalism signals.
+
+All three methods are independently trained using XGBoost. The pipeline organizes each stage’s training and evaluation data in alignment with the changeset splits outlined in Section~\ref{sec:data_splitting}, ensuring no data leakage between these overlapping models. Chapter~\ref{chapter:model_performance} provides empirical results, showing how these layered models can substantially improve detection accuracy across diverse OSM vandalism scenarios.
+
+
+\section{Evaluation}
+\label{sec:evaluation}
 
 \subsection{Evaluation Metrics}
 \label{sec:evaluation_metrics}
 
-Evaluating vandalism detection models requires balancing the cost of false alarms against the risk of missing actual malicious edits. To capture this, the thesis adopts a variety of metrics that reflect different dimensions of performance.
+Measuring vandalism detection performance involves navigating a trade-off between false alarms and undetected malicious edits. The thesis employs a suite of metrics that highlight different facets of classification quality.
 
 \paragraph{Precision, Recall, and F1-score.}
-\emph{Precision} specifies how many of the edits labeled as vandalism truly are malicious. High precision is important to avoid overwhelming human moderators with false positives. \emph{Recall} measures the fraction of vandalistic edits correctly identified, ensuring that true vandalism is not overlooked. The \emph{F1-score} harmonizes both precision and recall, giving a single measure that penalizes underperformance in either. These three metrics are especially relevant for a task where malicious edits may represent a small percentage of the total, yet pose disproportionate harm to data quality.
+These metrics encapsulate distinct but complementary concerns:
+\begin{itemize}
+    \item \textbf{Precision}: Among the edits flagged as vandalism, how many are truly malicious?
+    \item \textbf{Recall}: Of all vandalism edits in the dataset, how many did the model catch?
+    \item \textbf{F1-score}: The harmonic mean of precision and recall, penalizing weaknesses in either dimension.
+\end{itemize}
+Because vandalism typically makes up a minority of OSM edits, achieving strong recall (to catch most malicious contributions) without overwhelming moderators with false positives is paramount.
 
-\paragraph{AUC-PR vs.\ AUC-ROC.}
-Since the dataset exhibits class imbalance, the area under the precision-recall curve (AUC-PR) often gives a more telling assessment of predictive power, showing how effectively the model navigates the trade-off between capturing more vandalism and introducing false positives. The area under the ROC curve (AUC-ROC) remains informative, but may sometimes overestimate performance when the negative class is dominant. Tracking both AUC-PR and AUC-ROC offers a robust overview of classifier discrimination.
+\paragraph{AUC-PR vs. AUC-ROC.}
+\noindent
+When dealing with class imbalance, the area under the precision-recall curve (AUC-PR) can provide a clearer snapshot of performance than AUC-ROC. AUC-PR emphasizes how effectively the model maintains high recall while keeping false positives in check—a crucial balance in real-time vandalism detection. Nevertheless, the area under the receiver operating characteristic curve (AUC-ROC) remains valuable for a broader sense of discriminative power.
+
+\noindent
+Later sections present confusion matrices and curves (\autoref{fig:confusion_matrix}, \autoref{fig:precision_recall}, \autoref{fig:roc_curve}) that illustrate how these metrics play out in practice, demonstrating the classifier’s capacity to distinguish vandalism from normal edits.
 
 \subsection{Bootstrapping for Confidence Intervals}
 \label{sec:bootstrapping_for_ci}
 
-While test splits provide a single snapshot of model performance, bootstrapping yields statistical insights into metric variability. The procedure involves repeatedly sampling the test set with replacement to create multiple “bootstrapped” datasets. Each sample is evaluated to produce a distribution of precision, recall, F1, or AUC values. From these distributions, one derives measures like mean, median, and confidence intervals.
-
-In practice, this means that if we have \(N\) test examples, each bootstrap iteration randomly draws \(N\) items with replacement, and the classifier’s performance on that sample is logged. After, say, 1{,}000 iterations, the distribution of scores emerges. Narrow confidence intervals suggest stable, robust metrics; wide intervals indicate sensitivity to the specific composition of the test set. 
-
-\noindent
-\textbf{(Potential Visualization):}  
-\begin{figure}[htbp]
-    \centering
-    % Placeholder for box plots or error bars
-    \fbox{\includegraphics[width=0.65\textwidth]{bootstrap_confidence_plot.png}}
-    \caption{Conceptual box plots or whisker plots showing how precision, recall, or F1-scores vary under repeated sampling from the test set. The error bars represent confidence intervals that inform metric stability.}
-    \label{fig:bootstrap_plots}
-\end{figure}
-
-By combining robust splitting strategies, relevant classification metrics, and bootstrap-based uncertainty estimates, this thesis ensures a thorough and realistic assessment of model performance. The upcoming results (discussed in subsequent chapters) draw on these protocols, yielding comprehensive evidence for how well the classifier generalizes under varied scenarios, whether tackling newly emerging vandalism forms, adapting to different regions, or dealing with large-scale class imbalances.
-
-\section{Enhancing Changeset-Level Detection}
-\label{sec:changeset_level_detection}
-
-While much of the early focus lies on detecting malicious edits at the single-contribution level, it is equally important to consider the session-level context in which these edits occur. In OpenStreetMap (OSM), a \emph{changeset} can contain multiple edits, potentially spanning large geographic areas or involving many different map features. Detecting vandalism purely on a per-edit basis might miss broader patterns—such as systematically removing roads or radically altering the geometry of many objects in one session. Consequently, the pipeline introduces two distinct approaches for analyzing changeset-level data: a \emph{normal changeset model} that relies on conventional changeset features (e.g., bounding box extents, number of objects created or deleted, user-level metadata) and a \emph{hyper-classifier} that aggregates per-contribution predictions into new changeset-level signals. A further \emph{meta-classifier} then fuses the outputs of these two changeset-based approaches, producing a single, more refined verdict for each session. This section provides an extensive look at how these three layers—normal changeset model, hyper-classifier, and meta-classifier—cooperate to capture large-scale or collective vandalism patterns.
-
-\subsection{Normal Changeset Model}
-\label{sec:normal_changeset_model}
-
-A changeset represents all edits a user uploads during a single session. In principle, one can treat each changeset as a data instance in its own right, extracting features such as the total number of contributions, bounding box coordinates (min/max latitude/longitude), the creation and closing timestamps, and user characteristics (e.g., account age, total changesets made). If a changeset is labeled as vandalism—by external sources or by detecting certain textual markers such as “revert”—one can train a supervised learning model to recognize these properties.
-
-In the \emph{normal changeset model}, the pipeline uses a wide range of changeset-level signals, typically loaded from various OSM files or derived via queries to the OSM API. For example, numeric features might include:
-\begin{itemize}
-    \item \textbf{no\_creates, no\_modifications, no\_deletions}: The count of newly created objects, modified objects, and deleted objects during the session. A changeset abnormally dominated by deletions could hint at vandalism.
-    \item \textbf{min\_lon, max\_lon, min\_lat, max\_lat}: Bounding box extents capturing the geographical reach of the edits. Changesets covering extremely large areas might be more suspect.
-    \item \textbf{user\_id, changes\_count, account\_created}: Metadata about the user’s editing history and how active they generally are.
-\end{itemize}
-These features, collectively, characterize each changeset’s scope, complexity, and the user’s typical editing habits. Using these as inputs to a classification algorithm (such as XGBoost, logistic regression, or another suitable method), one can train a \emph{normal changeset model} to discriminate between benign and malicious sessions. When run on new data, it outputs a probability or label of vandalism at the \textit{changeset} level.
-
-\subsection{Hyper-Classifier: Aggregating Per-Contribution Predictions}
-\label{sec:hyper_classifier}
-
-Although the \emph{normal changeset model} is valuable in capturing broad session-level signals, it does not directly incorporate the fine-grained knowledge gleaned from per-contribution classification. There are situations where the distribution of suspicious edits within a changeset matters enormously. For example, if a changeset has 50 edits, each individually flagged as moderately suspicious by the contribution-level classifier, the aggregate effect strongly suggests malicious intent—even if no single edit surpasses a high suspicion threshold. Conversely, a changeset might have 100 edits, only 1 of which is borderline suspicious; in this case, the aggregated signal should remain mostly benign.
-
-The \emph{hyper-classifier} exploits precisely this idea. Rather than analyzing raw changeset metadata, it processes the output of the contribution-level model, which generates a vandalism probability (\texttt{predicted\_prob}) for each edit. For a given \texttt{changeset\_id}, the pipeline collects all the per-contribution probabilities, then computes numerical summaries describing how suspicious the entire session appears:
-\begin{itemize}
-    \item \textbf{Mean, median, min, max} of \texttt{predicted\_prob}, indicating the average suspiciousness of the edits, as well as the distribution’s spread.
-    \item \textbf{Standard deviation, skewness, kurtosis}, revealing how tightly clustered or outlier-heavy the contribution probabilities are.
-    \item \textbf{Proportion-based features}, such as the fraction of edits exceeding a 0.5 threshold, or whether all edits are above/below that threshold. 
-\end{itemize}
-By aggregating these statistics into a new feature vector, the hyper-classifier gains a session-level perspective derived from micro-level suspicions. It is then trained (again via a supervised approach, commonly XGBoost) to classify each changeset as vandalism or non-vandalism, based on these aggregated signals and the changeset’s ground-truth label. In many scenarios, this aggregated approach excels at detecting large-scale or coordinated vandalism that might slip through purely local checks.
-
-To construct this hyper-classifier dataset, the pipeline follows a sequence:  
-1. \emph{Load the trained contribution-level model and run predictions on every edit}, yielding a probability.  
-2. \emph{Group the predictions by \texttt{changeset\_id}}, and compute the statistical aggregation.  
-3. \emph{Merge the aggregated features with the labeled changesets}, ensuring each row now corresponds to a single changeset, accompanied by the newly generated summary statistics.  
-4. \emph{Split these labeled changesets into training, validation, and test}, then train a supervised classifier specialized to interpret these aggregated signals.
-
-The hyper-classifier’s strength lies in its ability to amplify broad malicious behaviors. It sees if an entire batch of edits is suspicious overall (e.g., a high \texttt{mean\_prediction} or a large \texttt{proportion\_vandalism}). At the same time, it can discount minor anomalies if most edits appear normal. 
-
-\subsection{Meta-Classifier: Fusing Normal Changeset Model and Hyper-Classifier Outputs}
-\label{sec:meta_classifier}
-
-Despite the benefits of the normal changeset model and the hyper-classifier, each can miss certain nuances. The normal changeset model draws on direct changeset attributes like bounding box extents, number of creations or deletions, or user-level metadata from the session, but it lacks immediate insight into whether the underlying edits themselves are flagged as suspicious. The hyper-classifier, conversely, ignores these original changeset features—like session bounding boxes or user account creation date—and focuses instead on the aggregated probabilities from the contribution-level model. Each perspective is valid and potentially powerful, but they do not inherently share their specialized insights with one another.
-
-Enter the \emph{meta-classifier}, which merges the predictions of the normal changeset model and the hyper-classifier. Rather than combining raw feature sets, this final layer typically takes as input the \emph{probabilities} that each model assigns to a given changeset. One model might state “there’s a 0.7 probability of vandalism based on bounding box area, user account metrics, etc.” (normal changeset model), while the hyper-classifier states “there’s a 0.8 probability of vandalism based on aggregated edit-level signals.” The meta-classifier receives these two probabilities as a small, two-feature vector. It also has access to the ground-truth label for the changeset (vandalism or not), allowing it to learn how best to combine these two probability scores.
-
-In practice, the meta-classifier might be a simple \texttt{LogisticRegression} that fits a linear boundary in the 2D space of probabilities, or it can be another \texttt{XGBoost} model that captures more complex interactions. The training routine typically involves the following steps:
+While a single test set offers a snapshot of model performance, \textbf{bootstrapping} yields deeper insight into metric stability and variance. The procedure involves:
 \begin{enumerate}
-    \item \emph{Obtain the normal changeset model predictions} for each session in a validation or “meta-training” set.  
-    \item \emph{Obtain the hyper-classifier predictions} for the same sessions.  
-    \item \emph{Merge these results}, verifying they reference the same changeset IDs and identical labels.  
-    \item \emph{Construct a small feature matrix} where each row has \texttt{y\_prob\_main} (the normal changeset model’s probability) and \texttt{y\_prob\_hyper\_classifier} (the hyper-classifier’s probability), plus a \texttt{y\_true} label indicating whether the changeset was actually vandalism.  
-    \item \emph{Train the meta-classifier} to map these two input probabilities to a final binary prediction.  
+    \item \emph{Resampling} the test set with replacement multiple times (e.g., 1,000 iterations).
+    \item \emph{Evaluating} metrics (precision, recall, F1-score, AUC-PR, etc.) for each resampled dataset.
+    \item \emph{Aggregating} these results into distributions, computing mean, median, and confidence intervals.
 \end{enumerate}
-At inference time (on an unseen “meta-test” split), the pipeline again obtains probabilities from both the normal changeset model and the hyper-classifier, feeds them into the meta-classifier, and acquires a single, consolidated probability or label for the changeset.
-
-\begin{figure}[htbp]
-    \centering
-    % Example placeholder figure
-    \fbox{\includegraphics[width=0.7\textwidth]{meta_classifier_schematic.png}}
-    \caption{Conceptual schematic illustrating how predictions from the normal changeset model and the hyper-classifier combine into a meta-classifier, which produces a single label for each changeset.}
-    \label{fig:meta_classifier_schematic}
-\end{figure}
-
-In Figure~\ref{fig:meta_classifier_schematic}, one might show a simple diagram where the normal changeset model’s probability stream branches into one side, the hyper-classifier’s probability stream branches into another, and both join in a meta-classifier that outputs a final vandalism label. This design encapsulates the idea that each changeset-level model (normal vs.\ aggregated-from-contributions) contributes complementary knowledge: the normal changeset model knows about bounding boxes, user histories, and session timestamps, while the hyper-classifier focuses on how suspicious the underlying edits looked when judged by the contribution-level classifier. The meta-classifier is thus the final arbiter, blending the two scores into a single risk assessment.
-
-Such a layered architecture can substantially boost detection performance in cases where purely changeset-based signals are insufficient or where aggregated edit-level signals fail to incorporate the raw changeset metadata. Because the meta-classifier’s training is quick—only involving a small number of features (e.g., two probabilities and possibly a few extra summary stats)—it can be readily retrained if either the normal changeset model or the hyper-classifier is updated. This modular design preserves flexibility: improved changeset features or refinements in per-contribution classification can flow through to the meta-classifier, offering a stable approach for continually improving the vandalism detection pipeline.
-
-Overall, these three modules—the normal changeset model, the hyper-classifier, and the meta-classifier—address the challenge of session-level vandalism in complementary ways. The normal changeset model leverages direct session metadata, the hyper-classifier aggregates fine-grained suspicion scores derived from individual edits, and the meta-classifier seamlessly fuses their outputs. By stacking these elements, the system captures both the explicit signals of large bounding boxes or user patterns and the subtler patterns of aggregated suspicious edits. This multi-tier arrangement underscores the complexity of OSM vandalism, recognizing that malicious behavior can manifest at multiple levels of granularity and can be most effectively detected by unifying local and global signals within a changeset. 
-
-\section{Additional Components and Visual Analytics}
-\label{sec:additional_components_visual_analytics}
-
-Although the core pipeline—ranging from data ingestion and feature engineering to the main classifiers and ensemble modules—constitutes the principal mechanism for identifying vandalism, several supplementary components can further enrich both our understanding of model behavior and our ability to diagnose domain-specific issues. In particular, geographical evaluations and clustering-based analyses provide added insight into where the model succeeds, where it struggles, and how certain edits might be grouped or flagged. By integrating these processes, we can uncover biases or blind spots that might not be apparent from standard accuracy metrics alone and refine our detection pipeline in response to real-world complexities.
+This Monte Carlo–style approach clarifies how sensitive the classifier is to the particular composition of the test set. Narrow intervals suggest a robust, reliable model, while wider bounds may indicate volatility in classification performance. Refer to \autoref{tab:bootstrap_metrics} for an example of how these confidence intervals provide a nuanced perspective on vandalism detection reliability.
 
 \subsection{Geographical Evaluations}
 \label{sec:geographical_evaluations}
 
 OpenStreetMap (OSM) is a global resource, edited by contributors across diverse continents and countries. Because mapping practices, data availability, and local conventions can differ substantially from one region to another, a vandalism-detection model that excels in one geographical area may falter in another. To ensure broad applicability, we incorporate \emph{geographical evaluations}, systematically breaking down performance by region or continent.
 
-In practice, this entails tagging each data instance—whether a single edit or an entire changeset—with the relevant continent or country. During post-processing, the model’s predictions are grouped by these spatial labels, and metrics such as precision, recall, and F1-score are recalculated within each group. If certain areas experience high error rates (e.g., a lower recall in Africa or an inflated false-positive rate in Asia), it can signal that the model’s learned patterns do not generalize effectively to those contexts. Explanations might include insufficient training samples from that region, differences in local tagging conventions, or a higher prevalence of certain map features that the classifier has not learned to handle. 
+In practice, this entails tagging each data instance—whether a single edit or an entire changeset—with the relevant continent or country. During post-processing, the model’s predictions are grouped by these spatial labels, and metrics such as precision, recall, and F1-score are recalculated within each group. If certain areas experience high error rates (e.g., a lower recall in Africa or an inflated false-positive rate in Asia), it can signal that the model’s learned patterns do not generalize effectively to those contexts. Explanations might include insufficient training samples from that region, differences in local tagging conventions, or a higher prevalence of certain map features that the classifier has not learned to handle.
 
 Such an analysis also paves the way for region-specific remediation. If the classifier repeatedly underperforms in an underrepresented continent, it may be beneficial to supplement the training set with additional data from that area, refine certain features (e.g., bounding-box logic for roads in mountainous terrain), or even implement custom logic that triggers extra checks in regions with historically higher vandalism rates. Further, by mapping the model’s false positives and false negatives spatially, domain experts or OSM community volunteers can better prioritize manual validation and adopt targeted improvements. Although the final numeric results of these geographical evaluations appear later in the thesis, the methodological framework itself—spatial tagging and region-specific performance scoring—embeds seamlessly within the broader pipeline and provides crucial diagnostic feedback on regional biases or gaps in generalization.
 
-\subsection{Clustering}
-\label{sec:clustering}
+\paragraph{Summary of Evaluation.}
+By combining multifaceted evaluation metrics, and bootstrap-based statistical checks, the thesis ensures a comprehensive assessment of model generalization. In Chapter~\ref{chapter:model_performance}, we examine how these metrics translate into tangible results, highlighting precision-recall trade-offs, confusion matrices, and the stability revealed by bootstrapped confidence intervals, geographical evaluations.
 
-In addition to evaluating performance by continent or country, another way to gain insight into model strengths and weaknesses is through \emph{unsupervised clustering}. The essential idea is that if edits or changesets with similar geometric or spatial profiles tend to cluster together, one might discover groupings that either exhibit suspiciously homogeneous editing behaviors or reflect particular map features more prone to vandalism.
 
-A straightforward method, such as \emph{K-Means clustering}, can be applied to the centroid coordinates (\texttt{centroid\_x}, \texttt{centroid\_y}) of a contribution or changeset. By assigning each data point to one of several clusters (e.g., 100 clusters, depending on the dataset size and distribution), the pipeline creates a new categorical feature indicating cluster membership. This “\texttt{cluster\_label}” can subsequently become part of the feature space for training, allowing the main or hyper-classifier to learn region- or neighborhood-specific editing patterns more readily. For instance, a cluster might group dense urban regions in Western Europe where certain types of vandalism are more prevalent, while another cluster might correspond to coastal areas in Oceania with distinct cartographic challenges. Including these cluster assignments can thus refine the model’s contextual awareness.
-
-Beyond direct integration into the feature set, clustering can also serve as a diagnostic tool. By visualizing the resulting clusters—plotting them, for example, in terms of \texttt{centroid\_x} and \texttt{centroid\_y}—one can see whether suspicious edits indeed form distinct pockets or whether malicious behaviors are scattered at random. If a certain cluster predominantly overlaps with high-probability vandalism labels, it may indicate systematic vulnerabilities in that area or a mapping style (e.g., repeated coastline edits) that tends to attract destructive changes. Conversely, clusters that are a mix of benign and malicious edits might warrant deeper exploration into whether the feature engineering captures enough relevant signals to distinguish safe from unsafe modifications. By layering the cluster label onto the pipeline’s standard metrics, analysts can isolate whether certain clusters are more frequently misclassified, prompting region-specific or category-specific improvements in the model.
-
-Although not every deployment will require clustering, this optional step can yield significant benefits when dealing with the scale and diversity of OSM. It provides another lens into the data’s inherent structure, guiding more nuanced feature engineering and helping to localize potential problems. Coupled with the spatial tagging mentioned earlier, clustering offers a potent combination for debugging, adaptation, and the continuous refinement of vandalism-detection capabilities.
-
-\subsection{Summary and Method Integration}
+\section{Summary and Method Integration}
 \label{sec:method_summary_integration}
 
-In sum, the methodological framework presented across this chapter unites a range of strategies to detect vandalism at multiple levels of granularity and to validate performance under realistic conditions. The pipeline begins by loading and cleaning raw OSM data (Sections~\ref{sec:data_sources_preprocessing} and \ref{sec:feature_construction}), ensuring that each edit or changeset has consistent, well-defined features capturing geometry, user history, tags, and other relevant attributes. From there, the main classification approach utilizes a finely tuned XGBoost model (\S\ref{sec:core_classification_model}) to learn which patterns correlate with malicious edits—a process guided by appropriate split strategies, robust evaluation metrics, and bootstrapping for confidence intervals (\S\ref{sec:data_splitting_evaluation}).
+In sum, the methodological framework presented across this chapter unites a range of strategies to detect vandalism at multiple levels of granularity and to validate performance under realistic conditions. The pipeline begins by loading and cleaning raw OSM data (\S\ref{sec:data_sources_preprocessing} and \S\ref{sec:feature_construction}), ensuring that each edit or changeset has consistent, well-defined features capturing geometry, user history, tags, and other relevant attributes. From there, the main classification approach utilizes a finely tuned XGBoost model (\S\ref{sec:core_classification_model}) to learn which patterns correlate with malicious edits—a process guided by appropriate split strategies, robust evaluation metrics, and bootstrapping for confidence intervals.
 
-Because vandalism can appear at different scales, the pipeline extends beyond per-contribution classification to changeset-level modeling, leveraging both a normal changeset model (built on session metadata) and a hyper-classifier (aggregating probabilities derived from individual edits) (\S\ref{sec:changeset_level_detection}). Finally, a meta-classifier can fuse the outputs of these changeset-level classifiers, capitalizing on the complementary nature of session metadata and aggregated per-contribution signals.
+Because vandalism can appear at different scales, the pipeline extends beyond per-contribution classification to changeset-level modeling, leveraging both a normal changeset model (built on session metadata) and a hyper-classifier (aggregating probabilities derived from individual edits). Finally, a meta-classifier can fuse the outputs of these changeset-level classifiers, capitalizing on the complementary nature of session metadata and aggregated per-contribution signals (\S\ref{sec:changeset_level_detection}).
 
-The additional elements described in this section—namely, geographical evaluations (\S\ref{sec:geographical_evaluations}) and clustering (\S\ref{sec:clustering})—further enhance our capacity to diagnose and refine the system. By analyzing performance broken down by continent or country, the pipeline can highlight region-specific strengths or weaknesses, informing targeted improvements. Meanwhile, unsupervised clustering offers another axis for discovery, potentially surfacing new structure in the data, revealing pockets of suspicious edits, or guiding the creation of advanced spatial features.
+The additional element described in this section—namely, geographical evaluations (\S\ref{sec:geographical_evaluations})—further enhance our capacity to diagnose and refine the system. By analyzing performance broken down by continent or country, the pipeline can highlight region-specific strengths or weaknesses, informing targeted improvements.
 
-Taken together, these components illustrate a method that is both \emph{comprehensive}—covering local anomalies, aggregated session patterns, and large-scale evaluation—and \emph{flexible} in addressing multiple forms of vandalism. Figure~\ref{fig:method_integration_pipeline} could conceptually depict how each piece (data loading, parallel feature extraction, main classifier, hyper-classifier, meta-classifier, geographical breakdowns, clustering) fits within a unified framework. By supporting incremental improvements and modular expansion (e.g., swapping out or retraining the hyper-classifier if new data emerges), the pipeline strives to adapt to OSM’s dynamic, global ecosystem. The next chapters will present empirical results demonstrating the effectiveness of this approach, accompanied by deeper discussions of how these methodological choices impact performance in real-world scenarios.
+Taken together, these components illustrate a method that is both \emph{comprehensive}—covering local anomalies, aggregated session patterns, and large-scale evaluation—and \emph{flexible} in addressing multiple forms of vandalism. The next chapters will present empirical results demonstrating the effectiveness of this approach, accompanied by deeper discussions of how these methodological choices impact performance in real-world scenarios.
 
-\begin{figure}[htbp]
+
+%---------------------------------------------
+% Chapter 4: Model Performance
+%---------------------------------------------
+\chapter{Model Performance}
+\label{chapter:model_performance}
+
+This chapter presents a detailed evaluation of the machine learning models developed for vandalism detection in OpenStreetMap (OSM). Both contribution-level and changeset-level models are analyzed, focusing on their ability to generalize across diverse data splits, the robustness of their predictions, and the role of user and OSM element features (abbreviated as U, OE features) in enhancing detection capabilities.
+
+\section{Contribution-Level Model Performance}
+\label{sec:contribution_model_perf}
+
+The contribution-level model operates at the granularity of individual edits, identifying malicious modifications before they aggregate into broader upload sessions. To comprehensively assess this model, we tested three distinct data split strategies:
+\begin{itemize}
+    \item \textbf{Random Split}: Random partitioning into training, validation, and test sets, using 42 as the random seed. The sizes were configured as \texttt{TEST\_SIZE} = 150,000, \texttt{VAL\_SIZE} = 50,000, and a remaining large training set.
+    \item \textbf{Geographic Split (by Continent)}: Training on specified regions (Oceania, Europe, South America), validating on others (Africa, Antarctica, Other), and testing on North America/Asia. The split key was \texttt{'continent'}, reflecting real-world geographic variability.
+    \item \textbf{Temporal Split}: Training on 2018--2019 data, validating on 2015, and testing on 2017 (\texttt{TRAIN\_YEARS}, \texttt{VAL\_YEARS}, \texttt{TEST\_YEARS}), thus evaluating how well the model generalizes to later edits.
+\end{itemize}
+
+The following sections compare the model’s performance under these scenarios, with and without U, OE features.
+
+\subsection{Model Performance Across Split Types}
+\label{sec:split_performance}
+
+Table~\ref{tab:vandalism_detection_final_clean} summarizes the performance metrics across random, geographic, and temporal splits. These metrics include \emph{Accuracy}, \emph{Precision}, \emph{Recall}, \emph{F1 score}, \emph{AUC-PR}, and \emph{ROC-AUC}. Each row indicates whether user and OSM element features are enabled.
+
+\begin{table}[h!]
     \centering
-    % Example placeholder figure
-    \fbox{\includegraphics[width=0.8\textwidth]{method_integration_pipeline.png}}
-    \caption{A conceptual overview of the entire pipeline, from data collection and feature engineering to training and evaluating multiple classifiers, with optional components like clustering and geographical breakdowns for in-depth analysis.}
-    \label{fig:method_integration_pipeline}
+    \renewcommand{\arraystretch}{2.5} % Increase row spacing for tables
+    \captionsetup{font=small, labelfont=bf} % Caption settings
+    \caption{Vandalism detection performance for different data split types regarding accuracy, precision, recall, F1 score, AUC-PR, and ROC-AUC [\%]. \vspace{0.3cm} \newline Note: U, OE features: User and OSM Element features}
+    \vspace{1cm}
+    \label{tab:vandalism_detection_final_clean}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{
+        |l||l| ccccc c|
+    }
+    \hline
+    \textbf{Data split type} & \textbf{Model type} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1 score} & \textbf{AUC-PR Score} & \textbf{ROC-AUC} \\
+    \hline\hline
+    \multirow{2}{*}{\textbf{Random Split}}
+     & With U, OE features & \textbf{0.9931} & \textbf{0.9673} & \textbf{0.9994} & \textbf{0.9831} & \textbf{0.99969} & \textbf{0.99991} \\
+     & Without U, OE features & 0.9742 & 0.8868 & 0.9986 & 0.9394 & 0.99742 & 0.99936 \\
+    \cdashline{1-8}[0.8pt/2pt]
+    \multirow{2}{*}{\textbf{Geo Split}}
+     & With U, OE features & \textbf{0.8063} & \textbf{0.7818} & 0.7706 & \textbf{0.7762} & \textbf{0.87210} & \textbf{0.91040} \\
+     & Without U, OE features & 0.5702 & 0.5155 & \textbf{0.9884} & 0.6776 & 0.61682 & 0.63373 \\
+    \cdashline{1-8}[0.8pt/2pt]
+    \multirow{2}{*}{\textbf{Temporal Split}}
+     & With U, OE features & \textbf{0.7213} & \textbf{0.7460} & \textbf{0.8379} & \textbf{0.7893} & \textbf{0.85336} & 0.79453 \\
+     & Without U, OE features & 0.7093 & 0.7106 & 0.7968 & 0.7512 & 0.83770 & \textbf{0.80316} \\
+     \hline
+    \end{tabular}
+    }
+\end{table}
+
+\paragraph{Random Split:}
+This configuration treats the entire dataset uniformly, distributing samples randomly into train, validation, and test partitions. With U, OE features, the model achieves high accuracy (99.31\%) and AUC-PR (99.969\%), reflecting a robust ability to identify vandalism. Recall is notably strong at 99.94\%, ensuring minimal missed vandalism. When these features are disabled, accuracy decreases to 97.42\%, indicating that user and OSM element attributes are critical for capturing nuanced vandalism behaviors.
+
+\paragraph{Geographical Split:}
+In this setup, training occurs on some continents while validation and testing occur on distinct regions. While the with-U, OE model attains a decent accuracy of 80.63\%, it underscores the challenges of regional variability, especially compared to the random split. The performance drop when excluding U, OE features (accuracy plunging to 57.02\%) suggests that user behavior and local OSM element patterns are pivotal for handling cross-region data differences.
+
+\paragraph{Temporal Split:}
+Here, older data (e.g., 2018--2019) trains the model, while newer edits (e.g., 2017 or other designated test year) form the test set. Accuracy (72.13\%) and recall (83.79\%) remain decent with U, OE features, highlighting the model’s ability to adapt over time, though not as strongly as under random conditions. Removing U, OE features diminishes performance further, revealing the difficulty of extrapolating older user behavior into newer vandalism patterns without comprehensive historical signals.
+
+\paragraph{Observations and Significance:}
+Across all split types, user and OSM element features consistently bolster metrics—most strikingly in geographical splits. Varying data distributions (regional or temporal) amplify the model’s need for contextual signals, underscoring user-level editing traits and OSM geometry changes as essential components in detecting and understanding vandalism. These findings guide subsequent steps in evaluating our best model configurations in greater detail.
+
+\subsection{Visualizing Metrics for the Best Model}
+\label{sec:visualizing_metrics}
+
+This subsection focuses on the best-performing configuration—namely, the \emph{random split} combined with user and OSM element (U, OE) features. By presenting and interpreting key visualizations, we aim to provide deeper insights into the model’s classification strengths and limitations.
+
+\paragraph{Confusion Matrix.}
+Figure~\ref{fig:confusion_matrix} shows the distribution of true positives (TP), true negatives (TN), false positives (FP), and false negatives (FN) for vandalism detection. Numerically, the model correctly identifies the majority of non-vandalism contributions (TN) and vandalism contributions (TP), while maintaining a minimal fraction of misclassifications (FP and FN). This balance is critical for OSM workflows, as excessive FP can overwhelm human reviewers, while excessive FN risks undetected malicious edits.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{confusion_matrix.png}
+    \caption{Confusion matrix for the best-performing model (random split with U, OE features).}
+    \label{fig:confusion_matrix}
 \end{figure}
+
+\paragraph{Precision-Recall Curve.}
+In vandalism detection, vandalism contributions typically form the minority class. Figure~\ref{fig:precision_recall} plots precision versus recall across varying classification thresholds, highlighting how effectively the model minimizes false positives (maintains high precision) while capturing the majority of true vandalism edits (high recall). The near-ideal curve indicates that precision remains high across a wide range of recall levels—a crucial property when balancing the cost of manual review versus missed vandalism incidents.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{precision_recall_curve.png}
+    \caption{Precision-recall curve for the best-performing contribution-level model.}
+    \label{fig:precision_recall}
+\end{figure}
+
+\paragraph{ROC Curve.}
+The receiver operating characteristic (ROC) curve in Figure~\ref{fig:roc_curve} illustrates the relationship between the true positive rate (TPR) and false positive rate (FPR). This best model closely hugs the top-left corner, yielding an AUC near 1.0—a strong indicator that the model consistently distinguishes vandalism from legitimate contributions without inflating FPR. Such performance is pivotal for OSM’s large-scale environment, where even a small misclassification rate can translate into numerous erroneous flags or undetected vandal edits.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{roc_curve.png}
+    \caption{ROC curve for the best-performing contribution-level model.}
+    \label{fig:roc_curve}
+\end{figure}
+
+\paragraph{Overall Observations.}
+These visualizations reinforce the conclusions drawn from the quantitative metrics:
+\begin{itemize}
+    \item \textbf{Robust Classification}: The confusion matrix reveals very few misclassifications, implying minimal risk of undetected vandalism or unnecessary alerts.
+    \item \textbf{Minority Class Excellence}: High precision-recall performance confirms that the model excels at flagging vandalism without overwhelming moderators with false positives.
+    \item \textbf{Stable Threshold Behavior}: Both PR and ROC curves remain favorable across a wide range of thresholds, indicating stability and flexibility in real-world scenarios where decision boundaries may shift.
+\end{itemize}
+
+These findings underscore the importance of incorporating user and OSM element features into the detection pipeline, as they substantially enhance the model’s ability to capture subtle vandalism signals. The next section explores the robustness of these performance metrics through bootstrapping, providing confidence intervals to gauge variance in model predictions.
+
+\subsection{Bootstrap Results for the Best Model}
+\label{sec:bootstrap_best_model}
+
+While the evaluation metrics in Section~\ref{sec:visualizing_metrics} highlight the strong performance of the model on a fixed test set, it is equally important to assess the \emph{stability} of these metrics under repeated sampling. Bootstrapping provides a robust mechanism for estimating variance and constructing confidence intervals, thereby revealing how sensitive the model is to variations in the test data.
+
+\paragraph{Experimental Setup.}
+The bootstrapping procedure involved drawing 1{,}000 random samples (with replacement) from the test set. Each sample maintained the same number of observations as the original test set, and the model’s metrics (Accuracy, Precision, Recall, F1-score, AUC-ROC, and AUC-PR) were computed for each iteration. Table~\ref{tab:bootstrap_metrics} presents the aggregated statistics over the 1{,}000 bootstrap iterations, providing insight into the mean, standard deviation, and 95\% confidence intervals for each metric.
+
+\begin{table}[H]
+    \centering
+    \caption{Bootstrap Metrics (1,000 Iterations) for the Best Contribution-Level Model (Random Split with U/O Features).}
+    \vspace{1cm}
+    \label{tab:bootstrap_metrics}
+    \renewcommand{\arraystretch}{1.3}
+    {%
+    \begin{tabular}{|l||r r r r|}
+    \hline
+    \textbf{Metric} & \textbf{Mean} & \textbf{Std Dev} & \textbf{95\% CI Lower} & \textbf{95\% CI Upper} \\
+    \hline\hline
+    Accuracy  & 0.99313 & 0.00022 & 0.99270 & 0.99357 \\
+    \cdashline{1-5}[0.8pt/2pt]
+    Precision & 0.96733 & 0.00105 & 0.96527 & 0.96941 \\
+    \cdashline{1-5}[0.8pt/2pt]
+    Recall    & 0.99943 & 0.00014 & 0.99914 & 0.99967 \\
+    \cdashline{1-5}[0.8pt/2pt]
+    F1-Score  & 0.98312 & 0.00054 & 0.98203 & 0.98418 \\
+    \cdashline{1-5}[0.8pt/2pt]
+    AUC-ROC   & 0.99992 & 0.00001 & 0.99989 & 0.99994 \\
+    \cdashline{1-5}[0.8pt/2pt]
+    AUC-PR    & 0.99970 & 0.00003 & 0.99963 & 0.99976 \\
+    \hline
+    \end{tabular}%
+    }
+\end{table}
+
+
+\paragraph{Interpretation of Bootstrap Statistics.}
+These bootstrap-derived statistics offer several key insights into model reliability:
+
+\begin{itemize}
+    \item \textbf{Consistency of Accuracy}: The mean accuracy of 0.99313, coupled with a low standard deviation (0.00022), suggests the model consistently maintains correct classification above 99\% of the time.
+    \item \textbf{Precision Stability}: A mean precision of 0.96733 with tight confidence bounds (0.96527--0.96941) implies minimal fluctuation in false positives. This stability is crucial for real-world usage, where false alarms can burden moderators.
+    \item \textbf{High Recall across Samples}: Recall remains exceptionally high at 0.99943, indicating that the model almost never misses vandalism, regardless of which subset of the test set is sampled.
+    \item \textbf{Robust F1-Score}: The F1-score hovers around 0.983, reflecting a strong balance between precision and recall.
+    \item \textbf{Near-Perfect AUC Metrics}: Both AUC-ROC (0.99992) and AUC-PR (0.99970) underscore the model’s powerful discriminative capabilities, with confidence intervals confined to a very narrow range.
+\end{itemize}
+
+\noindent The bootstrap analysis confirms that the high performance reported in Section~\ref{sec:visualizing_metrics} is not an artifact of a particular test split. Rather, the model maintains robust accuracy and class-specific metrics across repeated subsampling. This consistency highlights the effectiveness of incorporating user and OSM element features, reinforcing the conclusion that these feature sets are integral to robust vandalism detection. It also suggests that the model can be trusted to deliver stable results in production-like scenarios, where incoming edits may slightly differ from those observed in the test set.
+
+\subsection{Geographical Evaluation Results for the Best Model}
+\label{sec:geo_eval_best_model}
+
+This subsection presents a continent-wise evaluation of our best-performing model, illustrating how well it adapts to regional variations in OpenStreetMap (OSM) vandalism. Table~\ref{tab:geo_eval_continents} summarizes key metrics (accuracy, precision, recall, F1-score, AUC-ROC, AUC-PR) across eight continent categories in the dataset, revealing consistently high performance with minor discrepancies attributed to data distribution and sample sizes.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Continent-Wise Metrics for the Best Model}
+    \label{tab:geo_eval_metrics}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{lrrrrr}
+    \toprule
+    \textbf{Continent} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{AUC-ROC} \\
+    \midrule
+    Africa         & 0.9973 & 0.9861 & 0.9998 & 0.9929 & 0.99999 \\
+    Antarctica     & 1.0000 & 1.0000 & 1.0000 & 1.0000 & 1.00000 \\
+    Asia           & 0.9927 & 0.9474 & 0.9990 & 0.9725 & 0.99993 \\
+    Europe         & 0.9918 & 0.9601 & 0.9989 & 0.9791 & 0.99987 \\
+    North America  & 0.9923 & 0.9623 & 1.0000 & 0.9808 & 0.99987 \\
+    Oceania        & 0.9939 & 0.9835 & 0.9992 & 0.9913 & 0.99987 \\
+    Other          & 0.9968 & 0.9904 & 1.0000 & 0.9952 & 0.99999 \\
+    South America  & 0.9891 & 0.9672 & 0.9996 & 0.9831 & 0.99994 \\
+    \bottomrule
+    \end{tabular}
+    }
+\end{table}
+
+
+\noindent
+\textbf{Observations and Insights.}
+\begin{itemize}
+    \item \textbf{Overall High Accuracy Across Continents:}
+    Most regions display above 98\% accuracy, underscoring the model’s robust generalization to different geographic contexts. Even South America, with the lowest accuracy of 98.91\%, remains close to the top end.
+
+    \item \textbf{Near-Perfect Results in Antarctica:}
+    Antarctica has only 23 samples, all classified correctly, yielding 100\% metrics. This perfect performance partly reflects the small sample size, making it easier to achieve flawless classification.
+
+    \item \textbf{Minor Variation in Precision and Recall:}
+    Precision hovers mostly above 96\%—indicating few false positives—and recall consistently nears 100\% in most continents, signifying that vandalism edits are rarely missed. Africa, for instance, shows a near-perfect recall of 0.9998, illustrating minimal undetected vandalism in that region’s dataset.
+
+    \item \textbf{High AUC-ROC and AUC-PR Values:}
+    All regions achieve AUC-ROC scores above 0.9998, revealing superior discrimination between vandalism and non-vandalism edits. In practice, this means the model selects a threshold that balances precision and recall effectively across diverse geographies.
+
+    \item \textbf{Potential Influences of Data Distribution:}
+    Africa, Asia, and Europe comprise large numbers of edits, offering the model abundant training examples. Regions like Antarctica or Oceania have fewer edits, which can lead to either perfect performance (e.g., Antarctica) or minor classification errors if the training distribution does not fully capture these areas’ editing patterns.
+
+\end{itemize}
+
+\noindent
+These results validate the model’s capacity to handle global OSM edits, maintaining consistently high performance despite potential continental differences in editing style, user demographics, or map features. Although local factors (e.g., region-specific vandalism forms) could still pose challenges, the results suggest that the best model addresses the majority of vandalism scenarios around the world.
+
+The next subsection (\S\ref{sec:importance_user_features}) delves deeper into why user and OSM element features bolster performance, comparing metrics between models with and without these features to illustrate their impact in a more nuanced manner.
+
+\subsection{Importance of User and OSM Element Features}
+\label{sec:importance_user_features}
+
+User and OSM element (\textbf{U/O}) features have a pronounced effect on the model’s ability to distinguish malicious edits from legitimate contributions. This subsection provides both quantitative and qualitative insights into why these features matter, referencing comparative performance metrics, feature importance rankings, and domain-specific rationales.
+
+\paragraph{Comparative Performance.}
+Figure~\ref{fig:bar_graph_comparison} highlights how metrics such as precision, recall, F1-score, AUC-PR, and AUC-ROC increase significantly when U/O features are enabled compared to a baseline model that omits them. For instance, precision rises sharply due to the model’s enhanced capacity to identify truly vandalistic edits, minimizing spurious alerts. Similarly, recall improves, capturing more actual vandalism without sacrificing precision.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{bar_graph_comparision_pcuof_vs_nuof.png}
+    \caption{Metric comparison for models with and without user and OSM element (U/O) features, demonstrating clear performance gains when U/O features are included.}
+    \label{fig:bar_graph_comparison}
+\end{figure}
+
+\paragraph{Feature Importance.}
+Beyond raw metrics, the XGBoost framework enables interpretability via feature importance scores. Figure~\ref{fig:feature_importance} shows the top 20 features ranked by total gain, revealing a dominant presence of U/O features. High-ranking user-centric attributes, such as \texttt{user\_n\_changesets\_cum} or \texttt{user\_previous\_edit\_timestamp}, highlight how user histories and editing patterns offer critical clues. OSM element attributes, like \texttt{n\_edits} (cumulative edits on an object) or \texttt{element\_previous\_edit\_timestamp}, capture the recency and frequency of map-object changes, effectively flagging suspicious edit bursts or back-and-forth modifications.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{feature_importance.png}
+    \caption{Top 20 features by total gain in the XGBoost model. U/O features dominate the upper ranks, underscoring their value in vandalism detection.}
+    \label{fig:feature_importance}
+\end{figure}
+
+\subsubsection{Comparative Analysis of Geo-Split Models}
+\label{sec:geo_split_analysis}
+
+To evaluate the importance of user and OSM element features, an experiment was conducted comparing two models: one with user and OSM element features and one without. The analysis leveraged geo-splits by training, validating, and testing the models on geographically distinct regions such as Asia, Africa, Europe, Oceania, North America, South America, Antarctica, and Other. The bootstrap metrics were collected across multiple valid combinations of train, test, and validation regions, and the results are presented in Figure~\ref{fig:geo_bootstrap_comparison}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{geo_boot_strap_comparison.png}
+    \caption{Comparison of Bootstrap Performance Metrics (Geo-Split Models). The box plots compare the performance of models trained with and without user and OSM features across accuracy, precision, recall, and F1-score.}
+    \label{fig:geo_bootstrap_comparison}
+\end{figure}
+
+From the box plot shown in Figure~\ref{fig:geo_bootstrap_comparison}, the following observations can be made regarding the performance of the two models:
+
+\textbf{1. Accuracy:} The model with user and OSM features demonstrates a higher median accuracy, with most values clustering around 0.8. In contrast, the model without these features has a lower median accuracy, centered around 0.65. While the interquartile range is narrower for the model without features, the overall performance is less consistent and inferior.
+
+\textbf{2. Precision:} The feature-rich model exhibits a higher median precision, indicating better performance in identifying relevant results. The precision for the model without user and OSM features is significantly lower, with a narrower spread, suggesting limited relevance detection.
+
+\textbf{3. Recall:} The model with user and OSM features has a slightly lower median recall compared to its other metrics, but it still outperforms the feature-less model. The feature-less model shows a slightly higher recall but with significantly larger variability, implying inconsistent performance across different geo-splits.
+
+\textbf{4. F1 Score:} The model with user and OSM features maintains a higher median F1 score, reflecting a better balance between precision and recall. The feature-less model has a noticeably lower F1 score, indicating a suboptimal trade-off between these metrics.
+
+\textbf{Overall Insights:}
+The results highlight the clear advantage of incorporating user and OSM element features into the model. These features improve performance across all metrics, with the most significant gains observed in precision and accuracy. While there is some overlap in recall performance, the feature-rich model remains more consistent. This analysis underscores the importance of user behavior and OSM metadata in capturing spatial and contextual nuances, ultimately enhancing the model's ability to detect vandalism effectively.
+
+
+
+\paragraph{Discussion and Domain Rationale.}
+The synergy between user and element features is particularly evident in complex vandalism scenarios. For example:
+\begin{enumerate}
+    \item \textbf{User Histories and Behavior Patterns}:
+    Attributes such as \texttt{user\_n\_changesets\_cum} and \texttt{user\_n\_edit\_days\_cum} reveal long-term behavioral trends. A contributor who shows abnormally high activity in a short span or a history of contentious edits is more likely to commit vandalism. Thus, user-based metrics add a layer of personalized detection that purely content-based features might miss.
+
+    \item \textbf{OSM Element Details}:
+    Indicators like \texttt{n\_edits} for a specific road or building denote how frequently the object has been changed. A series of rapid, repetitive edits on the same element may signal disputes, edit wars, or back-and-forth vandalism. By tying suspicious activity to the element level, the model pinpoints hot spots in the map.
+
+    \item \textbf{Spatial/Temporal Contexts}:
+    Combining user and element signals with geometry and timestamps further refines predictions. For instance, a user who rarely edits outside a specific region but suddenly modifies data in a distant locale may trigger a higher vandalism likelihood. Similarly, temporal features (\texttt{user\_time\_since\_previous\_edit}) help detect bursts of edits that deviate from normal user patterns.
+
+    \item \textbf{Robustness Across Splits}:
+    As evidenced in Table~\ref{tab:vandalism_detection_final_clean}, models with U/O features exhibit consistent gains under random, geographic, and temporal splits. By capturing both who is editing and what is being edited, the model generalizes better to unseen regions or future data.
+\end{enumerate}
+
+\noindent
+These observations explain the metrics gap between models with and without U/O features. In essence, user features highlight contributor credibility and patterns, while element features enable a fine-grained view of object-based anomalies. Their combined effect sustains high precision and recall across various data splits, rendering the detection pipeline significantly more robust against the diverse forms of vandalism encountered in OSM.
+
+
+\section{Changeset-Level Model Performance}
+\label{sec:changeset_level_performance}
+
+This section evaluates three approaches for vandalism detection at the \emph{changeset} level:
+\begin{enumerate*}
+    \item A \textbf{baseline XGBoost model} (trained on changeset-level features \S\ref{sec:features_changeset}),
+    \item The \textbf{hyper-classifier} (incorporating aggregated per-contribution signals), and
+    \item The \textbf{meta-classifier} (fusing outputs from the first two models).
+\end{enumerate*}
+
+\vspace{0.5em}
+\noindent As discussed in Section~\ref{sec:changeset_level_detection}, each model addresses session-wide vandalism from a different angle; the hyper-classifier leverages micro-level signals by aggregating suspicious edits, whereas the baseline model focuses on direct changeset attributes, and the meta-classifier attempts to unify both.
+
+
+\subsection{Overview of Model Results}
+
+Table~\ref{tab:changeset_comparison} summarizes the performance of the three models in terms of accuracy, precision, recall, F1-score, and AUC-ROC. Notably, while the baseline model offers moderate performance, the hyper-classifier yields significantly higher metrics. The meta-classifier, in this dataset, does not surpass the hyper-classifier, indicating that aggregating contribution-level probabilities already captures most session-level signals.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Comparison of Changeset-Level Models}
+    \label{tab:changeset_comparison}
+    \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{AUC-ROC}\\
+    \midrule
+    Baseline XGBoost (Changeset) & 0.8715 & 0.8713 & 0.8773 & 0.8743 & 0.9440 \\
+    Hyper-Classifier             & 0.9761 & 0.9806 & 0.9724 & 0.9765 & 0.9962 \\
+    Meta-Classifier              & 0.9744 & 0.9758 & 0.9739 & 0.9749 & 0.9961 \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\noindent
+\textbf{Baseline XGBoost (Changeset):}
+Attains approximately 87\% accuracy and F1-score, highlighting its competence in identifying large-scale vandalism from high-level changeset features. However, an AUC-ROC of 0.9440 indicates it may struggle to cleanly separate malicious sessions from benign ones, especially when vandalism is subtle or distributed across numerous edits.
+
+\noindent
+\textbf{Hyper-Classifier:}
+Aggregating suspicious-edit probabilities into changeset-level metrics drastically improves performance, reaching roughly 97.61\% accuracy with precision of 0.9806 and recall of 0.9724. This leap underscores the value of micro-level insights—if many edits in a session appear suspicious, the entire changeset is likely vandalistic. With an AUC-ROC of 0.9962, it convincingly differentiates harmful sessions from standard editing behavior.
+
+\noindent
+\textbf{Meta-Classifier:}
+By merging the baseline changeset model’s probability with the hyper-classifier’s output, one might expect further gains. Here, however, the meta-classifier (0.9744 accuracy, 0.9961 AUC-ROC) does not exceed the hyper-classifier alone. This plateau suggests two possible factors:
+\begin{itemize}
+    \item The aggregated per-edit probabilities capture the majority of relevant information, leaving minimal unexplained variance for changeset-level features to exploit.
+    \item Additional hyperparameter tuning for the meta-classifier (e.g., adjusting regularization, tree depth) may be needed to unlock any residual improvements.
+\end{itemize}
+
+\subsection{Discussion and Observations}
+
+\begin{itemize}
+    \item \textbf{Value of Per-Edit Aggregation}:
+    The hyper-classifier’s strong performance highlights that modeling the distribution of suspicious edits within a changeset can substantially bolster detection accuracy. Even if single edits do not appear glaringly malicious, their collective pattern can signal high-risk sessions.
+    \item \textbf{Meta-Classifier Plateau}:
+    Although fusing both perspectives appears intuitively beneficial, our results indicate only marginal or no improvement over the hyper-classifier’s already-high performance. This outcome likely reflects the hyper-classifier’s ability to integrate most session-level cues implicitly, as well as the need for more extensive tuning of the meta-classifier to capitalize on potential synergies.
+    \item \textbf{Real-World Implications}:
+    For applications prioritizing precision and recall at the changeset level, adopting the hyper-classifier pipeline promises significant gains. The meta-classifier framework remains valuable if additional session features or refined training procedures reveal further performance potential.
+\end{itemize}
+
+Overall, the hyper-classifier stands out as the most effective changeset-level model in these experiments, demonstrating that aggregated per-contribution probabilities can reveal large-scale or distributed vandalism patterns. The meta-classifier’s performance indicates no immediate gains beyond the hyper-classifier, yet future iterations involving more extensive hyperparameter optimization or enriched changeset attributes may unlock further improvements.
+
+
+%-------------------------------------------------
+% CHAPTER: Application: Vandalism in OpenStreetMap
+%-------------------------------------------------
+
+\chapter{Application: Vandalism in OpenStreetMap} \label{chapter:application}
+
+This chapter presents an analysis of the application of the proposed vandalism detection model on over two years of real-time OpenStreetMap (OSM) contributions (from January 2022 to July 2024). Using the prediction results, we evaluate temporal trends, highlight significant deviations, and discuss the implications for identifying and mitigating vandalism in OSM contributions.
+
+\section{Overview of Vandalism Predictions}
+The analysis covers monthly contributions and corresponding vandalism predictions over the study period. Predictions are based on the model's application to real-time datasets, enabling continuous monitoring of contributions for potential vandalism. Figures \ref{fig:vandalism_bar_graph} and \ref{fig:vandalism_line_graph} illustrate these trends using bar and line graphs, respectively.
+
+\section{Key Observations and Analysis}
+
+\subsection{General Trends}
+Over the study period, OSM saw significant variation in monthly contributions, ranging from approximately \textbf{19 million} (July 2024) to \textbf{39 million} (August 2023). Vandalism counts exhibited similar variability, with predictions ranging from around \textbf{46,000} (December 2023) to a peak of over \textbf{1.3 million} (August 2023). These figures highlight a mix of stable months and periods of sudden spikes in vandalism, as seen in Figures \ref{fig:vandalism_bar_graph} and \ref{fig:vandalism_line_graph}.
+
+\subsection{Deviations and Notable Outliers}
+\textbf{August 2023 Spike:} The model flagged a dramatic increase in vandalism predictions, reaching over \textbf{1.3 million} entries, far exceeding the monthly average (Figure \ref{fig:vandalism_bar_graph}). This spike may be attributed to coordinated malicious activities or errors in contribution uploads. Notably, contributions also peaked at 39 million during this month, suggesting heightened activity.
+
+\textbf{July 2023 Increase:} Another substantial increase in vandalism predictions (over \textbf{207,000} entries) aligns with a high number of contributions for that month (\textbf{24.7 million}). While less extreme than August, this warrants further investigation to determine whether user behavior changes or systemic factors were responsible.
+
+\textbf{Temporal Stability in Early 2024:} From January to July 2024, vandalism counts appeared relatively stable, ranging between \textbf{49,000 and 72,000} predictions per month. This stability may reflect improved moderation or reduced malicious activity during this period.
+
+\subsection{Seasonal Variability}
+Seasonal patterns suggest that vandalism may fluctuate based on user activity trends. For instance, higher vandalism predictions often coincided with months of elevated contributions (Figure \ref{fig:vandalism_line_graph}), while periods like late 2022 and early 2023 exhibited comparatively lower vandalism rates.
+
+\section{Implications for Real-Time Monitoring}
+The insights gained from these predictions underscore the importance of implementing robust, scalable vandalism detection mechanisms in OSM. Key takeaways include:
+\begin{itemize}
+    \item \textbf{Spike Detection:} The ability to detect significant deviations (e.g., August 2023) provides an opportunity to investigate and address potential systemic issues or targeted vandalism campaigns.
+    \item \textbf{Trend Analysis:} Regular monitoring of vandalism trends can help prioritize regions or periods for manual review by moderators, improving the overall quality of OSM contributions.
+    \item \textbf{Scalability of the Model:} Despite the variability in contributions and vandalism counts, the model effectively scaled to handle datasets of varying sizes, demonstrating its practicality for large-scale applications.
+\end{itemize}
+
+\section{Visualizing Results}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{vandalism_predictions_2022_to_2024_bar_graph.png}
+    \caption{Monthly vandalism predictions in OSM (2022–2024) – Bar Graph. The spike in August 2023 is evident, indicating a significant deviation from regular vandalism patterns.}
+    \label{fig:vandalism_bar_graph}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{vandalism_predictions_2022_to_2024_line_graph.png}
+    \caption{Monthly vandalism predictions in OSM (2022–2024) – Line Graph. Seasonal patterns and notable spikes, such as in August 2023, are highlighted.}
+    \label{fig:vandalism_line_graph}
+\end{figure}
+
+\subsection{Heatmap Visualization}
+To further understand the spatial distribution of vandalism, a heatmap was generated showing vandalism predictions across the world. The heatmap is available for interactive exploration, allowing users to visualize patterns for each month from January 2022 to July 2024. The static image in Figure \ref{fig:vandalism_heatmap_aug_2023} shows the distribution of vandalism for August 2023, where the spike in predictions aligns with regions experiencing heightened activity.
+
+\noindent\textbf{Interactive Visualization:} The full heatmap can be accessed at the following link: \url{https://your-interactive-heatmap-link.com}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{vandalism_heat_map_aug_2023.png}
+    \caption{Heatmap of vandalism predictions for August 2023. The spike in vandalism activity is prominently visible across highly active regions.}
+    \label{fig:vandalism_heatmap_aug_2023}
+\end{figure}
+
+
+\section{Summary}
+The application of the vandalism detection model to over two years of real-time data illustrates its effectiveness in identifying malicious contributions and its adaptability to dynamic OSM editing trends. While general predictions align with expected patterns, significant deviations (e.g., August 2023) highlight the need for continued refinement of detection systems and collaborative efforts to mitigate vandalism in OSM.
+
+%---------------------------------------------
+% Chapter 5: Discussions and Future Work
+%---------------------------------------------
+\chapter{Discussions and Future Work}
+\label{chapter:discussions_and_future_work}
+
+This chapter reflects on the key insights gained from implementing and evaluating the proposed vandalism detection framework, addressing the objectives and research questions put forth in Chapter~\ref{introduction}. In particular, it discusses the model’s practical integration into real-world OSM workflows, the importance of user and OSM element features, and the feasibility of scaling the approach to high-volume data streams. The chapter concludes with an outline of potential directions for future work to bolster the robustness and adaptability of this system.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Achieving Robust Detection in Real-World Settings}
+A primary ambition of this thesis was to train and validate the model on a moderately sized dataset (approximately 0.6 million labeled contributions) while ensuring that it generalizes effectively to real-time OSM edits. Preliminary real-world tests indicate that around 30 million new contributions may arrive monthly, underscoring the necessity of a pipeline that not only excels in predictive accuracy but also maintains rapid inference times.
+\begin{itemize}
+    \item \textbf{Prediction as a New Labeled Dataset:} The high precision and recall observed in Chapter~\ref{model_performance} suggest that model outputs can serve as a high-confidence labeled set, marking suspicious edits for manual review. This iterative process can continually refine the training corpus, thus improving the model over time.
+    \item \textbf{Integration at HeiGIT:} Given the pipeline’s chunk-based architecture and proven scalability, it can be seamlessly linked to HeiGIT’s existing OSM data stream. The inference process (roughly 1.5 hours for monthly batch files) fits within the operational window of many data ingestion workflows, enabling near real-time identification of vandalism in 5-minute snapshots.
+    \item \textbf{Inference Efficiency:} Despite the comprehensive set of features, including user histories and OSM element metadata, the final XGBoost classifier delivers swift predictions. This efficiency is pivotal in continuously monitoring OSM’s stream of edits, ensuring that flagged cases reach reviewers swiftly.
+\end{itemize}
+
+\subsection{Importance of User and OSM Element Features}
+Chapters~\ref{model_performance} and \ref{background} jointly revealed that user-focused attributes (e.g., cumulative changesets, edit frequencies) and OSM element features (e.g., edit history on specific objects) significantly elevate the model’s capacity to spot vandalism. Empirical evidence shows:
+\begin{itemize}
+    \item \textbf{Better Geographical and Temporal Generalization:} Models enriched with user and element features performed more consistently under geographic (\S\ref{sec:geo_split_contrib}) and temporal splits (\S\ref{sec:temporal_split_contrib}), indicating that these signals capture enduring behavioral and object-based patterns less dependent on region or time.
+    \item \textbf{Heightened Precision and Recall:} The metrics in Table~\ref{tab:vandalism_detection_final_clean} confirm large gains in precision and recall with these features enabled, particularly in high-variance settings. The boosted precision lowers false alarms, while higher recall ensures fewer malicious edits evade detection.
+\end{itemize}
+By integrating insights about who is editing and what is being edited, the model robustly identifies anomalous behaviors, even when novel forms of vandalism arise.
+
+\subsection{Outcome Relative to Thesis Objectives and Research Questions}
+The objectives introduced in Section~1.4 aimed to build a feature-rich, scalable ML pipeline capable of detecting vandalism with high accuracy while remaining computationally efficient. Key achievements include:
+\begin{itemize}
+    \item \textbf{Comprehensive Feature Engineering:} Spatial, temporal, user, and textual attributes were combined to capture the diversity of OSM data. Chapters~\ref{background} and \ref{model_performance} detailed how these features bolster accuracy in different split configurations.
+    \item \textbf{Scalable ML Pipeline:} Chunk-based data loading and parallelized feature extraction allow the system to process millions of edits per month with minimal overhead. Inference times of roughly 1.5 hours for monthly data or real-time detection within a 5-minute window confirm operational viability.
+    \item \textbf{High Predictive Performance:} The best XGBoost-based model attained precision and recall above 95\% in random splits, with robust performance in geographic and temporal splits as well. This aligns with the goal of minimizing false positives while maintaining strong detection of genuine vandalism.
+    \item \textbf{User Behavior and Contextual Cues:} User-history features proved crucial for capturing recidivist or abrupt editing behaviors, while OSM element metadata flagged localized edit wars or repeated tampering. These findings address the research question of which signals most enhance vandalism detection.
+\end{itemize}
+Nonetheless, certain research questions persist around sustaining performance under evolving vandalism strategies and guaranteeing adaptation to newly emerging edit patterns.
+
+\section{Future Work}
+\label{sec:future_work}
+
+Despite the demonstrated success, several avenues exist for further enhancement of the proposed system:
+
+\begin{enumerate}
+    \item \textbf{Real-Time Streaming and Continuous Learning:}
+    While the current pipeline is chunk-based and efficient enough for monthly or near real-time data, an incremental or online learning framework could further reduce latency. This would allow immediate model updates in response to new edit behaviors or flagged vandalism cases.
+
+    \item \textbf{Refined Data Labeling at Scale:}
+    The thesis leverages a labeled dataset of around 0.6 million contributions. As predictions are integrated into OSM’s data stream at HeiGIT, an iterative feedback loop could generate more extensive, high-quality labels. Active learning or crowdsourced verification could refine class boundaries, especially for ambiguous edits.
+
+    \item \textbf{Deep Learning Architectures and Transfer Learning:}
+    While XGBoost proved optimal for tabular data, recent developments in transformer-based models (e.g., FT-Transformers) may yield benefits for extremely high-dimensional or sparse features. Future experiments can compare these architectures if data volumes justify the additional computational overhead.
+
+    \item \textbf{Localized Models and Domain Adaptation:}
+    Regional or city-level models might outperform a single global model, especially in highly specialized editing contexts. Domain adaptation techniques could further enhance cross-region or cross-time performance by reducing calibration overhead when shifting between geographies or time periods.
+
+    \item \textbf{In-Depth Interpretability and Explanation:}
+    While feature importances help unravel model decisions, advanced interpretability tools—such as SHAP (SHapley Additive exPlanations)—could clarify how each user-centric or OSM element attribute influences individual predictions. This granularity aids community trust and fosters collaborative improvement of detection rules.
+
+\end{enumerate}
+
+\noindent
+By pursuing these directions, the vandalism detection pipeline can stay aligned with OSM’s ever-evolving landscape. Enhanced real-time responsiveness, larger labeled datasets, and advanced interpretability or domain adaptation would expand both the technical depth and practical utility of the framework.
+
+\section{Conclusion}
+In summary, the research has demonstrated the feasibility and effectiveness of a feature-rich, XGBoost-based pipeline to detect vandalism across diverse OSM editing patterns. The system's strong performance—further underscored by user and OSM element features—indicates a viable path toward large-scale, near real-time deployment. As OSM continues to grow and editing behaviors change, ongoing improvements to data labeling, model updating, and region-specific adaptation will be essential to sustain the high detection rates exhibited in this thesis.
+
 
 \begin{thebibliography}{9}
 
@@ -876,105 +1468,110 @@ Taken together, these components illustrate a method that is both \emph{comprehe
 \textit{Changeset in OSM}: \url{https://wiki.openstreetmap.org/wiki/Changeset}
 
 \bibitem{Li2021}
-Y. Li, J. Anderson, and Y. Niu, 
-\textit{Vandalism Detection in OpenStreetMap via User Embeddings}, 
+Y. Li, J. Anderson, and Y. Niu,
+\textit{Vandalism Detection in OpenStreetMap via User Embeddings},
 Proceedings of the 30th ACM International Conference on Information and Knowledge Management, 2021. Available at: \url{https://dl.acm.org/doi/10.1145/3459637.3482213}.
 
 \bibitem{Yuan2022}
-Y. Yuan, J. Zhang, and S. Liu, 
-\textit{Attention-Based Vandalism Detection in OpenStreetMap}, 
+Y. Yuan, J. Zhang, and S. Liu,
+\textit{Attention-Based Vandalism Detection in OpenStreetMap},
 arXiv preprint, 2022. Available at: \url{https://arxiv.org/abs/2201.10406}.
 
 \bibitem{OSMPatrol}
-M. Neis and A. Zipf, 
-\textit{OSMPatrol: A Framework for Detecting Malicious Edits in OpenStreetMap}, 
+M. Neis and A. Zipf,
+\textit{OSMPatrol: A Framework for Detecting Malicious Edits in OpenStreetMap},
 Proceedings of the AGILE Conference on Geographic Information Science, 2012. Available at: \url{https://agile-online.org/conference_paper/cds/agile_2012/proceedings/papers/252_shortpaper.pdf}.
 
 \bibitem{OSMCha}
-W. Almeida, 
-\textit{OSMCha: OpenStreetMap Changeset Analyzer}, 
+W. Almeida,
+\textit{OSMCha: OpenStreetMap Changeset Analyzer},
 2016. Available at: \url{https://osmcha.org/}.
 
 \bibitem{Adler2010}
-B. Adler, L. De Alfaro, and I. Pye, 
-\textit{Detecting Wikipedia vandalism using WikiTrust}, 
+B. Adler, L. De Alfaro, and I. Pye,
+\textit{Detecting Wikipedia vandalism using WikiTrust},
 CLEF 2010.
 
 \bibitem{Crescenzi2017}
-V. Crescenzi, G. Mecca, and P. Merialdo, 
-\textit{Computational tools for Wikipedia vandalism detection}, 
+V. Crescenzi, G. Mecca, and P. Merialdo,
+\textit{Computational tools for Wikipedia vandalism detection},
 Communications of the ACM, 2017.
 
 \bibitem{Heindorf2016}
-S. Heindorf, M. Potthast, G. Engels, and B. Stein, 
-\textit{Vandalism detection in Wikidata}, 
+S. Heindorf, M. Potthast, G. Engels, and B. Stein,
+\textit{Vandalism detection in Wikidata},
 ACM International Conference on Information and Knowledge Management, 2017.
 
 \bibitem{Heindorf2017}
-S. Heindorf, M. Potthast, G. Engels, and B. Stein, 
-\textit{A comparative study of vandalism detection methods in collaborative knowledge bases}, 
+S. Heindorf, M. Potthast, G. Engels, and B. Stein,
+\textit{A comparative study of vandalism detection methods in collaborative knowledge bases},
 ACM Transactions on Knowledge Discovery from Data, 2017.
 
 \bibitem{Li2021}
-Y. Li, J. Anderson, and Y. Niu, 
-\textit{Vandalism Detection in OpenStreetMap via User Embeddings}, 
+Y. Li, J. Anderson, and Y. Niu,
+\textit{Vandalism Detection in OpenStreetMap via User Embeddings},
 Proceedings of the 30th ACM International Conference on Information and Knowledge Management (CIKM), 2021.
 
 \bibitem{MartinezRico2019}
-F. Martinez-Rico, J. C. Reyes-Ortiz, and L. G. Guerrero-Bonilla, 
-\textit{Deep learning for Wikipedia vandalism detection}, 
+F. Martinez-Rico, J. C. Reyes-Ortiz, and L. G. Guerrero-Bonilla,
+\textit{Deep learning for Wikipedia vandalism detection},
 International Journal of Advanced Computer Science and Applications, 2019.
 
 \bibitem{Neis2012}
-P. Neis, M. Goetz, and A. Zipf, 
-\textit{Towards automatic vandalism detection in OpenStreetMap}, 
+P. Neis, M. Goetz, and A. Zipf,
+\textit{Towards automatic vandalism detection in OpenStreetMap},
 ISPRS International Journal of Geo-Information, 2012.
 
 \bibitem{Truong2018}
-Q. T. Truong, G. Touya, and C. de Runz, 
-\textit{Towards Vandalism Detection in OpenStreetMap Through a Data Driven Approach}, 
+Q. T. Truong, G. Touya, and C. de Runz,
+\textit{Towards Vandalism Detection in OpenStreetMap Through a Data Driven Approach},
 GIScience 2018.
 
 \bibitem{Truong2020}
-Q. T. Truong, G. Touya, and C. de Runz, 
-\textit{OSMWatchman: Learning How to Detect Vandalized Contributions in OSM Using a Random Forest Classifier}, 
+Q. T. Truong, G. Touya, and C. de Runz,
+\textit{OSMWatchman: Learning How to Detect Vandalized Contributions in OSM Using a Random Forest Classifier},
 ISPRS International Journal of Geo-Information, 2020.
 
 \bibitem{Yuan2022}
-Y. Yuan, J. Zhang, and S. Liu, 
-\textit{Attention-Based Vandalism Detection in OpenStreetMap}, 
+Y. Yuan, J. Zhang, and S. Liu,
+\textit{Attention-Based Vandalism Detection in OpenStreetMap},
 arXiv preprint, 2022.
 
 \bibitem{OSMPatrol}
-P. Neis and A. Zipf, 
-\textit{OSMPatrol: A Tool for Monitoring and Repairing Vandalism in OpenStreetMap}, 
+P. Neis and A. Zipf,
+\textit{OSMPatrol: A Tool for Monitoring and Repairing Vandalism in OpenStreetMap},
 Proceedings of GIScience 2010.
 
 \bibitem{OSMCha}
-T. Schmitt, J. Anderson, 
-\textit{OSMCha: Detecting Anomalous Changes in OpenStreetMap Edits}, 
+T. Schmitt, J. Anderson,
+\textit{OSMCha: Detecting Anomalous Changes in OpenStreetMap Edits},
 FOSS4G, 2018.
 
 \bibitem{xgboost_paper}
-T. Chen and C. Guestrin, 
-\textit{XGBoost: A Scalable Tree Boosting System}, 
+T. Chen and C. Guestrin,
+\textit{XGBoost: A Scalable Tree Boosting System},
 Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 2016.
 
 \bibitem{Chen2016}
-T. Chen and C. Guestrin, 
-\textit{XGBoost: A scalable tree boosting system}, 
+T. Chen and C. Guestrin,
+\textit{XGBoost: A scalable tree boosting system},
 Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, 2016.
 
 \bibitem{Arik2021}
-S. O. Arik and T. Pfister, 
-\textit{TabNet: Attentive interpretable tabular learning}, 
+S. O. Arik and T. Pfister,
+\textit{TabNet: Attentive interpretable tabular learning},
 Proceedings of the AAAI Conference on Artificial Intelligence, 2021.
 
 \bibitem{Gorishniy2021}
-Y. Gorishniy, I. Rubachev, V. Khrulkov, and A. Babenko, 
-\textit{Revisiting deep learning models for tabular data}, 
+Y. Gorishniy, I. Rubachev, V. Khrulkov, and A. Babenko,
+\textit{Revisiting deep learning models for tabular data},
 Advances in Neural Information Processing Systems, 2021.
 
+\bibitem{chen2016xgboost} T. Chen and C. Guestrin, "XGBoost: A Scalable Tree Boosting System," in \textit{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, 2016, pp. 785–794.
+
+\bibitem{friedman2001greedy} J. H. Friedman, "Greedy Function Approximation: A Gradient Boosting Machine," \textit{Annals of Statistics}, vol. 29, no. 5, pp. 1189–1232, 2001.
+
+\bibitem{tutorialspoint2025} Tutorialspoint, "XGBoost Architecture," Available at: \url{https://www.tutorialspoint.com/xgboost/xgboost-architecture.htm}, Accessed: January 2025.
 
 \end{thebibliography}
 
