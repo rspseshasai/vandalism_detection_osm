@@ -158,11 +158,9 @@ def preprocess_contribution_features(features_df, is_training):
         features_df[['code', 'level']] = xzcode_df[['code', 'level']]
         features_df.drop('xzcode', axis=1, inplace=True)
 
-    # Remove 'changeset_id' column for contribution model
-    # TODO: we might need changeset id in the contribution data for the hyper-classifier.
-    if 'changeset_id' in features_df.columns and DATASET_TYPE == 'contribution':
-        features_df.drop('changeset_id', axis=1, inplace=True)
-        logger.info(f"Dropped column: changeset_id")
+    # if 'changeset_id' in features_df.columns and DATASET_TYPE == 'contribution':
+    #     features_df.drop('changeset_id', axis=1, inplace=True)
+    #     logger.info(f"Dropped column: changeset_id")
 
     # Drop other unnecessary columns
     columns_to_drop = ['geometry', 'code', 'osm_id', 'members', 'status', 'editor_used',
