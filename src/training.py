@@ -60,12 +60,13 @@ def plot_training_progress(evals_result):
     """
     Plot the training and validation metrics during the training process,
     including logloss, error, AUC, and derived accuracy from error.
-    All plots are saved to PLOTS_OUTPUT_DIR.
+    All plots are saved to training_plots_output_dir.
     """
     logger.info("Plotting training progress...")
 
+    training_plots_output_dir = os.path.join(PLOTS_OUTPUT_DIR, 'training_progress')
     # Create directory if not exists
-    os.makedirs(os.path.join(PLOTS_OUTPUT_DIR, 'training_progress'), exist_ok=True)
+    os.makedirs(training_plots_output_dir, exist_ok=True)
 
     # For each metric in validation_0
     for metric in evals_result['validation_0'].keys():
@@ -86,7 +87,7 @@ def plot_training_progress(evals_result):
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.tight_layout()
 
-        plot_path = os.path.join(PLOTS_OUTPUT_DIR, f"training_progress_{metric}.png")
+        plot_path = os.path.join(training_plots_output_dir, f"training_progress_{metric}.png")
         plt.savefig(plot_path, dpi=150)
         plt.close()
         logger.info(f"Saved training progress plot for {metric}: {plot_path}")
@@ -107,7 +108,7 @@ def plot_training_progress(evals_result):
             plt.grid(True, linestyle='--', alpha=0.6)
             plt.tight_layout()
 
-            acc_plot_path = os.path.join(PLOTS_OUTPUT_DIR, "training_progress_accuracy.png")
+            acc_plot_path = os.path.join(training_plots_output_dir, "training_progress_accuracy.png")
             plt.savefig(acc_plot_path, dpi=150)
             plt.close()
             logger.info(f"Saved training progress plot for accuracy: {acc_plot_path}")
