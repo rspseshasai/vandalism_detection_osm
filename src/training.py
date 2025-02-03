@@ -1,54 +1,12 @@
 import os
 
+import joblib
+import matplotlib.pyplot as plt
+import xgboost as xgb
 from joblib import dump
 from sklearn.metrics import precision_recall_curve
 
 from config import logger, FINAL_TRAINED_FEATURES_PATH, PLOTS_OUTPUT_DIR
-
-
-def train_final_model(X_train, y_train, X_val, y_val, best_params):
-    """
-    Train the final XGBoost model using the best hyperparameters
-    while tracking training and validation metrics (loss, accuracy, etc.).
-    """
-
-    # Save the feature names for future alignment
-    trained_feature_names = X_train.columns.tolist()
-    joblib.dump(trained_feature_names, FINAL_TRAINED_FEATURES_PATH)
-
-    logger.info("Training final model with best hyperparameters...")
-
-    final_model = xgb.XGBClassifier(
-        objective='binary:logistic',
-        early_stopping_rounds=20,
-        **best_params
-    )
-
-    eval_set = [(X_train, y_train), (X_val, y_val)]
-    final_model.fit(
-        X_train, y_train,
-        eval_set=eval_set,
-        verbose=True
-    )
-
-    # Retrieve evaluation results
-    evals_result = final_model.evals_result()
-
-    # Plot training progress
-    plot_training_progress(evals_result)
-
-    logger.info("Final model training completed.")
-    return final_model
-
-
-import matplotlib.pyplot as plt
-import xgboost as xgb
-import joblib
-
-import os
-import xgboost as xgb
-import joblib
-import matplotlib.pyplot as plt
 
 
 def train_final_model(X_train, y_train, X_val, y_val, best_params):
@@ -71,7 +29,7 @@ def train_final_model(X_train, y_train, X_val, y_val, best_params):
         em = best_params['eval_metric']
         if isinstance(em, str):
             em = [em]
-        required_m = {'logloss','error','auc'}
+        required_m = {'logloss', 'error', 'auc'}
         best_params['eval_metric'] = list(set(em) | required_m)
 
     final_model = xgb.XGBClassifier(
@@ -137,7 +95,7 @@ def plot_training_progress(evals_result):
         if metric == 'error':
             logger.info("Deriving accuracy from error metric and plotting accuracy graph...")
             train_acc = [1.0 - e for e in train_metric]
-            val_acc   = [1.0 - e for e in val_metric]
+            val_acc = [1.0 - e for e in val_metric]
 
             plt.figure(figsize=(10, 6))
             plt.plot(epochs, train_acc, label='Train Accuracy', color='green')
@@ -153,6 +111,7 @@ def plot_training_progress(evals_result):
             plt.savefig(acc_plot_path, dpi=150)
             plt.close()
             logger.info(f"Saved training progress plot for accuracy: {acc_plot_path}")
+
 
 def compute_optimal_threshold(model, X_val, y_val, threshold_file_path):
     """

@@ -1,22 +1,25 @@
 import logging
 import os
 import sys
-
 import coloredlogs
 import pandas as pd
 
-# === Additional Configurations ===
+# =============================================================================
+# Additional Configurations
+# =============================================================================
 SAVE_VISUALIZATION_SAMPLES = True
 TEST_RUN = False
 FORCE_COMPUTE_FEATURES = True
 SHOULD_BALANCE_DATASET = False
 SHOULD_INCLUDE_USERFEATURES = True
 SHOULD_INCLUDE_OSM_ELEMENT_FEATURES = True
-SHOULD_PERFORM_BOOTSTRAP_EVALUATION = False
-# === Dataset Type ===
-DATASET_TYPE = 'changeset'  # Options: 'contribution', 'changeset'
+SHOULD_PERFORM_BOOTSTRAP_EVALUATION = True
+SHOULD_PERFORM_CROSS_VALIDATION = True
 
-# === Split Configurations ===
+# =============================================================================
+# Dataset Type and Splitting Configurations
+# =============================================================================
+DATASET_TYPE = 'contribution'  # Options: 'contribution', 'changeset'
 SPLIT_TYPES = ['random', 'temporal', 'geographic']
 SPLIT_METHOD = 'random'  # 'random', 'temporal', or 'geographic'
 
@@ -31,20 +34,23 @@ if DATASET_TYPE == 'changeset':
 
 REAL_VANDAL_RATIO = 0.2
 
-# === Base Directories ===
+# =============================================================================
+# Base Directories
+# =============================================================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data', f"{DATASET_TYPE}_data")
 RAW_DATA_DIR = os.path.join(DATA_DIR, 'raw')
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
 VISUALIZATION_DIR = os.path.join(DATA_DIR, 'visualization', SPLIT_METHOD)
-MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
 OUTPUT_DIR = os.path.join(DATA_DIR, 'output')
+MODELS_DIR = os.path.join(BASE_DIR, 'models', f"{DATASET_TYPE}_model")
 
-# === Hyper-Classifier Paths ===
+# =============================================================================
+# Hyper-Classifier and Meta-Classifier Paths
+# =============================================================================
 HYPER_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'hyper_classifier')
 os.makedirs(HYPER_CLASSIFIER_DIR, exist_ok=True)
 
-# === Meta-Classifier Paths ===
 META_CLASSIFIER_DIR = os.path.join(BASE_DIR, 'models', f'{DATASET_TYPE}_model', SPLIT_METHOD, 'meta_classifier')
 os.makedirs(META_CLASSIFIER_DIR, exist_ok=True)
 
@@ -59,15 +65,16 @@ os.makedirs(VISUALIZATION_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# === Clustering Configuration ===
+# =============================================================================
+# Clustering and Parallel Processing Configurations
+# =============================================================================
 N_CLUSTERS = 100  # Default number of clusters for KMeans
-
-# Number of jobs for parallel processing
-N_JOBS = 11  # -1 to use all available cores
-
+N_JOBS = 11  # Number of jobs for parallel processing (-1 to use all available cores)
 DEFAULT_THRESHOLD_FOR_EVALUATION = 0.5
 
-# === File Paths ===
+# =============================================================================
+# File Paths for Raw and Processed Data
+# =============================================================================
 CHANGESET_DATA_RAW_FILE_NAME = 'osm_labelled_changeset_features_with_user_info.parquet'
 UNLABELLED_CHANGESET_DATA_RAW_FILE_NAME = 'changesets_unlabelled_data.parquet'
 
@@ -78,54 +85,63 @@ UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME = '2022-03-01.parquet'
 if DATASET_TYPE == 'changeset':
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CHANGESET_DATA_RAW_FILE_NAME)
     UNLABELLED_RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME)
-
 else:
     RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, CONTRIBUTION_DATA_RAW_FILE_NAME)
     UNLABELLED_RAW_DATA_FILE = os.path.join(RAW_DATA_DIR, UNLABELLED_CONTRIBUTIONS_DATA_RAW_FILE_NAME)
 
 PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_features.parquet')
 UNLABELLED_PROCESSED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_features.parquet')
-
 PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR, f'{prefix}_processed_encoded_features.parquet')
 
 # Validation dataset paths
 VALIDATION_DATASET_PATH = os.path.join(PROCESSED_DATA_DIR, 'validation_dataset.parquet')
 VALIDATION_LABELS_PATH = os.path.join(PROCESSED_DATA_DIR, 'validation_labels.parquet')
 
-UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(PROCESSED_DATA_DIR,
-                                                          f'{prefix}_unlabelled_processed_encoded_features.parquet')
+UNLABELLED_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(
+    PROCESSED_DATA_DIR, f'{prefix}_unlabelled_processed_encoded_features.parquet'
+)
 
-CHANGESET_LABELS_FILE = os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
-                                     'changeset_labels.tsv')
+CHANGESET_LABELS_FILE = os.path.join(
+    os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+    'changeset_labels.tsv'
+)
 
-PREDICTIONS_INPUT_DATA_DIR = os.path.join(RAW_DATA_DIR, 'parquet_files_to_be_predicted', '2022_to_2024_pcuof_monthly')
+PREDICTIONS_INPUT_DATA_DIR = os.path.join(
+    RAW_DATA_DIR, 'parquet_files_to_be_predicted', '2022_to_2024_pcuof_monthly'
+)
 HISTORICAL_DATA_DIR = os.path.join(PROCESSED_DATA_DIR, 'history_files')
 
-# Paths for models and hyperparameters
+# =============================================================================
+# Paths for Models and Hyperparameters
+# =============================================================================
 BEST_PARAMS_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_best_hyperparameters.json')
 FINAL_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_xgboost_model.pkl')
 FINAL_TRAINED_FEATURES_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_trained_features.pkl')
-OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD,
-                                                    f'{prefix}_optimal_threshold_for_inference.pkl')
-
+OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH = os.path.join(
+    MODELS_DIR, SPLIT_METHOD, f'{prefix}_optimal_threshold_for_inference.pkl'
+)
 CLUSTER_MODEL_PATH = os.path.join(MODELS_DIR, SPLIT_METHOD, f'{prefix}_final_kmeans_clustering_model.pkl')
 
 HYPER_MODEL_PATH = os.path.join(HYPER_CLASSIFIER_DIR, f'{prefix}_hyper_classifier_model.xgb')
-
 META_MODEL_BEST_PARAMS_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_best_hyperparameters.json')
 META_MODEL_PATH = os.path.join(META_CLASSIFIER_DIR, f'{prefix}_meta_classifier_model.xgb')
 
-# For Hyper Classifier
-CONTRIBUTION_FINAL_MODEL_PATH = os.path.join(os.path.join(BASE_DIR, 'models', f"contribution_model"), SPLIT_METHOD,
-                                             f'{prefix}_final_xgboost_model.pkl')
+# For Hyper Classifier (Contribution Model)
+CONTRIBUTION_FINAL_MODEL_PATH = os.path.join(
+    os.path.join(BASE_DIR, 'models', f"contribution_model"), SPLIT_METHOD,
+    f'{prefix}_final_xgboost_model.pkl'
+)
 CONTRIBUTION_PROCESSED_ENCODED_FEATURES_FILE = os.path.join(
     os.path.join(os.path.join(BASE_DIR, 'data', f"contribution_data"), 'processed'),
-    f'{prefix}_processed_encoded_features.parquet')
+    f'{prefix}_processed_encoded_features.parquet'
+)
 
 os.makedirs(os.path.join(MODELS_DIR, SPLIT_METHOD), exist_ok=True)
 UNLABELLED_PROCESSED_OUTPUT_CSV_FILE = os.path.join(OUTPUT_DIR, f'{prefix}_unlabelled_predictions.csv')
 
-# === Visualization Paths ===
+# =============================================================================
+# Visualization Paths
+# =============================================================================
 VISUALIZATION_DATA_PATH = {
     'data_loading': os.path.join(VISUALIZATION_DIR, 'data_loading_sample.parquet'),
     'feature_engineering': os.path.join(VISUALIZATION_DIR, 'feature_engineering_sample.parquet'),
@@ -150,42 +166,57 @@ VISUALIZATION_DATA_PATH = {
 PLOTS_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "plots")
 os.makedirs(PLOTS_OUTPUT_DIR, exist_ok=True)
 
-# === Bootstrapping Configurations ===
+# =============================================================================
+# Bootstrapping Configurations
+# =============================================================================
 BOOTSTRAP_ITERATIONS = 1000
 BOOTSTRAP_RESULTS_DIR = os.path.join(PROCESSED_DATA_DIR, SPLIT_METHOD, 'bootstrap_results')
 os.makedirs(BOOTSTRAP_RESULTS_DIR, exist_ok=True)
 
-# === Geographical Evaluation Configurations ===
+# =============================================================================
+# Geographical Evaluation Configurations
+# =============================================================================
 GEOGRAPHICAL_RESULTS_DIR = os.path.join(PROCESSED_DATA_DIR, SPLIT_METHOD, 'geographical_evaluation_results')
 os.makedirs(GEOGRAPHICAL_RESULTS_DIR, exist_ok=True)
 
-# === Geographic Split Parameters ===
-GEOGRAPHIC_SPLIT_KEY = 'continent'  # 'continent' or 'country'
+# =============================================================================
+# Geographic Split Parameters
+# =============================================================================
+GEOGRAPHIC_SPLIT_KEY = 'continent'  # Options: 'continent' or 'country'
 TRAIN_REGIONS = ['Oceania', 'Europe', 'South America']
 VAL_REGIONS = ['Africa', 'Antarctica', 'Other']
 TEST_REGIONS = ['North America', 'Asia']
 
-# === Temporal Split Parameters ===
+# =============================================================================
+# Temporal Split Parameters
+# =============================================================================
 DATE_COLUMN = 'date_created'  # Column name in the DataFrame
 TRAIN_YEARS = [2018, 2019]
 VAL_YEARS = [2015]
 TEST_YEARS = [2017]
 
-# Test changeset ids
+# =============================================================================
+# Test Changeset IDs
+# =============================================================================
 # Take the first 1000 changeset IDs for testing
-TEST_CHANGESET_IDS = pd.read_csv(os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
-                                              'test_common_changesets_1000.csv'))['changeset_id']
+TEST_CHANGESET_IDS = pd.read_csv(
+    os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+                 'test_common_changesets_1000.csv')
+)['changeset_id']
 
-COMMON_CHANGESET_IDS = pd.read_csv(os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
-                                                '_common_changeset_ids.csv'))['changeset_id']
+COMMON_CHANGESET_IDS = pd.read_csv(
+    os.path.join(os.path.join(os.path.join(BASE_DIR, 'data', "changeset_data"), 'raw'),
+                 '_common_changeset_ids.csv')
+)['changeset_id']
 
-# === Logging Configuration ===
+# =============================================================================
+# Logging Configuration
+# =============================================================================
 LOG_FORMAT = '\n%(asctime)s - %(levelname)s - %(filename)s -- %(message)s'
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE_PATH = os.path.join(LOG_DIR, f'{DATASET_TYPE}_pipeline.log')
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format=LOG_FORMAT,
@@ -195,7 +226,6 @@ logging.basicConfig(
     ],
 )
 
-# Custom color scheme for coloredlogs
 FIELD_STYLES = {
     'asctime': {'color': 'green'},
     'levelname': {'color': 'black', 'bold': True},
@@ -209,7 +239,6 @@ LEVEL_STYLES = {
     'critical': {'color': 'red', 'bold': True},
 }
 
-# Apply coloredlogs
 coloredlogs.install(
     level='INFO',
     logger=logging.getLogger(__name__),
@@ -218,5 +247,4 @@ coloredlogs.install(
     field_styles=FIELD_STYLES,
 )
 
-# Export logger instance
 logger = logging.getLogger(__name__)

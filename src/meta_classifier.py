@@ -16,9 +16,6 @@ from config import logger, META_MODEL_PATH, META_MODEL_BEST_PARAMS_PATH, VISUALI
 
 
 def check_for_data_consistency(evaluation_results_main_model, evaluation_results_hyper_classifier_model):
-    """
-    Check for consistency in 'y_true' between main and hyper-classifier models.
-    """
     # Extract labels and changeset_ids from both evaluation results
     main_labels = evaluation_results_main_model[['changeset_id', 'y_true']]
     hyper_labels = evaluation_results_hyper_classifier_model[['changeset_id', 'y_true']]
@@ -94,9 +91,6 @@ def meta_classifier(evaluation_results_main_model, evaluation_results_hyper_clas
 
 
 def get_metrics(y_true, y_pred, y_prob):
-    """
-    Calculate evaluation metrics and return them in a dictionary.
-    """
     metrics = {}
     metrics['Accuracy'] = accuracy_score(y_true, y_pred)
     metrics['Precision'] = precision_score(y_true, y_pred, zero_division=0)
@@ -107,17 +101,6 @@ def get_metrics(y_true, y_pred, y_prob):
 
 
 def train_meta_classifier(X_meta_train, y_meta_train, model_type='logistic_regression'):
-    """
-    Train a meta-classifier model.
-
-    Parameters:
-    - X_meta_train: DataFrame with meta features (probabilities from base models)
-    - y_meta_train: Series with true labels
-    - model_type: 'logistic_regression' or 'xgboost'
-
-    Returns:
-    - trained meta-classifier model
-    """
     if model_type == 'logistic_regression':
         meta_model = LogisticRegression()
         meta_model.fit(X_meta_train, y_meta_train)
@@ -195,17 +178,6 @@ def train_meta_classifier(X_meta_train, y_meta_train, model_type='logistic_regre
 
 
 def get_meta_predictions(meta_model, X_meta_test):
-    """
-    Get predictions and probabilities from the meta-classifier.
-
-    Parameters:
-    - meta_model: trained meta-classifier model
-    - X_meta_test: DataFrame with meta features
-
-    Returns:
-    - y_meta_pred: predicted labels
-    - y_meta_prob: predicted probabilities
-    """
     y_meta_pred = meta_model.predict(X_meta_test)
     y_meta_prob = meta_model.predict_proba(X_meta_test)[:, 1]
     return y_meta_pred, y_meta_prob
@@ -234,8 +206,6 @@ def meta_classifier_pipeline(merged_results, main_model, hyper_classifier_model,
 
     # Train the meta-classifier with hyperparameter tuning
     meta_model = train_meta_classifier(X_meta_train, y_meta_train, model_type=model_type)
-
-    # Generate predictions from base models on meta-test set
 
     # Generate predictions from main model on X_test_meta_main
     y_prob_main_meta = main_model.predict_proba(X_test_meta_main)[:, 1]
@@ -326,6 +296,7 @@ def meta_classifier_pipeline(merged_results, main_model, hyper_classifier_model,
         'y_prob_meta_classifier': y_meta_prob
     })
     results_df.to_csv(VISUALIZATION_DATA_PATH['evaluation_results_meta_classifier'], index=False)
-    print(f"\nMeta-classifier results saved to '{VISUALIZATION_DATA_PATH['evaluation_results_meta_classifier']}' for visualization.")
+    print(
+        f"\nMeta-classifier results saved to '{VISUALIZATION_DATA_PATH['evaluation_results_meta_classifier']}' for visualization.")
 
     return metrics_df

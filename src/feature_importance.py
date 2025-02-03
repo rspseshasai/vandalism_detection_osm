@@ -41,7 +41,7 @@ gain_threshold = 0.01 * feature_importance_df['gain'].max()  # 1% of max gain
 low_importance_features = feature_importance_df[
     (feature_importance_df['gain'] < gain_threshold) &
     (feature_importance_df['weight'] == 0)
-]
+    ]
 
 # Print the results
 print("Top 15 Important Features:")

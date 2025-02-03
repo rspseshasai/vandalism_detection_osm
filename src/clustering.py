@@ -2,19 +2,17 @@
 
 import os
 
-from sklearn.cluster import KMeans
-
-from src import config
 import matplotlib.pyplot as plt
 import pandas as pd
-from config import VISUALIZATION_DATA_PATH, logger, DATASET_TYPE
+from sklearn.cluster import KMeans
+
+from config import VISUALIZATION_DATA_PATH
+from config import logger
+from src import config
+
 
 # src/clustering.py
 
-import os
-from sklearn.cluster import KMeans
-import joblib
-from config import logger
 
 def perform_clustering(X_train, X_val, X_test=None, X_test_meta=None, n_clusters=100):
     """

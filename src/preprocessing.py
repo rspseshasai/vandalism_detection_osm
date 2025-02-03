@@ -7,36 +7,12 @@ from src import config
 
 
 def encode_multilabel_column(df, column_name, prefix):
-    """
-    One-hot encodes a multi-label column using MultiLabelBinarizer.
-
-    Parameters:
-    - df: The DataFrame containing the column to encode.
-    - column_name: The name of the multi-label column to encode.
-    - prefix: The prefix for the encoded columns.
-
-    Returns:
-    - Updated DataFrame with the original column replaced by one-hot encoded columns.
-    """
-    # logger.info(f"Encoding multi-label column '{column_name}' with prefix '{prefix}'")
-    # Initialize the MultiLabelBinarizer
     mlb = MultiLabelBinarizer()
-
-    # Fit and transform the column
     encoded_data = mlb.fit_transform(df[column_name])
-
-    # Create a DataFrame with the encoded features
     encoded_df = pd.DataFrame(encoded_data, columns=[f'{prefix}_{label}' for label in mlb.classes_])
-
-    # Reset index to align with df
     encoded_df.index = df.index
-
-    # Drop the original column
     df = df.drop(column_name, axis=1)
-
-    # Concatenate the new features with the original DataFrame
     df = pd.concat([df, encoded_df], axis=1)
-
     return df
 
 
@@ -74,15 +50,6 @@ import pandas as pd
 
 
 def preprocess_user_features(df):
-    """
-    Preprocess user-related features in the DataFrame.
-
-    Parameters:
-    - df: The input DataFrame.
-
-    Returns:
-    - df: The DataFrame with preprocessed user-related features.
-    """
     # Convert timestamps to datetime, handling NULL values
     for column in ['user_previous_edit_timestamp']:
         df[column] = pd.to_datetime(df[column], format='%d/%m/%Y %H:%M', errors='coerce')
@@ -96,15 +63,6 @@ def preprocess_user_features(df):
 
 
 def preprocess_osm_element_features(df):
-    """
-    Preprocess OSM element-related features in the DataFrame.
-
-    Parameters:
-    - df: The input DataFrame.
-
-    Returns:
-    - df: The DataFrame with preprocessed OSM element-related features.
-    """
     # Convert timestamps to datetime, handling NULL values
     df['element_previous_edit_timestamp'] = pd.to_datetime(
         df['element_previous_edit_timestamp'], format='%d/%m/%Y %H:%M', errors='coerce'
@@ -158,10 +116,6 @@ def preprocess_contribution_features(features_df, is_training):
         features_df[['code', 'level']] = xzcode_df[['code', 'level']]
         features_df.drop('xzcode', axis=1, inplace=True)
 
-    # if 'changeset_id' in features_df.columns and DATASET_TYPE == 'contribution':
-    #     features_df.drop('changeset_id', axis=1, inplace=True)
-    #     logger.info(f"Dropped column: changeset_id")
-
     # Drop other unnecessary columns
     columns_to_drop = ['geometry', 'code', 'osm_id', 'members', 'status', 'editor_used',
                        'source_used', 'grid_cell_id', 'contribution_key']
@@ -182,11 +136,9 @@ def preprocess_contribution_features(features_df, is_training):
         X = features_df
         y = None
 
-    # One-hot encode 'countries' if it exists
     if 'countries' in X.columns:
         X = encode_multilabel_column(X, 'countries', 'country')
 
-    # One-hot encode 'continents' if it exists
     if 'continents' in X.columns:
         X = encode_multilabel_column(X, 'continents', 'continent')
 
@@ -209,18 +161,6 @@ def preprocess_contribution_features(features_df, is_training):
 
 
 def preprocess_features(features_df, is_training):
-    """
-    Preprocess the features DataFrame for ML training.
-
-    Parameters:
-    - features_df: The raw features DataFrame.
-
-    Returns:
-    - X_encoded: The preprocessed and encoded feature DataFrame.
-    - y: The target labels.
-    """
-
     if DATASET_TYPE == 'changeset':
         return preprocess_changeset_features(features_df)
-
     return preprocess_contribution_features(features_df, is_training)

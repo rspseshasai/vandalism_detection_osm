@@ -11,7 +11,8 @@ sys.path.append(os.path.join(project_dir, 'src'))
 
 from config import logger, BEST_PARAMS_PATH, TEST_RUN, SPLIT_METHOD, FORCE_COMPUTE_FEATURES, DATASET_TYPE, \
     PROCESSED_ENCODED_FEATURES_FILE, PROCESSED_FEATURES_FILE, CLUSTER_MODEL_PATH, OPTIMAL_THRESHOLD_FOR_INFERENCE_PATH, \
-    DEFAULT_THRESHOLD_FOR_EVALUATION, SHOULD_PERFORM_BOOTSTRAP_EVALUATION, COMMON_CHANGESET_IDS
+    DEFAULT_THRESHOLD_FOR_EVALUATION, SHOULD_PERFORM_BOOTSTRAP_EVALUATION, COMMON_CHANGESET_IDS, \
+    SHOULD_PERFORM_CROSS_VALIDATION
 from src import config
 from src.data_loading import load_data
 
@@ -23,12 +24,12 @@ from src.clustering import perform_clustering
 from src.training import train_final_model, save_model
 
 from geographical_evaluation import geographical_evaluation
-from hyper_parameter_search import randomized_search_cv
+from hyper_parameter_search import randomized_search_cv, load_best_hyperparameters
 
 from src.evaluation import (
     evaluate_train_test_metrics,
     calculate_auc_scores,
-    save_evaluation_results
+    save_evaluation_results, evaluate_model_with_cv
 )
 from src.bootstrap_evaluation import (
     perform_bootstrap_evaluation,
@@ -59,7 +60,8 @@ def data_loading_helper():
 
     logger.info("Data loading completed.")
     if DATASET_TYPE == 'changeset':
-        logger.info("Limiting to the changeset entries matching common changeset IDs - to maintain consistent dataset for hyper classifier that matches with contribution data set.")
+        logger.info(
+            "Limiting to the changeset entries matching common changeset IDs - to maintain consistent dataset for hyper classifier that matches with contribution data set.")
         data_df = data_df[data_df['changeset_id'].isin(COMMON_CHANGESET_IDS)]
     return data_df
 
@@ -207,19 +209,6 @@ def training_helper(X_train, y_train, X_val, y_val):
 
 # Step 7: Model Evaluation
 def evaluation_helper(model, X_train, y_train, X_test=None, y_test=None, X_test_ids=None, model_type="model"):
-    """
-    Evaluate the model on both training and test datasets and save the results.
-
-    Parameters:
-    - model: The trained machine learning model.
-    - X_train, y_train: Training features and labels.
-    - X_test, y_test: Test features and labels (optional).
-    - X_test_ids: IDs for test set (optional, used in 'changeset' dataset type).
-    - model_type: String identifier for the model being evaluated.
-
-    Returns:
-    - evaluation_results_main_model: DataFrame containing evaluation results.
-    """
     logger.info(f"Starting evaluation for {model_type} model...")
 
     # Load or use default threshold
@@ -262,7 +251,8 @@ def evaluation_helper(model, X_train, y_train, X_test=None, y_test=None, X_test_
         logger.warning("No test set provided. Skipping test evaluation.")
 
     # Optional: Perform Cross-Validation on Training Data (if applicable)
-    # evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
+    if SHOULD_PERFORM_CROSS_VALIDATION:
+        evaluate_model_with_cv(X_train, y_train, load_best_hyperparameters(BEST_PARAMS_PATH))
 
     logger.info(f"Evaluation completed for {model_type} model.")
     return evaluation_results_main_model

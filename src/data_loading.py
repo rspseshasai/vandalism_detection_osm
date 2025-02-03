@@ -7,10 +7,6 @@ from src import config
 
 
 def load_data(data_path, print_sample_data=False):
-    """
-    Load data from a Parquet file and optionally balance the dataset if specified.
-    Handles cases where 'vandalism' column values are either 0/1 or True/False.
-    """
     logger.info(f"Loading data from {data_path}...")
     contribution_df = pd.read_parquet(data_path, engine='pyarrow')
 

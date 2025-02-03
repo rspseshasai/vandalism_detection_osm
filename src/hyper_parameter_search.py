@@ -5,7 +5,7 @@ import random
 import xgboost as xgb
 from sklearn.model_selection import RandomizedSearchCV
 
-from config import logger
+from config import logger, N_JOBS
 
 
 def load_best_hyperparameters(hyperparams_file):
@@ -52,21 +52,9 @@ def get_random_parameters():
 
 
 def randomized_search_cv(X_train, y_train, hyperparams_file):
-    # Define the parameter grid
-    # param_grid = {
-    #     'learning_rate': [0.005, 0.01, 0.05, 0.1],
-    #     'max_depth': [3, 5, 7, 9, 11],
-    #     'subsample': [0.6, 0.8, 1.0],
-    #     'colsample_bytree': [0.6, 0.8, 1.0],
-    #     'lambda': [0, 1, 3],
-    #     'alpha': [0, 1, 2],
-    #     'min_child_weight': [1, 5, 10],
-    #     'gamma': [0, 0.1, 0.5],
-    #     'n_estimators': [100, 200, 500],
-    #     'scale_pos_weight': [1, 10, 25, 50]  # Adjust based on class imbalance
-    # }
-
     logger.info("Starting randomized search for hyperparameter tuning.")
+
+    # Define the parameter grid
     param_grid = {
         'learning_rate': [0.01, 0.05, 0.1, 0.2, 0.3],
         'max_depth': [3, 5, 7, 9],
@@ -80,17 +68,14 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
         'scale_pos_weight': [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 10, 50, 100, 250]
     }
 
-    # Check if the hyperparameters file exists
     if os.path.exists(hyperparams_file):
         logger.info("Hyperparameters file already exists.")
     else:
-        # Initialize the models
         xgb_model = xgb.XGBClassifier(
             objective='binary:logistic',
             eval_metric='aucpr',
         )
 
-        # TODO: Move CV, n_jobs, n_iter params to config file
         # Set up and run RandomizedSearchCV
         random_search = RandomizedSearchCV(
             estimator=xgb_model,
@@ -99,12 +84,11 @@ def randomized_search_cv(X_train, y_train, hyperparams_file):
             scoring='roc_auc',
             cv=5,
             verbose=False,
-            n_jobs=-1,
+            n_jobs=N_JOBS,
             random_state=42
         )
         random_search.fit(X_train, y_train)
 
-        # Get the best parameters
         best_params = random_search.best_params_
 
         # Save best parameters to file

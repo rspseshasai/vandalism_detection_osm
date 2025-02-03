@@ -43,19 +43,6 @@ def print_metrics(true, pred, prob):
 
 
 def evaluate_train_test_metrics(model, X_train, y_train, X_test=None, y_test=None, threshold=None):
-    """
-    Evaluate model performance on both training and test datasets, optionally using a custom threshold.
-
-    Parameters:
-    - model: The trained XGBoost model.
-    - X_train, y_train: Training features and labels.
-    - X_test, y_test: Test features and labels (optional).
-    - threshold (float): If provided, we'll classify probabilities >= threshold as 1 (vandalism).
-
-    Returns:
-    - y_test_pred: Predicted classes for the test set (if available).
-    - y_test_prob: Predicted probabilities for the test set (if available).
-    """
 
     # ---------------------
     # 1) Training Metrics
@@ -182,18 +169,7 @@ def plot_roc_pr_curves(model_type):
 
 
 def evaluate_model_with_cv(X, y, best_params, cv=5):
-    """
-    Evaluate the models using cross-validation on the training data.
 
-    Parameters:
-    - X: Features (training data)
-    - y: Labels (training data)
-    - best_params: Best hyperparameters from tuning
-    - cv: Number of cross-validation folds
-
-    Returns:
-    - cv_scores: Cross-validation scores
-    """
     print("\nPerforming 5-fold Cross-Validation on the training data...")
 
     # Initialize the models with the best hyperparameters

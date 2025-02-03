@@ -1,4 +1,3 @@
-import logging
 import math
 import os
 from multiprocessing import Pool, cpu_count
@@ -9,11 +8,6 @@ from tqdm import tqdm
 from config import SPLIT_METHOD, DATASET_TYPE, TEST_CHANGESET_IDS, SHOULD_INCLUDE_USERFEATURES, \
     SHOULD_INCLUDE_OSM_ELEMENT_FEATURES
 from config import logger
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 def get_continents_for_bbox(xmin, xmax, ymin, ymax):
     continents = []
@@ -68,10 +62,6 @@ def extract_temporal_features(contribution):
 
     features['day_of_week'] = timestamp.weekday()
     features['is_weekend'] = int(timestamp.weekday() >= 5)
-
-    # Previously we used precomputed time_since_last_edit, but now removed
-    # so we won't set 'time_since_last_edit' here anymore.
-
     features['date_created'] = contribution['valid_from']
     return features
 
@@ -125,10 +115,6 @@ def extract_spatial_features(contribution):
 
     latitude = contribution['centroid']['y']
     longitude = contribution['centroid']['x']
-
-    # We no longer use user_edit_frequencies or historical features,
-    # so no need for complex logic here.
-    # Just compute spatial features as before.
 
     # grid cell
     def get_grid_cell_id(lat, lon, grid_size=0.1):
@@ -189,7 +175,6 @@ def extract_changeset_features(contribution):
     features['changeset_id'] = contribution['changeset']['id']
     features['contribution_key'] = str(contribution['valid_from']) + "__" + str(contribution['osm_id']) + "__" + str(contribution['osm_version'])
     features['source_used'] = source if source else 'unknown'
-    # features['changeset_timestamp'] = contribution['changeset_timestamp']
 
     return features
 
@@ -203,12 +188,7 @@ def extract_map_features(contribution):
         features[feature_name] = int(feature_value)
     return features
 
-
-# Previously we had GLOBAL_* vars and complex logic for historical and user frequencies.
-# Now we remove them since we are not using these complicated features.
-
 GLOBAL_IS_TRAINING = None
-
 
 def _init_worker(is_training):
     global GLOBAL_IS_TRAINING
@@ -273,14 +253,12 @@ def _process_records(records):
 
 
 def extract_features_contributions(contribution_df, is_training):
-    # We no longer calculate user_edit_frequencies, historical features, or time_since_last_edit dict.
-    # Just directly extract features based on data.
-
     records = contribution_df.to_dict('records')
 
     num_partitions = cpu_count()
     if not is_training:
         num_partitions = min(4, os.cpu_count() // 2)
+
     record_count = len(records)
     if record_count == 0:
         return pd.DataFrame()

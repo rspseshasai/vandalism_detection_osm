@@ -1,7 +1,5 @@
 # src/data_splitting.py
 
-# src/data_splitting.py
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -46,7 +44,7 @@ def create_realistic_splits(X, y,
                             val_size=50000,
                             random_state=42):
     """
-    Create a validation set and test set that mirrors the real-world vandalism ratio (0.4%).
+    Create a validation set and test set that mirrors the real-world vandalism ratio (0.2%).
     The rest is returned as the training set.
     """
     # Combine X and y for easier slicing

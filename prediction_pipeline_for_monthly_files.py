@@ -7,6 +7,10 @@ import joblib
 import pandas as pd
 import pyarrow.dataset as ds
 
+from src.feature_engineering import get_or_generate_features
+from src.preprocessing import preprocess_features
+from training import load_model
+
 # Adjust the path to import modules from src
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(project_dir, 'src'))
@@ -23,15 +27,9 @@ from config import (
     OUTPUT_DIR,
     UNLABELLED_PROCESSED_FEATURES_FILE
 )
-from training import load_model
-from src.feature_engineering import get_or_generate_features
-from src.preprocessing import preprocess_features
 
 
 def load_parquet_in_chunks(data_path, batch_size=1000000):
-    """
-    Loads a Parquet file in chunks using pyarrow.dataset, returning a Pandas DataFrame per chunk.
-    """
     dataset = ds.dataset(data_path, format="parquet")
     scanner = dataset.to_batches(batch_size=batch_size)
     for record_batch in scanner:
