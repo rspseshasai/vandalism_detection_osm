@@ -8,13 +8,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from folium.plugins import HeatMapWithTime
 
-from config import logger
-OUTPUT_DIR_NAME= 'pcuof'
+from config import logger, PLOTS_OUTPUT_DIR, OUTPUT_DIR
+
+OUTPUT_DIR_NAME = 'pcuof'
 
 # Paths
-folder_path = r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\predictions_output\pcuf_full_dataset_detailed_2022_to_2024_monthly"
+input_folder_path = os.path.join(OUTPUT_DIR, 'predictions_output', 'pcuf_full_dataset_detailed_2022_to_2024_monthly')
 plots_dir = os.path.join(
-    r"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\plots",
+    PLOTS_OUTPUT_DIR,
     f"{OUTPUT_DIR_NAME}__{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
 )
 
@@ -237,7 +238,7 @@ if __name__ == "__main__":
     os.makedirs(plots_dir, exist_ok=True)
 
     # 1) Aggregate data for bar/line plots
-    vandalism_counts = aggregate_vandalism_counts(folder_path)
+    vandalism_counts = aggregate_vandalism_counts(input_folder_path)
     if not vandalism_counts:
         logger.info("No vandalism CSV files found or no data in them. Exiting.")
         sys.exit(0)
@@ -266,6 +267,6 @@ if __name__ == "__main__":
     plot_line_graph(months, values, output_path_line_graph)
 
     # 4) Create Folium heatmap with monthly slider
-    create_heatmap_folium(folder_path, plots_dir, output_path_heatmap)
+    create_heatmap_folium(input_folder_path, plots_dir, output_path_heatmap)
 
     logger.info("All plots and heatmap creation completed successfully.")
