@@ -65,7 +65,7 @@ def plot_training_progress(evals_result):
     logger.info("Plotting training progress...")
 
     # Create directory if not exists
-    os.makedirs(PLOTS_OUTPUT_DIR, exist_ok=True)
+    os.makedirs(os.path.join(PLOTS_OUTPUT_DIR, 'training_progress'), exist_ok=True)
 
     # For each metric in validation_0
     for metric in evals_result['validation_0'].keys():
