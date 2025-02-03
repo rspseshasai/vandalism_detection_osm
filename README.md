@@ -10,7 +10,7 @@ This project focuses on **automatic vandalism detection** in OpenStreetMap (OSM)
   - Parallelizable **data loading** and **feature engineering** for large datasets
   - Modular **XGBoost-based training pipeline** designed to seamlessly handle both **OSM changesets and contributions data**
   - Pipeline scripts for **monthly** (bulk) and **daily** (frequent) inference
-  - Logging, evaluation artifacts (e.g., confusion matrix, ROC, PR/PR curves)
+  - Logging, evaluation artifacts (e.g., confusion matrix, ROC/PR curves)
 - **Extensibility**: Easily integrate new features, clustering, or alternative classifiers using a chunk-based approach and flexible config files.
 
 ## Installation & Setup
@@ -94,7 +94,7 @@ This project focuses on **automatic vandalism detection** in OpenStreetMap (OSM)
 │   ├── feature_engineering.py
 │   ├── preprocessing.py
 │   ├── training.py           # XGBoost training logic
-│   ├── evaluation.py         # Metrics & PR-Gain plots
+│   ├── evaluation.py         # Metrics & plots
 │   ├── config.py
 │   ├── hyper_classifier/
 │   │   ├── hyper_classifier_main.py
