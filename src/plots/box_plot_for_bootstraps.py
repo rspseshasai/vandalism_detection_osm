@@ -15,7 +15,7 @@ FILE_WITH_FEATURES = os.path.join(
 FILE_WITHOUT_FEATURES = os.path.join(
     OUTPUT_DIR,
     'geo_bootstrap_results',
-    "bootstrap_geo_split_results_nuof_2025-01-16_11-14-24.parquet"
+    "bootstrap_geo_split_results_no_user_osm_element_features.parquet"
 )
 
 # Metrics to plot
