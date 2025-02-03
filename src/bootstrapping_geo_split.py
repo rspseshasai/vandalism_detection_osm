@@ -5,11 +5,12 @@ from datetime import datetime
 import pandas as pd
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
+from config import OUTPUT_DIR
 from ml_training_and_eval_pipeline import pipeline
 
 # Define regions
 regions = ['Asia', 'Africa', 'Europe', 'Oceania', 'North America', 'South America', 'Antarctica', 'Other']
-combination_start_count = 1011
+combination_start_count = 1
 
 
 def generate_size_combinations(total_regions, min_size, max_size):
@@ -54,8 +55,11 @@ size_combinations = generate_size_combinations(total_regions=len(regions), min_s
 
 # Initialize results storage
 results = []
-output_path = rf"D:\PycharmProjects\vandalism_detection_osm\data\contribution_data\output\bootstrap_geo_split_results_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.parquet"
-
+output_path = os.path.join(
+    OUTPUT_DIR,
+    'geo_bootstrap_results',
+    f"bootstrap_geo_split_results_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.parquet"
+)
 # Iterate over size combinations and region assignments
 combination_count = 0
 for train_size, val_size, test_size in size_combinations:

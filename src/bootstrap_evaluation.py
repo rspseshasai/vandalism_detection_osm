@@ -18,12 +18,6 @@ from src.config import logger
 
 
 def plot_metric_distributions(metrics_df, plot_graphs=False):
-    """
-    Plot histograms and box plots for each performance metric.
-
-    Parameters:
-    - metrics_df: DataFrame containing metrics from bootstrapping_results.
-    """
     results_df = calculate_bootstrap_statistics(metrics_df)
     print("Bootstrap Performance Metrics on Test Set:")
     print(results_df)

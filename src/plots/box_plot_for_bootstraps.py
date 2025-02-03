@@ -3,9 +3,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from config import OUTPUT_DIR
+
 # File paths (Update these paths accordingly)
-FILE_WITH_FEATURES = r"D:\HeidelbergUniversity\Thesis\HeiGit\discussion\16-01-2025-benni\geo_bootstrap_results\bootstrap_geo_split_results_with_user_and_osm_element_features_spw_4.5.parquet"
-FILE_WITHOUT_FEATURES = r"D:\HeidelbergUniversity\Thesis\HeiGit\discussion\16-01-2025-benni\geo_bootstrap_results\bootstrap_geo_split_results_nuof_2025-01-16_11-14-24.parquet"
+FILE_WITH_FEATURES = os.path.join(
+    OUTPUT_DIR,
+    'geo_bootstrap_results',
+    "bootstrap_geo_split_results_with_user_and_osm_element_features_spw_4.5.parquet"
+)
+
+FILE_WITHOUT_FEATURES = os.path.join(
+    OUTPUT_DIR,
+    'geo_bootstrap_results',
+    "bootstrap_geo_split_results_nuof_2025-01-16_11-14-24.parquet"
+)
 
 # Metrics to plot
 METRICS = ["accuracy", "precision", "recall", "f1_score"]
